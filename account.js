@@ -17,7 +17,29 @@
     return { course, vocabulary: window.PolymathStudio.vocabularySnapshot(), revision: account.revision };
   }
   function stored(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch { return fallback; } }
+  const pendingKey = userId => "polymath_pending_progress_v1:" + userId;
+  function pendingProgress(userId) {
+    const value = stored(pendingKey(userId), null);
+    return value && value.course && value.vocabulary && (value.revision === null || Number.isSafeInteger(value.revision)) ? value : null;
+  }
+  function retainPending(value = snapshot()) {
+    if (!account.user) return;
+    try { localStorage.setItem(pendingKey(account.user.id), JSON.stringify(value)); } catch { /* Existing account storage remains the fallback when storage is full. */ }
+  }
+  function clearPending(userId, expected) {
+    try {
+      // A second tab may have queued newer work while this request was in flight.
+      if (!expected || localStorage.getItem(pendingKey(userId)) === JSON.stringify(expected)) localStorage.removeItem(pendingKey(userId));
+    } catch { /* Storage may be unavailable. */ }
+  }
   function emptyVocabulary() { return { saved: [], learned: [], cache: [] }; }
+  function restoreProgress(course, vocabulary, userId) {
+    account.restoring = true;
+    try {
+      window.PolymathStudio.replaceVocabulary(vocabulary);
+      window.PolymathApp.replaceProgress(course, userId);
+    } finally { account.restoring = false; }
+  }
   function renderControl() {
     const control = $("account-control"); control.hidden = !account.configured;
     if (!account.configured) return;
@@ -25,7 +47,8 @@
     if ($("account-sync")) $("account-sync").textContent = account.sync;
     window.dispatchEvent(new Event("polymath:account"));
   }
-  async function applyUser(user) {
+  async function applyUser(user, { discardPending = false } = {}) {
+    account.recovering = account.user?.id === user.id && !discardPending;
     account.loading = true;
     clearTimeout(account.timer);
     if (account.saving) await account.saving;
@@ -33,6 +56,7 @@
     account.user = user;
     account.admin = false;
     account.dirty = false;
+    let pending = discardPending ? null : pendingProgress(user.id);
     const headers = { "X-Polymath-Account": user.id };
     const access = api("/api/admin-accounts?action=access", { headers }).then(
       result => result.allowed === true,
@@ -40,19 +64,31 @@
     );
     try {
       const result = await api("/api/progress", { headers });
+      if (account.recovering) pending = pendingProgress(user.id);
       const progress = result.progress;
       account.revision = progress?.revision ?? null;
-      window.PolymathStudio.replaceVocabulary(progress?.vocabulary || emptyVocabulary());
-      window.PolymathApp.replaceProgress(progress?.course || null, user.id);
-      account.ready = true; account.sync = progress ? "Progresul contului este actualizat." : "Cont conectat. Progresul se va salva automat.";
+      // Keep unsynced work after a reload. Only replay it against the version it was based on.
+      restoreProgress(pending?.course || progress?.course || null, pending?.vocabulary || progress?.vocabulary || emptyVocabulary(), user.id);
+      if (discardPending) clearPending(user.id);
+      account.dirty = Boolean(pending);
+      account.ready = !pending || pending.revision === account.revision;
+      if (pending) {
+        account.revision = pending.revision;
+        account.sync = account.ready ? "Modificările păstrate pe dispozitiv se vor sincroniza."
+          : "Progresul s-a schimbat în altă sesiune. Modificările tale rămân pe acest dispozitiv; reîncarcă din cont doar dacă vrei să le înlocuiești.";
+      } else account.sync = progress ? "Progresul contului este actualizat." : "Cont conectat. Progresul se va salva automat.";
     } catch {
-      window.PolymathStudio.replaceVocabulary(stored("polymath_vocabulary_v1:" + user.id, emptyVocabulary()));
-      window.PolymathApp.replaceProgress(window.PolymathApp.accountProgress?.(user.id) || stored("polymath_edtech_state_v2:" + user.id, null), user.id);
+      if (account.recovering) pending = pendingProgress(user.id);
+      account.revision = pending?.revision ?? null;
+      account.dirty = Boolean(pending);
+      restoreProgress(pending?.course || window.PolymathApp.accountProgress?.(user.id) || stored("polymath_edtech_state_v2:" + user.id, null), pending?.vocabulary || stored("polymath_vocabulary_v1:" + user.id, emptyVocabulary()), user.id);
       account.sync = "Sincronizarea nu este disponibilă. Încearcă să reîncarci progresul contului.";
     } finally {
       account.admin = await access;
       account.loading = false;
+      account.recovering = false;
       renderControl();
+      if (account.ready && account.dirty) queueSave();
     }
   }
   function flush() {
@@ -62,10 +98,15 @@
     account.sync = "Se salvează progresul…";
     renderControl();
     const headers = { "X-Polymath-Account": account.user.id };
-    account.saving = api("/api/progress", { method: "PUT", headers, body: JSON.stringify(snapshot()) })
+    const savingUserId = account.user.id;
+    const payload = snapshot();
+    retainPending(payload);
+    account.saving = api("/api/progress", { method: "PUT", headers, body: JSON.stringify(payload) })
       .then(result => {
         account.revision = result.revision;
         account.sync = "Progres salvat în cont.";
+        if (account.dirty) retainPending();
+        else clearPending(savingUserId, payload);
       })
       .catch(error => {
         account.sync = error.message;
@@ -82,9 +123,20 @@
       });
     return account.saving;
   }
-  function queueSave() { if (!account.user || !account.ready || account.loading) return; account.dirty = true; clearTimeout(account.timer); account.timer = setTimeout(flush, 900); }
+  function queueSave() {
+    if (!account.user || account.restoring || (account.loading && !account.recovering)) return;
+    account.dirty = true;
+    retainPending();
+    clearTimeout(account.timer);
+    if (account.ready && !account.loading) account.timer = setTimeout(flush, 900);
+  }
   function dialog() {
-    if (!$("account-dialog")) { const element = document.createElement("dialog"); element.id = "account-dialog"; element.className = "auth-dialog"; element.setAttribute("aria-labelledby", "auth-title"); document.body.appendChild(element); }
+    if (!$("account-dialog")) {
+      const element = document.createElement("dialog"); element.id = "account-dialog"; element.className = "auth-dialog";
+      element.setAttribute("aria-labelledby", "auth-title");
+      element.addEventListener("close", () => $("account-control")?.querySelector("button")?.focus());
+      document.body.appendChild(element);
+    }
     return $("account-dialog");
   }
   function open(mode = "login") {
@@ -99,6 +151,12 @@
         button.dataset.openAdmin = "";
         button.textContent = "Panou administrator";
         element.querySelector(".account-summary").after(button);
+      }
+      if (account.dirty || !account.ready) {
+        const retry = document.createElement("button");
+        retry.type = "button"; retry.className = "studio-primary"; retry.dataset.retryAccount = "";
+        retry.textContent = "Reîncearcă sincronizarea";
+        element.querySelector("[data-reload-account]").before(retry);
       }
     } else {
       const register = mode === "register";
@@ -236,9 +294,15 @@
     else if (button.hasAttribute("data-open-admin")) openAdmin();
     else if (button.hasAttribute("data-close-account")) $("account-dialog").close();
     else if (button.dataset.authMode) open(button.dataset.authMode);
-    else if (button.hasAttribute("data-reload-account") && account.user && !account.loading && !account.authenticating) {
+    else if (button.hasAttribute("data-retry-account") && account.user && !account.loading && !account.authenticating) {
       button.disabled = true;
       await applyUser(account.user);
+      await flush();
+      open();
+    }
+    else if (button.hasAttribute("data-reload-account") && account.user && !account.loading && !account.authenticating) {
+      button.disabled = true;
+      await applyUser(account.user, { discardPending: true });
       button.disabled = false;
     }
     else if (button.hasAttribute("data-logout-account") && account.user && !account.loading && !account.authenticating) {
@@ -259,6 +323,9 @@
     }
   });
   window.addEventListener("polymath:progress", queueSave);
+  window.addEventListener("online", () => {
+    if (account.user && account.dirty && !account.loading && !account.authenticating) return applyUser(account.user);
+  });
   document.addEventListener("visibilitychange", () => { if (document.hidden && account.ready && account.dirty) flush(); });
   document.addEventListener("DOMContentLoaded", async () => {
     try {

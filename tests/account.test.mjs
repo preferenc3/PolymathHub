@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import vm from "node:vm";
 import { createAccountHandler } from "../api/account.mjs";
 import { createProgressHandler, validateProgress } from "../api/progress.mjs";
 import { createAdminAccountsHandler } from "../api/admin-accounts.mjs";
@@ -145,4 +147,92 @@ test("admin queries use the verified user token, bind to the active account, and
   assert.match(response.headers["cache-control"], /no-store/);
   assert.equal((await run(handler, { url, headers: { ...headers, "x-polymath-account": "other" } })).statusCode, 412);
   assert.equal(rpcCalls, 1);
+});
+
+// Exercise the real browser controller at its fetch/storage boundaries.
+function accountBrowser({ storage = new Map(), remote = { course: { xp: 0 }, vocabulary: {}, revision: 0 }, failSave = false, beforeRead = () => {} } = {}) {
+  const documentEvents = {}, windowEvents = {}, writes = [];
+  let state = { xp: 0 }, words = {}, currentRemote = remote;
+  const control = { hidden: false, innerHTML: "" };
+  const document = { hidden: true, getElementById: name => name === "account-control" ? control : null,
+    addEventListener: (name, fn) => { documentEvents[name] = fn; } };
+  const window = { addEventListener: (name, fn) => { windowEvents[name] = fn; }, dispatchEvent() {},
+    PolymathApp: { snapshot: () => ({ state }), replaceProgress: value => { state = value || {}; }, toast() {}, accountProgress: () => state },
+    PolymathStudio: { vocabularySnapshot: () => words, replaceVocabulary: value => { words = value; windowEvents["polymath:progress"]?.(); } } };
+  const fetcher = async (path, options = {}) => {
+    if (path.includes("action=config")) return result({ configured: true });
+    if (path.includes("action=session")) return result({ user });
+    if (path.includes("admin-accounts")) return result({ allowed: false });
+    if (path === "/api/progress" && options.method === "PUT") {
+      const payload = JSON.parse(options.body); writes.push(payload);
+      if (failSave) throw new TypeError("Network unavailable");
+      currentRemote = { ...payload, revision: payload.revision + 1 };
+      return result({ revision: currentRemote.revision });
+    }
+    if (path === "/api/progress") { await beforeRead(); return result({ progress: currentRemote }); }
+    throw Error("Unexpected path " + path);
+  };
+  vm.runInNewContext(fs.readFileSync(new URL("../account.js", import.meta.url), "utf8"), {
+    window, document, fetch: fetcher, structuredClone, AbortSignal, Event, Intl,
+    setTimeout: () => 1, clearTimeout() {},
+    localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) }
+  });
+  return { window, storage, writes, start: () => documentEvents.DOMContentLoaded(),
+    progress: value => { state = value; windowEvents["polymath:progress"](); },
+    reconnect: () => windowEvents.online(),
+    flush: async () => { documentEvents.visibilitychange(); await window.PolymathAccount.saving; },
+    state: () => state };
+}
+
+test("account attempts survive a failed save and reload, then resume against the same cloud revision", async () => {
+  const storage = new Map();
+  const first = accountBrowser({ storage, failSave: true });
+  await first.start();
+  first.progress({ xp: 25, sqlPractice: { records: { e1: { passed: true } } } });
+  await first.flush();
+  assert.equal(first.window.PolymathAccount.ready, false);
+  const second = accountBrowser({ storage });
+  await second.start();
+  await second.flush();
+  assert.equal(second.state().xp, 25, "recover unsynced local work instead of replacing it with older cloud state");
+  assert.equal(second.writes.length, 1);
+  assert.equal(second.writes[0].revision, 0);
+  assert.equal(second.window.PolymathAccount.revision, 1);
+});
+
+test("offline account recovery preserves local work without overwriting a newer cloud revision", async () => {
+  const storage = new Map();
+  const first = accountBrowser({ storage, failSave: true });
+  await first.start(); first.progress({ xp: 25 }); await first.flush();
+  const second = accountBrowser({ storage, remote: { course: { xp: 100 }, vocabulary: {}, revision: 1 } });
+  await second.start(); await second.flush();
+  assert.equal(second.state().xp, 25);
+  assert.equal(second.writes.length, 0);
+  assert.equal(second.window.PolymathAccount.ready, false);
+  assert.match(second.window.PolymathAccount.sync, /altă sesiune/);
+});
+
+test("new attempts made after a failed save are retained for the next account connection", async () => {
+  const storage = new Map();
+  const first = accountBrowser({ storage, failSave: true });
+  await first.start(); first.progress({ xp: 25 }); await first.flush();
+  first.progress({ xp: 50 });
+  const second = accountBrowser({ storage });
+  await second.start(); await second.flush();
+  assert.equal(second.state().xp, 50);
+  assert.equal(second.writes[0].course.xp, 50);
+  assert.equal(storage.size, 0, "acknowledged pending snapshot is removed after the save succeeds");
+});
+
+test("attempts made while reconnecting are not replaced by the earlier local snapshot", async () => {
+  let release, reads = 0;
+  const gate = new Promise(resolve => { release = resolve; });
+  const browser = accountBrowser({ failSave: true, beforeRead: () => ++reads > 1 ? gate : undefined });
+  await browser.start(); browser.progress({ xp: 25 }); await browser.flush();
+  const retry = browser.reconnect();
+  browser.progress({ xp: 50 });
+  release();
+  await retry;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(browser.state().xp, 50);
 });

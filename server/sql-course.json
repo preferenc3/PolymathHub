@@ -9,6 +9,8 @@
         "SELECT alege coloanele afișate, iar FROM indică tabelul. SELECT * citește toate coloanele. Interogarea citește datele fără să le modifice."
       ],
       "example": "SELECT * FROM customers;",
+      "exampleExplanation": "Rezultatul conține toate coloanele: id, name și city. Fiecare rând rămâne un client; interogarea nu schimbă datele magazinului.",
+      "commonMistake": "Numele customers este numele tabelului, nu o valoare textuală. După FROM scriem customers, fără apostrofuri.",
       "exercises": [
         "s1-all",
         "s1-columns"
@@ -23,6 +25,8 @@
         "AS oferă un nume coloanei din rezultat, fără să schimbe tabelul. Poți folosi alte aliasuri corecte: evaluăm valorile și ordinea coloanelor."
       ],
       "example": "SELECT name AS produs, stock AS stoc FROM products;",
+      "exampleExplanation": "Valorile provin din name și stock, dar antetele rezultatului devin produs și stoc. În tabelul sursă, numele coloanelor rămân neschimbate.",
+      "commonMistake": "Între două coloane este necesară o virgulă. SELECT name stock poate fi interpretat ca un alias și întoarce o singură coloană.",
       "exercises": [
         "s2-select",
         "s2-alias"
@@ -37,6 +41,8 @@
         "AND cere ca ambele condiții să fie adevărate. NULL înseamnă valoare necunoscută; folosește IS NULL pentru a o căuta, nu = NULL."
       ],
       "example": "SELECT name FROM products WHERE stock > 0 AND price < 50;",
+      "exampleExplanation": "Citește cerința în pași: pornim de la products, păstrăm produsele disponibile sub 50 lei, apoi afișăm numai name. AND cere îndeplinirea ambelor condiții.",
+      "commonMistake": "< 100 exclude prețul 100, iar <= 100 îl include. Pentru NULL folosește IS NULL; o comparație obișnuită cu NULL nu este adevărată.",
       "exercises": [
         "s3-stock",
         "s3-orders"
@@ -51,6 +57,8 @@
         "La egalitate, o a doua coloană face ordinea previzibilă: ORDER BY price DESC, id ASC. LIMIT 3 păstrează primele trei rânduri după sortare."
       ],
       "example": "SELECT name, stock FROM products ORDER BY stock DESC, id ASC LIMIT 2;",
+      "exampleExplanation": "Mai întâi ordonăm toate produsele după stoc, de la mare la mic. La stoc egal alegem id crescător. LIMIT 2 păstrează primele două produse din această ordine.",
+      "commonMistake": "LIMIT fără ORDER BY nu înseamnă cele mai mari sau cele mai mici valori. Precizează și criteriul secundar cerut, chiar dacă setul afișat nu are egalități.",
       "exercises": [
         "s4-price",
         "s4-limit"
@@ -62,9 +70,12 @@
       "description": "Asociază comenzile cu clienții, inclusiv clienții fără comenzi.",
       "theory": [
         "orders.customer_id indică spre customers.id. JOIN ... ON leagă rândurile folosind această relație, nu poziția lor în tabel.",
-        "INNER JOIN păstrează doar potrivirile. LEFT JOIN păstrează și rândurile din stânga fără corespondent: coloanele din dreapta devin NULL. Aliasurile c și o scurtează numele tabelelor."
+        "INNER JOIN păstrează doar potrivirile. LEFT JOIN păstrează și rândurile din stânga fără corespondent: coloanele din dreapta devin NULL. Aliasurile c și o scurtează numele tabelelor.",
+        "ON stabilește ce rânduri se potrivesc; WHERE filtrează rezultatul după asociere. La LEFT JOIN, pune în ON o condiție despre comenzile dorite dacă vrei să păstrezi și clienții fără acele comenzi."
       ],
       "example": "SELECT c.name, o.status FROM customers c JOIN orders o ON o.customer_id = c.id;",
+      "exampleExplanation": "Fiecare comandă este legată de clientul ei. Dacă un client are două comenzi, numele lui apare de două ori. Clientul fără comenzi nu apare în rezultatul acestui INNER JOIN.",
+      "commonMistake": "Leagă orders.customer_id de customers.id. orders.id identifică o comandă și nu identifică proprietarul ei. Folosește c.id sau o.id când ambele tabele au o coloană id.",
       "exercises": [
         "s5-inner",
         "s5-left"
@@ -76,9 +87,12 @@
       "description": "Transformă rândurile în totaluri utile.",
       "theory": [
         "GROUP BY city formează un grup pentru fiecare oraș. COUNT(*) numără rândurile din fiecare grup; SUM(total) adună valorile.",
-        "După LEFT JOIN, COUNT(o.id) numără comenzile reale, în timp ce COUNT(*) numără și rândul clientului fără comandă. COALESCE(SUM(o.total), 0) înlocuiește totalul NULL cu zero."
+        "După LEFT JOIN, COUNT(o.id) numără comenzile reale, în timp ce COUNT(*) numără și rândul clientului fără comandă. COALESCE(SUM(o.total), 0) înlocuiește totalul NULL cu zero.",
+        "În SELECT, fiecare coloană care nu este agregată trebuie să descrie grupul. Pentru un raport pe client, grupează după id și name: două persoane pot avea același nume."
       ],
       "example": "SELECT customer_id, COUNT(*) AS comenzi FROM orders GROUP BY customer_id;",
+      "exampleExplanation": "Toate comenzile aceluiași customer_id formează un grup. Rezultatul are un singur rând pentru fiecare client cu comenzi, iar COUNT(*) arată câte comenzi are acel client.",
+      "commonMistake": "GROUP BY id-ul comenzii creează câte un grup pentru fiecare comandă. Alege cheia categoriei pe care vrei să o rezumi. COUNT(coloană) ignoră valorile NULL.",
       "exercises": [
         "s6-cities",
         "s6-status"
@@ -226,7 +240,7 @@
       "id": "s5-left",
       "lesson": "l5",
       "title": "Păstrează și clienții fără comenzi",
-      "prompt": "Afișează numele fiecărui client și totalul comenzilor lui. Păstrează și clienții fără comenzi, cu total NULL.",
+      "prompt": "Afișează numele clientului și totalul fiecărei comenzi a lui, câte un rând pentru fiecare comandă. Păstrează și clienții fără comenzi, cu total NULL.",
       "reference": "SELECT c.name, o.total FROM customers c LEFT JOIN orders o ON o.customer_id = c.id",
       "hints": [
         "customers este tabelul din stânga.",
@@ -627,6 +641,20 @@
           "Carte",
           "A",
           0,
+          1
+        ],
+        [
+          107,
+          "Dosar",
+          "A",
+          100,
+          2
+        ],
+        [
+          108,
+          "Album",
+          "Artă",
+          60,
           1
         ]
       ],

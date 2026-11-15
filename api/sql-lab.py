@@ -62,8 +62,15 @@ SAFE_FUNCTIONS = {"count", "sum", "avg", "min", "max", "coalesce", "round", "low
 
 
 def public_course():
+    lessons = []
+    for lesson in COURSE["lessons"]:
+        examples = []
+        for fixture in COURSE["datasets"]:
+            columns, rows = course_rows(lesson["example"], fixture)
+            examples.append({"columns": columns, "rows": rows})
+        lessons.append({**lesson, "exampleResults": examples})
     return {
-        "lessons": COURSE["lessons"], "project": COURSE["project"],
+        "lessons": lessons, "project": COURSE["project"],
         "exercises": [{k: v for k, v in ex.items() if k != "reference"} for ex in COURSE["exercises"]],
         "tables": {name: {"columns": schema["columns"]} for name, schema in COURSE["tables"].items()},
         "datasets": COURSE["datasets"],
@@ -80,13 +87,19 @@ def course_authorize(action, table, function, database, _context):
     return sqlite3.SQLITE_DENY
 
 
-def course_rows(query, fixture):
+def course_rows(query, fixture, check_order=False):
     with closing(sqlite3.connect(":memory:")) as db:
         for table, schema in COURSE["tables"].items():
             fields = ", ".join(name + " " + type_ for name, type_ in zip(schema["columns"], schema["types"]))
             db.execute(f"CREATE TABLE {table} ({fields})")
             marks = ",".join("?" for _ in schema["columns"])
             db.executemany(f"INSERT INTO {table} VALUES ({marks})", fixture[table])
+        if check_order:
+            # Valid alternative access paths expose missing tie-breakers without
+            # prescribing SQL text: explicit, equivalent ORDER BYs still pass.
+            db.execute("CREATE INDEX check_price ON products(price DESC, id DESC, name)")
+            db.execute("CREATE INDEX check_name ON products(name ASC, id DESC, price)")
+            db.execute("CREATE INDEX check_total ON orders(total DESC, id DESC, status)")
         db.execute("PRAGMA query_only = ON")
         db.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, 8192)
         db.setlimit(sqlite3.SQLITE_LIMIT_COLUMN, 16)
@@ -113,6 +126,33 @@ def course_rows(query, fixture):
         return [c[0] for c in cursor.description], rows
 
 
+def execution_feedback(error):
+    """Explain a known failure without returning raw database diagnostics."""
+    message = str(error).lower()
+    if "no such table" in message:
+        return "table", "Tabelul nu există. Verifică numele deasupra datelor: customers, products sau orders."
+    if "no such column" in message:
+        return "column", "Coloana nu există în tabelul ales. Verifică antetele datelor și scrie textele între apostrofuri, de exemplu 'completed'."
+    if "ambiguous column" in message:
+        return "ambiguous-column", "Aceeași coloană există în mai multe tabele. Precizează tabelul sau aliasul, de exemplu c.id ori o.id."
+    if "syntax error" in message or "incomplete input" in message:
+        return "syntax", "Eroare de sintaxă. Verifică ordinea SELECT … FROM … WHERE …, virgulele dintre coloane și închiderea apostrofurilor sau parantezelor."
+    if "interrupted" in message or isinstance(error, MemoryError):
+        return "query-limit", "Interogarea a depășit limita de lucru. Verifică relațiile JOIN și evită combinarea tuturor rândurilor fără o condiție ON."
+    return "unsupported", "Această operație nu este disponibilă în laborator. Folosește un singur SELECT pe tabelele afișate și funcțiile de bază, precum COUNT, SUM, AVG sau COALESCE."
+
+
+def result_feedback(columns, rows, expected_columns, expected, ordered):
+    """Diagnose the visible result; never disclose hidden test rows."""
+    if len(columns) != len(expected_columns):
+        return "columns", f"Rezultatul are {len(columns)} coloane; cerința cere {len(expected_columns)}. Verifică lista de după SELECT și ordinea coloanelor."
+    if ordered and Counter(rows) == Counter(expected):
+        return "row-order", "Ai rândurile corecte, dar în altă ordine. Verifică ASC/DESC și criteriul secundar pentru valorile egale."
+    if len(rows) != len(expected):
+        return "row-count", f"Pe setul afișat ai {len(rows)} rânduri, iar cerința produce {len(expected)}. Verifică filtrele, relațiile JOIN și eventualele rânduri duplicate."
+    return "values", "Numărul de rânduri și coloane este potrivit, dar valorile diferă. Verifică ordinea coloanelor din SELECT, condițiile, valorile NULL și agregările."
+
+
 def evaluate_course(payload):
     ex = EXERCISES.get(payload.get("exerciseId")) if isinstance(payload.get("exerciseId"), str) else None
     variant = payload.get("variant", 0)
@@ -123,27 +163,33 @@ def evaluate_course(payload):
         return 400, {"error": "Scrie o interogare SQL de maximum 2.000 de caractere."}
     query = query.strip()
     if not SELECT.match(query):
-        return 400, {"error": "Folosește un singur SELECT. Datele laboratorului pot fi doar citite."}
+        return 400, {"errorCode": "unsupported", "error": "Folosește un singur SELECT. Datele laboratorului pot fi doar citite."}
     try:
         correct = True
         columns, rows = [], []
+        visible_correct, visible_expected_columns, visible_expected = False, [], []
         fixtures = [COURSE["datasets"][variant], *COURSE["hidden"], COURSE["datasets"][1 - variant]]
         for index, fixture in enumerate(fixtures):
-            actual_columns, actual = course_rows(query, fixture)
-            expected_columns, expected = course_rows(ex["reference"], fixture)
+            actual_columns, actual = course_rows(query, fixture, check_order=index > 0)
+            expected_columns, expected = course_rows(ex["reference"], fixture, check_order=index > 0)
             same_rows = actual == expected if ex["ordered"] else Counter(actual) == Counter(expected)
-            correct = correct and len(actual_columns) == len(expected_columns) and same_rows
+            fixture_correct = len(actual_columns) == len(expected_columns) and same_rows
+            correct = correct and fixture_correct
             if index == 0:
                 columns, rows = actual_columns, actual
+                visible_correct, visible_expected_columns, visible_expected = fixture_correct, expected_columns, expected
     except ValueError as error:
         return 400, {"error": str(error)}
-    except (sqlite3.Error, MemoryError, UnicodeError):
-        return 400, {"error": "Interogarea nu poate fi executată. Verifică numele coloanelor, virgulele, apostrofurile și relațiile dintre tabele. Sunt permise doar SELECT și funcțiile de bază de agregare."}
+    except (sqlite3.Error, MemoryError, UnicodeError) as error:
+        code, explanation = execution_feedback(error)
+        return 400, {"errorCode": code, "error": explanation}
     result = {"columns": columns, "rows": rows, "correct": correct, "exerciseId": ex["id"], "variant": variant}
     if not correct:
-        result["error"] = ("Rezultatul nu corespunde cerinței pe toate datele de verificare. "
-                           "Verifică numărul și ordinea coloanelor, filtrele, rândurile duplicate și valorile NULL."
-                           + (" Ordinea rândurilor trebuie să respecte toate criteriile cerute." if ex["ordered"] else " Ordinea rândurilor este liberă."))
+        if visible_correct:
+            result["errorCode"] = "check-data"
+            result["error"] = "Rezultatul este corect pe setul afișat, dar nu și pe toate datele de verificare. Încearcă «Alte date». Verifică limitele inclusive, egalitățile la sortare, rândurile duplicate și valorile NULL; evită listele de id-uri scrise manual."
+        else:
+            result["errorCode"], result["error"] = result_feedback(columns, rows, visible_expected_columns, visible_expected, ex["ordered"])
     return 200, result
 
 

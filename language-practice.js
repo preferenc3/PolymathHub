@@ -7,10 +7,20 @@
     '„C’est combien ?” este o întrebare uzuală despre preț: „Cât costă?”.'
   ];
   const normalize=v=>String(v||'').normalize('NFKC').trim().toLocaleLowerCase('fr').replace(/[.!?]+$/g,'').trim();
+  const timestamp=v=>typeof v==='string'&&Number.isFinite(Date.parse(v))?new Date(v).toISOString():'';
+  function explain(value,index,correct){
+    if(correct)return 'Corect. '+explanations[index];
+    const word=normalize(value);
+    if(!word)return 'Completează cuvântul lipsă. '+explanations[index];
+    if(index===0&&word==='vendre')return 'Vendre înseamnă „a vinde”; clientul vrea să cumpere. '+explanations[index];
+    if(index===0&&['achète','achete','achetez','achetons'].includes(word))return 'Ai ales verbul potrivit, dar forma este conjugată. '+explanations[index];
+    if(index===2&&word==='prix')return 'Prix înseamnă „preț”, dar este un substantiv. Aici lipsește cuvântul de întrebare. '+explanations[index];
+    return 'Mai încearcă. '+explanations[index];
+  }
   function check(values){
     const answers=Array.from({length:3},(_,i)=>typeof values?.[i]==='string'?values[i].slice(0,100):'');
     const correct=answers.map((value,i)=>normalize(value)===expected[i]);
-    return {answers,correct,passed:correct.every(Boolean),explanations};
+    return {answers,correct,passed:correct.every(Boolean),explanations,feedback:answers.map((value,i)=>explain(value,i,correct[i]))};
   }
   function clean(value){
     const raw=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -19,15 +29,24 @@
     return {version:1,answers:result.answers,correct:result.correct,passed:result.passed,
       completed:raw.completed===true||result.passed,rewarded:raw.rewarded===true||result.passed,
       attempts,hadMistake:raw.hadMistake===true,needsReview:attempts>0&&!result.passed,
-      lastAttemptAt:typeof raw.lastAttemptAt==='string'&&Number.isFinite(Date.parse(raw.lastAttemptAt))?new Date(raw.lastAttemptAt).toISOString():''};
+      lastAttemptAt:timestamp(raw.lastAttemptAt),
+      lastMistakeAnswers:check(raw.lastMistakeAnswers??(attempts>0&&!result.passed?raw.answers:[])).answers,
+      lastMistakeAt:timestamp(raw.lastMistakeAt??(attempts>0&&!result.passed?raw.lastAttemptAt:''))};
   }
   function attempt(value,answers,now=new Date().toISOString()){
     const previous=clean(value),result=check(answers);
     return clean({...previous,answers:result.answers,attempts:Math.min(previous.attempts+1,100000),
       completed:previous.completed||result.passed,rewarded:previous.rewarded||result.passed,
-      hadMistake:previous.hadMistake||!result.passed,lastAttemptAt:now});
+      hadMistake:previous.hadMistake||!result.passed,lastAttemptAt:now,
+      lastMistakeAnswers:result.passed?previous.lastMistakeAnswers:result.answers,
+      lastMistakeAt:result.passed?previous.lastMistakeAt:now});
   }
   function summary(value){const s=clean(value);return {xp:s.rewarded?20:0,completed:s.completed?1:0,correct:s.correct.filter(Boolean).length,toReview:s.needsReview?1:0,resolved:s.hadMistake&&!s.needsReview&&s.passed?1:0};}
-  const api={check,clean,attempt,summary};
+  function practiceStatus(value,draft){
+    const saved=clean(value);
+    const verified=saved.attempts>0&&(draft==null||(Array.isArray(draft)&&draft.length===3&&draft.every((answer,i)=>answer===saved.answers[i])));
+    return {verified,correct:verified?saved.correct.filter(Boolean).length:0};
+  }
+  const api={check,clean,attempt,summary,practiceStatus};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.LanguagePractice=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

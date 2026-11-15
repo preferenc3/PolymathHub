@@ -37,3 +37,32 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 /* On a desktop, the course rail already provides the language stages. */
 @media(min-width:761px){.language-sheet>.stage-tabs,.reader>.stage-tabs{display:none}.conversation-line p{font-size:17px}.cloze-sentence{font-size:18px}.reader .body-copy{font-size:17px}}
 @media(min-width:761px){.reader{padding-top:30px}.reader .body-copy{line-height:1.7}.reader .tip{margin:16px 0}.reader .relationship{margin-top:16px;margin-bottom:14px}.reader .reader-next{margin-top:18px}}
+
+/* Continuation, readable feedback and small-screen navigation. */
+.home-intro{max-width:62ch;font-size:17px;line-height:1.7;color:var(--muted);margin:-14px 0 30px}
+.resume-note{font-size:13px;color:var(--muted);margin:12px 4px 0;max-width:70ch}
+.resume-entry>.primary{max-width:200px;white-space:normal;flex-shrink:0}
+.project-status{border-left:3px solid var(--teal);padding:10px 16px;background:var(--teal-soft);font-weight:600}
+.mistake-query{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--mono)}
+.speaker-label,.cloze-meaning{display:block;font:13px/1.6 var(--sans);color:var(--muted);margin:4px 0}
+.speaker-label{font-weight:600}.review-solution{margin-top:12px}.review-solution pre{white-space:pre-wrap;overflow-wrap:anywhere}.review-language-answer{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+#main-content:focus{outline:none}
+#main-content:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+@media(max-width:760px){
+ .app-header{height:auto;min-height:65px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px;gap:7px 12px}
+ #global-nav{order:3;flex-basis:100%;justify-content:center;gap:22px}
+ #global-nav a{font-size:12px;min-height:36px;display:inline-flex;align-items:center}
+ #global-nav a:first-child{display:inline-flex}
+ .header-tools{margin-left:auto}.header-tools #help-button{display:inline-flex}
+ body[data-learning=true] #global-nav{display:flex}
+ .home-intro{font-size:15px;margin-top:0}.resume-entry>.primary{max-width:none}
+}
+/* Measured WCAG AA text contrast on warm paper surfaces. */
+:root{--clay:#a94f32}
+.domain-door p{color:#665c4f}.domain-door.language .section-label{color:#4f6849}
+.translation{color:#6b6256}.step-label{color:#626557}.exercise-label{color:#5b5d50}
+.line-numbers{color:#716b5e}
+@media(max-width:480px){.app-header .wordmark{font-size:18px}.app-header{gap:6px 8px}.header-tools{gap:0}.icon-button{width:32px;height:36px}.account-button{padding:8px}}
+.speaker-label{color:#5c6455}.app-footer{color:#685f53}.result-empty{color:#676759}.row-number{color:#69695b}
+.word-row .translation{color:#6b6256}
+.conversation-line .speaker-label{color:#5c6455}.course-row .row-number{color:#69695b}

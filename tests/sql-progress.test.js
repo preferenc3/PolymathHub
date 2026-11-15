@@ -34,3 +34,37 @@ test('continuation and project progress count exercise identities rather than re
  assert.equal(progress.resume(s),'s1-all');
  assert.throws(()=>progress.attempt(s,'bad','SELECT 1',{correct:true},0));
 });
+test('resolved mistakes retain their original query and explanation after reload and persistence',()=>{
+ let s=progress.attempt(null,'s3-stock','SELECT * FROM products',{correct:false,error:'Filtrează produsele fără stoc.'},1,'2026-11-14T10:00:00Z');
+ s=progress.attempt(s,'s3-stock','SELECT * FROM products WHERE stock > 0',{correct:true},0,'2026-11-14T10:05:00Z');
+ s=validateProgress({revision:0,course:{sqlPractice:JSON.parse(JSON.stringify(s))}}).course.sqlPractice;
+ const r=s.records['s3-stock'];
+ assert.equal(r.lastMistakeQuery,'SELECT * FROM products');
+ assert.equal(r.lastMistakeFeedback,'Filtrează produsele fără stoc.');
+ assert.equal(r.lastMistakeVariant,1);
+ assert.equal(r.lastMistakeAt,'2026-11-14T10:00:00.000Z');
+ assert.equal(r.lastFeedback,'Rezolvat corect.');
+ assert.equal(progress.summary(s).resolved,1);
+});
+test('continuation returns to an active mistake even when the exercise was passed before',()=>{
+ let s=progress.attempt(null,'s4-price','SELECT 1',{correct:true},0);
+ s=progress.attempt(s,'s4-price','SELECT 2',{correct:false,error:'Ordinea diferă.'},1);
+ assert.equal(progress.resume(s),'s4-price');
+});
+test('completion of the whole course offers an unresolved review before a repeat',()=>{
+ let s=null;
+ for(const id of progress.ids)s=progress.attempt(s,id,'SELECT 1',{correct:true},0);
+ s=progress.attempt(s,'s5-left','SELECT 2',{correct:false,error:'Lipsesc clienți.'},1);
+ s=progress.attempt(s,'p3','SELECT 1',{correct:true},0);
+ assert.equal(progress.resume(s),'s5-left');
+ assert.equal(progress.summary(s).xp,300);
+});
+test('existing pending mistakes migrate to bounded snapshots without inventing old resolved attempts',()=>{
+ const pending=progress.clean({records:{'s1-all':{needsReview:true,hadMistake:true,lastQuery:'x'.repeat(3000),lastFeedback:'y'.repeat(800),lastAttemptAt:'2026-11-14T11:00:00Z',variant:1}}});
+ assert.equal(pending.records['s1-all'].lastMistakeQuery.length,2000);
+ assert.equal(pending.records['s1-all'].lastMistakeFeedback.length,600);
+ assert.equal(pending.records['s1-all'].lastMistakeVariant,1);
+ const oldResolved=progress.clean({records:{'s1-all':{passed:true,hadMistake:true,lastQuery:'SELECT * FROM customers',lastFeedback:'Rezolvat corect.'}}});
+ assert.equal(oldResolved.records['s1-all'].lastMistakeQuery,'');
+ assert.equal(oldResolved.records['s1-all'].lastMistakeAt,'');
+});
