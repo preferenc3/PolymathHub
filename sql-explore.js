@@ -21,8 +21,8 @@
   drawer.setAttribute('aria-labelledby', 'explore-drawer-title');
   drawer.innerHTML = `
     <header>
-      <h2 id="explore-drawer-title">Experimentează</h2>
-      <button class="dialog-close" type="button" aria-label="Închide meniul" autofocus>×</button>
+      <h2 id="explore-drawer-title" class="dialog-heading" tabindex="-1" autofocus>Experimentează</h2>
+      <button class="dialog-close" type="button" aria-label="Închide meniul">×</button>
     </header>
     <nav aria-label="Destinații Experimentează">${links()}</nav>`;
   document.body.append(drawer);
