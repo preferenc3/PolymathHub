@@ -10,6 +10,7 @@
     return {
       sql: P.clean(raw?.sqlPractice),
       french: L.clean(raw?.languagePractice),
+      catalogMistake:raw?.catalogMistake || null,
       area: raw?.activeTrack === 'Franceză' ? 'fr' : 'sql',
       stage: ['teorie','exemple','practica'].includes(raw?.activeDualPane) ? raw.activeDualPane : 'teorie'
     };
@@ -29,7 +30,7 @@
     return {...sql, xp:sql.xp + fr.xp, toReview:sql.toReview + fr.toReview, resolved:sql.resolved + fr.resolved, french:fr};
   }
   function snapshot() {
-    return {sqlPractice:P.clean(state.sql), languagePractice:L.clean(state.french),
+    return {sqlPractice:P.clean(state.sql), languagePractice:L.clean(state.french), catalogMistake:state.catalogMistake,
       activeTrack:state.area === 'fr' ? 'Franceză' : 'SQL', activeDualPane:state.stage,
       xp:totals().xp, completedLessons:[...(course?.lessons || []).filter(l=>l.exercises.every(id=>state.sql.records[id]?.passed)).map(l=>l.id),...(state.french.completed?['fr-market']:[])]};
   }
@@ -72,8 +73,7 @@
       const lesson = [...(course?.lessons||[]),course?.project].find(l=>l?.id===item.dataset.lessonCount);
       if(lesson)item.textContent=lesson.exercises.filter(id=>state.sql.records[id]?.passed).length+'/'+lesson.exercises.length+' exerciții rezolvate în această lecție';
     }
-    const greeting = $('user-greeting');
-    if (greeting) greeting.textContent = window.PolymathAccount?.user?.name ? 'Bun venit, ' + window.PolymathAccount.user.name + '.' : 'Bun venit. Cu ce continuăm?';
+
   }
   window.addEventListener('polymath:account', updateStatus);
   const sqlLink = (id, stage = 'practica', variant = 0) => '#lectie?' + new URLSearchParams({ex:id, etapa:stage, ...(variant===1?{date:'1'}:{})});
@@ -120,6 +120,29 @@
       </ul>
     </section>`;
   }
+  window.addEventListener('polymath:catalog-mistake', event => {
+    state.catalogMistake = event.detail;
+    persist();
+  });
+
+  function latestMistake() {
+    const attempts = Object.entries(state.sql.records).filter(([,r])=>r.lastMistakeAt).map(([id,r])=>({
+      at:r.lastMistakeAt, area:'Bazele SQL', title:exercise(id)?.title || id, answer:r.lastMistakeQuery,
+      feedback:r.lastMistakeFeedback, href:sqlLink(id,'practica',r.lastMistakeVariant)
+    }));
+    const fr = state.french;
+    if (fr.lastMistakeAt) {
+      const result = L.check(fr.lastMistakeAnswers), index = result.correct.indexOf(false);
+      if (index >= 0) attempts.push({at:fr.lastMistakeAt, area:'Franceză', title:['Je voudrais … des oranges.','… en voulez-vous ?', 'C’est … ?'][index], answer:result.answers[index] || '(răspuns necompletat)', feedback:result.feedback[index], href:frLink()});
+    }
+    const workshop = stored('polymath-workshop-mistake:' + (owner || 'guest'));
+    if (workshop?.id) attempts.push({...workshop, area:'Atelier SQL · acest browser', href:'/sql-university.html?ex='+encodeURIComponent(workshop.id)});
+    if (state.catalogMistake?.id) attempts.push({...state.catalogMistake, area:'Catalog', href:'#material?id='+encodeURIComponent(state.catalogMistake.id)+'&intrebare='+encodeURIComponent(state.catalogMistake.questionId || '')});
+    const recent = attempts.filter(a=>Number.isFinite(Date.parse(a.at))).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
+    if (!recent) return '<section class="home-recall empty-recall"><h2>Ultima greșeală</h2><p>Încă nu ai greșeli salvate.</p></section>';
+    return `<section class="home-recall"><p class="section-label">Ultima greșeală · ${esc(recent.area)}</p><h2>${esc(recent.title)}</h2><pre class="mistake-query">${esc(recent.answer)}</pre><p>${esc(recent.feedback)}</p><a class="text-button" href="${esc(recent.href)}">Reia exercițiul ${icon('arrow-right','icon-small')}</a></section>`;
+  }
+
   function home() {
     const sql = P.summary(state.sql), fr = L.summary(state.french);
     const current = exercise(P.resume(state.sql));
@@ -145,8 +168,7 @@
     }
     return `<div class="home-frame"><nav class="home-side home-explore" aria-labelledby="home-explore-title">
       <h2 id="home-explore-title" class="section-label">Experimentează</h2>
-      ${window.PolymathExplore.links()}</nav><div class="home"><p class="home-greeting"><strong id="user-greeting"></strong></p>
-      ${!started?'<p class="home-intro">Un loc pentru idei pe care le înțelegi și le pui în practică. Alege laboratoarele SQL sau începe o lecție de franceză.</p>':''}
+      ${window.PolymathExplore.links()}</nav><div class="home">${latestMistake()}
       <section aria-labelledby="resume-title"><h2 id="resume-title" class="section-label">${started?'Următorul tău pas':'Începe aici'}</h2>
       <div class="resume-entry"><span class="resume-icon">${icon(french?'translate':'code')}</span><div class="resume-copy"><div class="meta">${firstLab?'SQL · SQLite':french?'Franceză · Conversație':'SQL · Lecția '+(course.lessons.indexOf(lesson)+1 || 'finală')}</div><h1>${esc(firstLab?'Laboratoarele 4 și 5':french?'Au marché — La piață':lesson.title)}</h1>${firstLab?'':`<div class="progress-track" role="progressbar" aria-label="Progresul cursului" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress*100)}"><span style="width:${Math.round(progress*100)}%"></span></div><small>${french?fr.correct+'/3 răspunsuri corecte':sql.completed+'/15 exerciții rezolvate'}</small>`}</div><a class="primary" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></div><p class="resume-note">${note}</p></section>
       ${homePractice()}
@@ -165,7 +187,7 @@
     const showSQL = domain !== 'limbi', showFR = !['programare', 'sql'].includes(domain);
     return `<div class="catalog"><p class="section-label">Alege următorul pas</p><h1>Cursurile tale</h1><p class="page-intro">Începe cu o idee, înțelege-o și pune-o în practică. Poți reveni oricând.</p>
       ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>SQL</h2></div><a class="course-row" href="/sql-university.html"><span class="row-copy"><h3>Laboratoarele 4 și 5</h3><p>Deschide tabelele și rezolvă exercițiile în terminalul SQLite.</p></span>${icon('arrow-right')}</a><h3>Bazele SQL</h3>${course.lessons.map(courseRow).join('')}<div class="project-intro"><h2>Un magazin. Trei rapoarte.</h2><p class="page-intro">Proiectul final leagă filtrarea, relațiile dintre tabele și totalurile.</p><a class="secondary" href="#proiect">Deschide proiectul · ${P.summary(state.sql).projectDone}/3 ${icon('arrow-right','icon-small')}</a></div></section>`:''}
-      ${showFR?`<section><div class="catalog-heading">${icon('translate')}<h2>Franceză, în context</h2></div><a class="course-row" href="${frLink('teorie')}"><span class="row-number">01</span><span class="row-copy"><h3>Au marché — La piață</h3><p>O conversație, pronunție și trei propoziții de completat.</p></span><span class="row-status">${L.summary(state.french).correct}/3 corecte</span>${icon('arrow-right')}</a></section>`:''}${saveNote()}</div>`;
+      ${showFR?`<section><div class="catalog-heading">${icon('translate')}<h2>Franceză, în context</h2></div><a class="course-row" href="${frLink('teorie')}"><span class="row-number">01</span><span class="row-copy"><h3>Au marché — La piață</h3><p>O conversație, pronunție și trei propoziții de completat.</p></span><span class="row-status">${L.summary(state.french).correct}/3 corecte</span>${icon('arrow-right')}</a></section>`:''}<div data-catalog-view="list" data-domain="${esc(domain)}"></div>${saveNote()}</div>`;
   }
   function project() {
     const summary = P.summary(state.sql);
@@ -266,7 +288,7 @@
     generation++; if(!course)return;
     let [view,search='']=location.hash.slice(1).split('?');const params=new URLSearchParams(search);
     if(view==='traseu'){view='cursuri';params.set('domeniu','programare');}
-    if(!['acasa','cursuri','lectie','limba','proiect','greseli','progres'].includes(view))view='acasa';
+    if(!['acasa','cursuri','lectie','limba','proiect','greseli','progres','material'].includes(view))view='acasa';
     const ex=exercise(params.get('ex'))||exercise(P.resume(state.sql));
     let stage=['teorie','exemple','practica'].includes(params.get('etapa'))?params.get('etapa'):'practica';
     if(view==='lectie'&&(stage==='exemple'||!lessonFor(ex).theory))stage='practica';
@@ -280,8 +302,9 @@
     } else if(view==='limba') {
       state.area='fr';state.stage=stage;host.innerHTML=languageView(stage);wireLanguage(stage);persist();
     } else {
-      host.innerHTML=view==='cursuri'?catalog(params.get('domeniu')):view==='proiect'?project():view==='greseli'?review():view==='progres'?progressView():home();
+      host.innerHTML=view==='material'?`<div class="catalog" data-catalog-view="entry" data-id="${esc(params.get('id'))}" data-focus-question="${esc(params.get('intrebare'))}"></div>`:view==='cursuri'?catalog(params.get('domeniu')):view==='proiect'?project():view==='greseli'?review():view==='progres'?progressView():home();
     }
+    host.querySelectorAll('[data-catalog-view]').forEach(window.PolymathCatalog.renderView);
     host.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{filter=button.dataset.filter;render();host.querySelector(`[data-filter="${filter}"]`)?.focus();}));
     updateStatus();document.title=(view==='lectie'?lessonFor(ex).title:view==='limba'?'Au marché · Franceză':view==='greseli'?'Greșelile mele':view==='cursuri'?'Cursuri':'Jurnalul tău de studiu')+' · PolymathHub';
   }

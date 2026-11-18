@@ -4,6 +4,12 @@
   const attempts = new Set();
   const tablesByExercise = new Map();
   const storageKey = 'polymath-university-sql-completed';
+  const mistakeStorage = fetch('/api/account?action=session', {cache:'no-store',signal:AbortSignal.timeout(8000)})
+    .then(async response => {
+      if (!response.ok) return null;
+      const {user} = await response.json();
+      return 'polymath-workshop-mistake:' + (user?.id || 'guest');
+    }).catch(() => null);
   const completed = new Set();
   try {
     const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -316,6 +322,12 @@
     try {
       const result = await request(action, id, query);
       if (token !== revision) return;
+      if (action === 'check' && result.correct === false && mode !== 'console') {
+        const mistake = {at:new Date().toISOString(),id,title:active.title,answer:query.slice(0,2000),feedback:result.message};
+        mistakeStorage.then(key => {
+          try { if (key) localStorage.setItem(key,JSON.stringify(mistake)); } catch {}
+        });
+      }
       if (action === 'run') {
         feedback(result.message);
       } else if (mode === 'test') {

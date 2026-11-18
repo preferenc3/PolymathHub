@@ -11,7 +11,7 @@
         <span class="explore-symbol"><img src="/assets/icons/${icon}.svg" alt=""></span>
         <span><strong>${title}</strong><small>${detail}</small></span>
         <img class="explore-arrow" src="/assets/icons/caret-right.svg" alt="">
-      </a>`).join('');
+      </a>`).join('') + '<div data-catalog-links>' + window.PolymathCatalog.links() + '</div>';
   }
 
   const button = document.getElementById('explore-button');

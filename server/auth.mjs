@@ -67,8 +67,10 @@ function cookies(req) {
   return result;
 }
 
+export const avatars = ["initials","fox","owl","cat","panda","whale","turtle"];
 export function publicUser(user) {
-  return { id: user.id, email: user.email, name: String(user.user_metadata?.display_name || user.email?.split("@")[0] || "").slice(0, 60) };
+  const avatar = user.user_metadata?.avatar;
+  return { ...(avatars.includes(avatar) ? {avatar} : {}), id: user.id, email: user.email, name: String(user.user_metadata?.display_name || user.email?.split("@")[0] || "").slice(0, 60) };
 }
 
 export function checkExpectedAccount(req, user) {

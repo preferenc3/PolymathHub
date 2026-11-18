@@ -6,6 +6,12 @@ const cleanObject = value => value && !Array.isArray(value) && typeof value === 
 export function validateProgress(body) {
   const course = cleanObject(body.course); const vocabulary = cleanObject(body.vocabulary);
   const safeCourse = {};
+  const mistake = course.catalogMistake;
+  if (mistake && /^[a-f0-9-]{36}$/i.test(mistake.id) && typeof mistake.at === "string" && Number.isFinite(Date.parse(mistake.at))) {
+    safeCourse.catalogMistake = {id:mistake.id, at:new Date(mistake.at).toISOString()};
+    if (/^[a-f0-9-]{36}$/i.test(mistake.questionId)) safeCourse.catalogMistake.questionId = mistake.questionId;
+    for (const key of ["title","answer","feedback"]) safeCourse.catalogMistake[key] = String(mistake[key] || "").slice(0,800);
+  }
   if (course.languagePractice && typeof course.languagePractice === "object") safeCourse.languagePractice = LanguagePractice.clean(course.languagePractice);
   if (course.sqlPractice && typeof course.sqlPractice === "object") safeCourse.sqlPractice = SqlProgress.clean(course.sqlPractice);
   for (const field of ["streak", "longestStreak", "xp"]) if (Number.isSafeInteger(course[field]) && course[field] >= 0 && course[field] <= 10_000_000) safeCourse[field] = course[field];

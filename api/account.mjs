@@ -1,4 +1,4 @@
-import { ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, publicUser, credentials, setSession, fail, checkExpectedAccount } from "../server/auth.mjs";
+import { avatars, ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, publicUser, credentials, setSession, fail, checkExpectedAccount } from "../server/auth.mjs";
 
 const settingsActions = ["profile", "password", "delete"];
 
@@ -13,7 +13,12 @@ async function settings(req, res, action, body, call) {
     if (!name || name.length > 60 || /[\u0000-\u001f\u007f]/.test(name)) {
       throw new ApiError(400, "Introdu un nume între 1 și 60 de caractere.");
     }
-    const user = await call("/auth/v1/user", { method: "PUT", token: session.token, body: { data: { display_name: name } } });
+    const data = { display_name: name };
+    if (body.avatar !== undefined) {
+      if (!avatars.includes(body.avatar)) throw new ApiError(400, "Alege un avatar din listă.");
+      data.avatar = body.avatar;
+    }
+    const user = await call("/auth/v1/user", { method: "PUT", token: session.token, body: { data } });
     if (user.id !== session.user.id) throw new ApiError(503, "Numele nu a putut fi actualizat.");
     return send(res, 200, { user: publicUser(user) });
   }
