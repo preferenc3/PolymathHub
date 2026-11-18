@@ -113,8 +113,14 @@
     status.className = type ? 'feedback ' + type : '';
   }
 
-  function pagedTable(columns, rows, label) {
-    const container = node('div');
+  function pagedTable(columns, rows, label, title, description) {
+    const container = node('section');
+    container.className = 'sql-table-card';
+    const heading = node('header');
+    heading.className = 'sql-table-heading';
+    heading.append(node('h3', title), node('span', description));
+    const numeric = columns.map((_, index) => rows.some(row => typeof row[index] === 'number') &&
+      rows.every(row => row[index] === null || typeof row[index] === 'number'));
     const scroll = node('div');
     scroll.className = 'table-scroll';
     scroll.tabIndex = 0;
@@ -123,11 +129,12 @@
     const table = node('table');
     table.className = 'data-table';
     const header = table.createTHead().insertRow();
-    for (const name of columns) {
+    columns.forEach((name, index) => {
       const th = node('th', name);
       th.scope = 'col';
+      th.classList.toggle('number-cell', numeric[index]);
       header.append(th);
-    }
+    });
     const body = table.createTBody();
     const count = node('span');
     count.setAttribute('aria-live', 'polite');
@@ -139,7 +146,7 @@
     controls.className = 'table-details';
     controls.append(previous, count, next);
     scroll.append(table);
-    container.append(scroll);
+    container.append(heading, scroll);
     if (rows.length > 25) container.append(controls);
 
     let offset = 0;
@@ -147,18 +154,26 @@
       body.replaceChildren();
       for (const row of rows.slice(offset, offset + 25)) {
         const tr = body.insertRow();
-        for (const value of row) {
+        row.forEach((value, index) => {
           const cell = tr.insertCell();
-          cell.textContent = value === null ? 'NULL' : String(value);
-          cell.classList.toggle('null', value === null);
-        }
+          cell.classList.toggle('number-cell', numeric[index]);
+          if (value === null) {
+            const badge = node('span', 'NULL');
+            badge.className = 'null';
+            cell.append(badge);
+          } else {
+            cell.textContent = String(value);
+          }
+        });
       }
       if (!rows.length) {
         const cell = body.insertRow().insertCell();
         cell.colSpan = columns.length;
+        cell.className = 'no-rows';
         cell.textContent = 'Niciun rând.';
       }
       count.textContent = `${offset + 1}–${Math.min(offset + 25, rows.length)} din ${rows.length}`;
+      scroll.scrollTop = 0;
       previous.disabled = offset === 0;
       next.disabled = offset + 25 >= rows.length;
     }
@@ -169,19 +184,28 @@
   }
 
   function drawTableDetails(data) {
-    const details = $('table-details');
-    details.replaceChildren(
-      node('h3', 'Structură'),
-      pagedTable(['Coloană', 'Tip', 'NOT NULL', 'Implicit', 'Poziție în cheia primară'],
-        data.columns.map(([name, type, required, defaultValue, primary]) =>
-          [name, type, required ? 'Da' : '—', defaultValue ?? '—', primary || '—']), 'Structură ' + data.name)
-    );
+    const structure = pagedTable(['Coloană', 'Tip', 'NOT NULL', 'Implicit', 'Poziție în cheia primară'],
+      data.columns.map(([name, type, required, defaultValue, primary]) =>
+        [name, type, required ? 'Da' : '—', defaultValue ?? '—', primary || '—']),
+      'Structură ' + data.name, 'Structură', data.columns.length + ' coloane');
     if (data.relations.length) {
-      details.append(node('p', data.relations.map(([column, table, target]) =>
-        `${data.name}.${column} → ${table}.${target}`).join(' · ')));
+      const relations = node('div');
+      relations.className = 'sql-relations';
+      relations.append(node('strong', 'Chei străine'));
+      for (const [column, table, target] of data.relations) {
+        relations.append(node('code', `${data.name}.${column} → ${table}.${target}`));
+      }
+      structure.append(relations);
     }
-    details.append(node('h3', 'Date · ' + data.rows.length + ' rânduri'),
-      pagedTable(data.columns.map(column => column[0]), data.rows, 'Date ' + data.name));
+    const records = pagedTable(data.columns.map(column => column[0]), data.rows,
+      'Date ' + data.name, 'Date', rowCount(data.rows.length));
+    $('table-details').replaceChildren(...(data.rows.length ? [records, structure] : [structure, records]));
+  }
+
+  function rowCount(count) {
+    if (count === 1) return '1 rând';
+    const needsPreposition = count >= 20 && (count % 100 === 0 || count % 100 >= 20);
+    return count + (needsPreposition ? ' de rânduri' : ' rânduri');
   }
 
   $('show-tables').onclick = async () => {
@@ -189,14 +213,18 @@
     $('terminal-panel').hidden = true;
     $('university-tables').hidden = false;
     $('table-browser').hidden = true;
-    $('back-to-terminal').focus();
+    $('back-to-terminal').focus({preventScroll: true});
+    $('university-tables').scrollIntoView({block: 'start'});
     const status = $('tables-status');
     status.textContent = 'Se încarcă tabelele…';
     try {
       const data = tablesByExercise.get(id) || await request('tables', id);
       tablesByExercise.set(id, data);
       if (active.id !== id || $('university-tables').hidden) return;
-      status.textContent = data.schema.length ? 'Schema Companie: ' + data.schema.join(', ') + '.' : '';
+      status.textContent = '';
+      $('schema-tables').replaceChildren(...data.schema.map(name => node('li', name)));
+      $('schema-index').hidden = data.schema.length === 0;
+      $('schema-index').open = false;
       const select = $('table-select');
       select.replaceChildren(...data.tables.map(table => new Option(table.name, table.name)));
       select.onchange = () => drawTableDetails(data.tables[select.selectedIndex]);
@@ -271,8 +299,8 @@
         }
       }
       for (const [index, item] of result.results.entries()) {
-        const caption = `Rezultat ${index + 1} · ${item.count} rânduri`;
-        $('university-results').append(node('h3', caption), pagedTable(item.columns, item.rows, caption));
+        const title = result.results.length === 1 ? 'Rezultat' : 'Rezultat ' + (index + 1);
+        $('university-results').append(pagedTable(item.columns, item.rows, title, title, rowCount(item.count)));
       }
     } catch (error) {
       if (token === revision) feedback(error.message || 'Verificarea a eșuat. Încearcă din nou.', 'error');

@@ -10,6 +10,9 @@
 <body class="learning-app university">
   <a class="skip-link" href="#university-main">Sari la conținut</a>
   <header class="app-header">
+    <button class="icon-button explore-toggle" id="explore-button" type="button" aria-label="Experimentează" aria-haspopup="dialog" aria-controls="explore-drawer">
+      <img src="assets/icons/list.svg" alt="">
+    </button>
     <a class="wordmark" href="/" aria-label="PolymathHub — Acasă">Polymath<span>Hub</span></a>
     <nav aria-label="Domenii">
       <a href="/sql-university.html" aria-current="page">SQL</a>
@@ -17,26 +20,30 @@
     </nav>
   </header>
   <main class="university-main" id="university-main">
-    <div class="university-heading">
-      <h1>Laboratoare SQL</h1>
-      <a href="/#cursuri?domeniu=sql">Bazele SQL</a>
-    </div>
-    <nav class="lab-modes" aria-label="Mod de lucru">
-      <button class="secondary" id="mode-exercises" type="button" aria-pressed="true">Exerciții</button>
-      <button class="secondary" id="mode-console" type="button" aria-pressed="false">Consolă liberă</button>
-      <button class="secondary" id="mode-test" type="button" aria-pressed="false">Simulare test</button>
-    </nav>
-    <div class="lab-controls">
-      <label>Laborator
-        <select id="lab-select" disabled>
-          <option value="4">Lab 4 · Structură și modificări</option>
-          <option value="5">Lab 5 · Interogări</option>
-        </select>
-      </label>
-      <label>Exercițiu
-        <select id="exercise-select" disabled></select>
-      </label>
-    </div>
+    <section class="lab-masthead" aria-labelledby="lab-title">
+      <div class="university-heading">
+        <h1 id="lab-title">Laboratoare <span>SQL</span></h1>
+        <a class="lab-foundations" href="/#cursuri?domeniu=sql">Bazele SQL <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="lab-picker">
+        <nav class="lab-modes" aria-label="Mod de lucru">
+          <button id="mode-exercises" type="button" aria-pressed="true"><img src="assets/icons/list.svg" alt="">Exerciții</button>
+          <button id="mode-console" type="button" aria-pressed="false"><img src="assets/icons/code.svg" alt="">Consolă liberă</button>
+          <button id="mode-test" type="button" aria-pressed="false"><img src="assets/icons/play.svg" alt="">Simulare test</button>
+        </nav>
+        <div class="lab-controls">
+          <label for="lab-select">Laborator
+            <select id="lab-select" disabled>
+              <option value="4">Lab 4 · Structură și modificări</option>
+              <option value="5">Lab 5 · Interogări</option>
+            </select>
+          </label>
+          <label for="exercise-select">Exercițiu
+            <select id="exercise-select" disabled></select>
+          </label>
+        </div>
+      </div>
+    </section>
     <p id="lab-status" role="status">Se încarcă exercițiile…</p>
     <button id="retry-catalog" class="secondary" type="button" hidden>Reîncearcă</button>
     <section id="exercise-workspace" hidden>
@@ -72,8 +79,15 @@
         </header>
         <p id="tables-status" role="status"></p>
         <div id="table-browser" hidden>
-          <label for="table-select">Tabel</label>
-          <select id="table-select"></select>
+          <div class="table-browser-toolbar">
+            <label for="table-select">Tabel
+              <select id="table-select"></select>
+            </label>
+            <details class="schema-index" id="schema-index" hidden>
+              <summary>Schema Companie</summary>
+              <ul id="schema-tables"></ul>
+            </details>
+          </div>
           <div id="table-details"></div>
         </div>
       </section>
@@ -83,6 +97,7 @@
       </nav>
     </section>
   </main>
+  <script src="sql-explore.js"></script>
   <script src="sql-university.js"></script>
 </body>
 </html>

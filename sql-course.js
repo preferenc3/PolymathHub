@@ -84,6 +84,19 @@
     return `<div class="table-scroll"><table class="data-table">${caption?`<caption>${esc(caption)}</caption>`:''}<thead><tr>${columns.map((c,i)=>`<th scope="col"${emphasized.includes(i)?' class="emphasis"':''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map(row=>`<tr>${row.map((value,i)=>`<td${emphasized.includes(i)?' class="emphasis"':''}>${value===null?'<span class="null">NULL</span>':esc(value)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${columns.length}">Niciun rând.</td></tr>`}</tbody></table></div>`;
   }
   const saveNote = () => `<p class="save-note" data-save-status>${esc(accountNote())}</p>`;
+  function homeActivity() {
+    const {toReview, xp} = totals();
+    let labCount = 0;
+    const lab = stored('polymath-university-sql-completed');
+    if (Array.isArray(lab)) labCount = new Set(lab.filter(id => typeof id === 'string')).size;
+    return `<aside class="home-side home-activity" aria-labelledby="home-activity-title">
+      <h2 id="home-activity-title" class="section-label">Activitatea ta</h2>
+      <ul class="activity-list">
+        <li><a href="/sql-university.html"><span>Rezolvate în atelierul SQL</span><b>${labCount}</b></a></li>
+        <li><a href="#greseli"><span>De repetat la cursuri</span><b>${toReview}</b></a></li>
+        <li><a href="#progres"><span>Puncte din cursuri</span><b>${xp} XP</b></a></li>
+      </ul></aside>`;
+  }
   function home() {
     const sql = P.summary(state.sql), fr = L.summary(state.french);
     const current = exercise(P.resume(state.sql));
@@ -107,7 +120,9 @@
       else if (!french && !state.french.completed) { destination = frLink('teorie'); action = 'Încearcă franceza'; note = 'Ai rezolvat toate cele 15 cerințe SQL. Descoperă acum o altă formă de practică.'; }
       else { destination = french ? frLink('exemple') : sqlLink('p1','practica',1); action = french ? 'Repetă conversația' : 'Reia pe alte date'; note = 'Ai încheiat traseul. Repetarea consolidează ce ai învățat, fără XP suplimentar.'; }
     }
-    return `<div class="home"><p class="home-greeting"><strong id="user-greeting"></strong></p>
+    return `<div class="home-frame"><nav class="home-side home-explore" aria-labelledby="home-explore-title">
+      <h2 id="home-explore-title" class="section-label">Experimentează</h2>
+      ${window.PolymathExplore.links()}</nav><div class="home"><p class="home-greeting"><strong id="user-greeting"></strong></p>
       ${!started?'<p class="home-intro">Un loc pentru idei pe care le înțelegi și le pui în practică. Alege laboratoarele SQL sau începe o lecție de franceză.</p>':''}
       <section aria-labelledby="resume-title"><h2 id="resume-title" class="section-label">${started?'Următorul tău pas':'Începe aici'}</h2>
       <div class="resume-entry"><span class="resume-icon">${icon(french?'translate':'code')}</span><div class="resume-copy"><div class="meta">${firstLab?'SQL · SQLite':french?'Franceză · Conversație':'SQL · Lecția '+(course.lessons.indexOf(lesson)+1 || 'finală')}</div><h1>${esc(firstLab?'Laboratoarele 4 și 5':french?'Au marché — La piață':lesson.title)}</h1>${firstLab?'':`<div class="progress-track" role="progressbar" aria-label="Progresul cursului" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress*100)}"><span style="width:${Math.round(progress*100)}%"></span></div><small>${french?fr.correct+'/3 răspunsuri corecte':sql.completed+'/15 exerciții rezolvate'}</small>`}</div><a class="primary" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></div><p class="resume-note">${note}</p></section>
@@ -115,7 +130,7 @@
       <a class="domain-door" href="/sql-university.html">${icon('code','domain-symbol')}<h2>SQL</h2><p>Laboratoarele 4 și 5 · terminal, tabele și verificare.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
       <a class="domain-door language" href="#cursuri?domeniu=limbi">${icon('translate','domain-symbol')}<h2>Limbi străine</h2><p>Franceză în context. Ascultă, înțelege și răspunde.</p><span class="door-arrow">${icon('arrow-right')}</span></a></div></section>
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
-      ${saveNote()}</div>`;
+      ${saveNote()}</div>${homeActivity()}</div>`;
   }
   function courseRow(lesson, index) {
     const done = lesson.exercises.filter(id=>state.sql.records[id]?.passed).length;
