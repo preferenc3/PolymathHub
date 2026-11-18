@@ -47,7 +47,8 @@
   };
 
   // 1. Încărcarea și Fuzionarea Tuturor Lecțiilor din Curriculum Oficial
-  const allLessonsRaw = [
+  const lessonIndex = document.getElementById("lesson-index");
+  const allLessonsRaw = lessonIndex ? JSON.parse(lessonIndex.textContent) : [
     ...(typeof DEFAULT_CURRICULUM !== "undefined" ? DEFAULT_CURRICULUM : []),
     ...(typeof EXTENDED_MODULES !== "undefined" ? EXTENDED_MODULES : []),
     ...(typeof EXTENDED_CURRICULUM !== "undefined" && typeof EXTENDED_MODULES === "undefined" ? EXTENDED_CURRICULUM : []),
@@ -187,6 +188,26 @@
       }
     }
   });
+
+  const lessonRequests = new Map();
+  async function loadLessonContent(lessons) {
+    const urls = new Set(lessons.map(lesson => lesson.contentUrl).filter(Boolean));
+    await Promise.all([...urls].map(url => {
+      if (!lessonRequests.has(url)) {
+        const request = fetch(url).then(async response => {
+          if (!response.ok) throw new Error("Lesson download failed");
+          const content = await response.json();
+          for (const lesson of allLessons.filter(item => item.contentUrl === url)) {
+            const {track, level, division} = lesson;
+            Object.assign(lesson, content[lesson.id], {track, level, division});
+            delete lesson.contentUrl;
+          }
+        }).finally(() => lessonRequests.delete(url));
+        lessonRequests.set(url, request);
+      }
+      return lessonRequests.get(url);
+    }));
+  }
 
   // Helper Tipografie Română: previne lăsarea particulelor și prepozițiilor scurte orfane pe capăt de rând
   function formatRomanianTypography(str) {
@@ -892,7 +913,7 @@
     if (target === "catalog") renderCatalogView();
     else if (target === "study") renderStudyView();
     else if (target === "lab") renderLabView();
-    else if (target === "tests") window.CurriculumTests.render(getTracks(), allLessons, getQuizForLesson, params.track || state.activeTrack);
+    else if (target === "tests") window.CurriculumTests.render(getTracks(), allLessons, getQuizForLesson, params.track || state.activeTrack, loadLessonContent);
     else if (target === "activity") renderActivityView();
     else if (target === "leagues") renderLeaguesView();
     if (window.PolymathStudio && target !== "study") window.PolymathStudio.render(target, params);
@@ -1073,13 +1094,25 @@
     return (a.id || "").localeCompare(b.id || "");
   }
 
-  function renderCatalogChapters() {
+  function renderCatalogChapters(searchLoaded = false) {
     const allTrackLessons = allLessons
       .filter(l => l.track === state.activeTrack)
       .sort(sortLessonsCanonical);
 
     const selectedLevel = els.catalogLevelFilter ? els.catalogLevelFilter.value : "ALL";
     const query = els.catalogSearchInput ? els.catalogSearchInput.value.trim().toLowerCase() : "";
+
+    if (query && searchLoaded !== true && allTrackLessons.some(lesson => lesson.contentUrl)) {
+      const track = state.activeTrack;
+      loadLessonContent(allTrackLessons).then(() => {
+        if (state.activeView === "catalog" && state.activeTrack === track) renderCatalogChapters();
+      }).catch(() => {
+        if (state.activeView !== "catalog" || state.activeTrack !== track) return;
+        showToast("Textul lecțiilor nu s-a putut descărca. Caută după titlu sau încearcă din nou.");
+        renderCatalogChapters(true);
+      });
+      return;
+    }
 
     const filteredLessons = allTrackLessons.filter(l => {
       const matchesLevel = selectedLevel === "ALL" || (l.level && l.level.startsWith(selectedLevel));
@@ -1199,6 +1232,25 @@
     els.verifyBtn.disabled = false;
     const lesson = allLessons.find(l => l.id === state.activeLessonId) || allLessons[0];
     if (!lesson) return;
+
+    const view = document.getElementById("study-view");
+    const status = document.getElementById("study-load");
+    if (lesson.contentUrl) {
+      view.dataset.loading = "true";
+      status.replaceChildren("Se încarcă lecția…");
+      loadLessonContent([lesson]).then(() => {
+        if (state.activeView === "study" && state.activeLessonId === lesson.id) renderStudyView();
+      }).catch(() => {
+        if (state.activeView !== "study" || state.activeLessonId !== lesson.id) return;
+        const retry = document.createElement("button");
+        retry.className = "btn-primary";
+        retry.textContent = "Reîncearcă";
+        retry.onclick = renderStudyView;
+        status.replaceChildren("Lecția nu s-a putut încărca. ", retry);
+      });
+      return;
+    }
+    delete view.dataset.loading;
 
     state.activeTrack = lesson.track;
     if (state.activeView === "study") syncRoute();

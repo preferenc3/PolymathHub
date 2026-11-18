@@ -175,7 +175,7 @@
     }, {once: true});
   }
 
-  function render(tracks, lessons, getQuiz, activeTrack) {
+  function render(tracks, lessons, getQuiz, activeTrack, loadContent) {
     const root = document.getElementById("curriculum-test");
     const controls = element("div");
     controls.className = "test-controls";
@@ -194,8 +194,26 @@
       host.replaceChildren();
       start.textContent = "Începe testul";
     });
-    start.addEventListener("click", () => {
-      const items = buildTest(select.value, lessons, getQuiz);
+    start.addEventListener("click", async () => {
+      const track = select.value;
+      const pending = lessons.filter(lesson => lesson.track === track && lesson.contentUrl);
+      if (pending.length) {
+        start.disabled = true;
+        start.textContent = "Se încarcă…";
+        select.disabled = true;
+        try {
+          await loadContent(pending);
+        } catch {
+          host.replaceChildren(element("p", "Întrebările nu s-au putut încărca. Încearcă din nou."));
+          start.textContent = "Reîncearcă";
+          return;
+        } finally {
+          start.disabled = false;
+          select.disabled = false;
+        }
+      }
+      if (!root.contains(host) || root.closest(".hidden")) return;
+      const items = buildTest(track, lessons, getQuiz);
       if (!items.length) return;
       showAttempt(host, items);
       start.textContent = "Test nou";

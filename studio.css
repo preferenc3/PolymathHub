@@ -455,3 +455,7 @@ body[data-view="study"] .study-content-area { width:100%; }
   }
   body:is([data-view="home"], [data-view="catalog"]) .nav-link-btn span { font-size: .8rem; }
 }
+
+#study-load { display: none; }
+#study-view[data-loading] > :not(#study-load) { display: none; }
+#study-view[data-loading] #study-load { display: block; grid-column: 1 / -1; }

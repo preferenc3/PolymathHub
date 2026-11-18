@@ -40,6 +40,16 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
+  if (process.env.POLYMATH_SERVE_DIST === "1") {
+    const file = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
+    if (file === "biblioteca.html" || assets.test(file) || /^lessons\/[a-f0-9]{20}\.json$/.test(file)) {
+      try {
+        const body = await fs.readFile(path.join(root, "dist", file));
+        res.writeHead(200, { "Content-Type": types[path.extname(file)], "Cache-Control": "no-store" });
+        return res.end(body);
+      } catch { res.writeHead(404); return res.end("Not found"); }
+    }
+  }
   const requested = url.pathname === "/biblioteca.html" ? "index.html" : url.pathname.slice(1);
   const file = ["/","/index.html"].includes(url.pathname) ? "sql-course.html" : requested;
   if (!assets.test(file)) { res.writeHead(404); return res.end("Not found"); }

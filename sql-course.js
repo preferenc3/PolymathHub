@@ -400,5 +400,11 @@
     try {const response=await fetch('/api/sql-lab',{signal:AbortSignal.timeout(12000)});if(!response.ok)throw new Error();course=await response.json();if(course.lessons?.length!==6||course.exercises?.length!==15)throw new Error();render();}
     catch {$('main-content').innerHTML='<div class="empty"><h1>Spațiul de studiu nu s-a putut încărca.</h1><p>Verifică conexiunea și încearcă din nou.</p><button class="primary" id="reload-course">Reîncearcă</button></div>';$('reload-course').addEventListener('click',load);}
   }
-  load();
+  const embeddedCourse = $('sql-course-data');
+  if (embeddedCourse) {
+    course = JSON.parse(embeddedCourse.textContent);
+    render();
+  } else {
+    load();
+  }
 })();
