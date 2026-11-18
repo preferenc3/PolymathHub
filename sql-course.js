@@ -86,16 +86,39 @@
   const saveNote = () => `<p class="save-note" data-save-status>${esc(accountNote())}</p>`;
   function homeActivity() {
     const {toReview, xp} = totals();
-    let labCount = 0;
     const lab = stored('polymath-university-sql-completed');
-    if (Array.isArray(lab)) labCount = new Set(lab.filter(id => typeof id === 'string')).size;
-    return `<aside class="home-side home-activity" aria-labelledby="home-activity-title">
-      <h2 id="home-activity-title" class="section-label">Activitatea ta</h2>
-      <ul class="activity-list">
-        <li><a href="/sql-university.html"><span>Rezolvate în atelierul SQL</span><b>${labCount}</b></a></li>
-        <li><a href="#greseli"><span>De repetat la cursuri</span><b>${toReview}</b></a></li>
-        <li><a href="#progres"><span>Puncte din cursuri</span><b>${xp} XP</b></a></li>
-      </ul></aside>`;
+    const labCount = Array.isArray(lab) ? new Set(lab.filter(id => typeof id === 'string')).size : 0;
+    return `<aside class="home-side home-activity" aria-label="Activitatea ta">
+      <details>
+        <summary>Activitatea ta</summary>
+        <ul class="activity-list">
+          <li><a href="/sql-university.html"><span>Rezolvate în atelier</span><span>${labCount}</span></a></li>
+          <li><a href="#greseli"><span>De repetat la cursuri</span><span>${toReview}</span></a></li>
+          <li><a href="#progres"><span>Puncte din cursuri</span><span>${xp} XP</span></a></li>
+        </ul>
+      </details>
+    </aside>`;
+  }
+  function homePractice() {
+    const activities = [
+      ['SQL · Lab 4', 'Redenumește un tabel', 'Schimbă numele tabelei agenti în personal.', '/sql-university.html?ex=4-4.1'],
+      ['SQL · Lab 5', 'Filtrează după salariu', 'Afișează numele și salariul angajaților care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14'],
+      ['SQL · Lab 5', 'Leagă două tabele', 'Afișează angajații împreună cu denumirea departamentului.', '/sql-university.html?ex=5-33'],
+      ['Franceză · Ascultare', 'Ascultă un dialog la piață', 'Urmărește întrebarea despre preț și răspunsul vânzătorului.', frLink('exemple')],
+      ['Franceză · Practică', 'Completează replicile', 'Completează trei replici din conversația dintre client și vânzător.', frLink('practica')],
+      ['Evaluare SQL', 'Încearcă simularea', 'Rezolvă cinci exerciții de actualizare, filtrare și joncțiuni.', '/sql-university.html?mod=test'],
+    ];
+    return `<section class="home-practice" aria-labelledby="home-practice-title">
+      <h2 id="home-practice-title">Exersează acum</h2>
+      <ul class="home-practice-list">
+        ${activities.map(([topic, title, prompt, href]) => `<li><a href="${href}">
+          <span class="home-practice-topic">${topic}</span>
+          <strong>${title}</strong>
+          <span class="home-practice-prompt">${prompt}</span>
+          ${icon('arrow-right','home-practice-arrow')}
+        </a></li>`).join('')}
+      </ul>
+    </section>`;
   }
   function home() {
     const sql = P.summary(state.sql), fr = L.summary(state.french);
@@ -126,6 +149,7 @@
       ${!started?'<p class="home-intro">Un loc pentru idei pe care le înțelegi și le pui în practică. Alege laboratoarele SQL sau începe o lecție de franceză.</p>':''}
       <section aria-labelledby="resume-title"><h2 id="resume-title" class="section-label">${started?'Următorul tău pas':'Începe aici'}</h2>
       <div class="resume-entry"><span class="resume-icon">${icon(french?'translate':'code')}</span><div class="resume-copy"><div class="meta">${firstLab?'SQL · SQLite':french?'Franceză · Conversație':'SQL · Lecția '+(course.lessons.indexOf(lesson)+1 || 'finală')}</div><h1>${esc(firstLab?'Laboratoarele 4 și 5':french?'Au marché — La piață':lesson.title)}</h1>${firstLab?'':`<div class="progress-track" role="progressbar" aria-label="Progresul cursului" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress*100)}"><span style="width:${Math.round(progress*100)}%"></span></div><small>${french?fr.correct+'/3 răspunsuri corecte':sql.completed+'/15 exerciții rezolvate'}</small>`}</div><a class="primary" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></div><p class="resume-note">${note}</p></section>
+      ${homePractice()}
       <section class="explore-section" aria-labelledby="explore-title"><h2 id="explore-title" class="section-label">Explorează</h2><div class="domain-doors">
       <a class="domain-door" href="/sql-university.html">${icon('code','domain-symbol')}<h2>SQL</h2><p>Laboratoarele 4 și 5 · terminal, tabele și verificare.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
       <a class="domain-door language" href="#cursuri?domeniu=limbi">${icon('translate','domain-symbol')}<h2>Limbi străine</h2><p>Franceză în context. Ascultă, înțelege și răspunde.</p><span class="door-arrow">${icon('arrow-right')}</span></a></div></section>
