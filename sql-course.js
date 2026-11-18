@@ -106,7 +106,7 @@
       ['SQL · Lab 5', 'Leagă două tabele', 'Afișează angajații împreună cu denumirea departamentului.', '/sql-university.html?ex=5-33'],
       ['Franceză · Ascultare', 'Ascultă un dialog la piață', 'Urmărește întrebarea despre preț și răspunsul vânzătorului.', frLink('exemple')],
       ['Franceză · Practică', 'Completează replicile', 'Completează trei replici din conversația dintre client și vânzător.', frLink('practica')],
-      ['Evaluare SQL', 'Încearcă simularea', 'Rezolvă cinci exerciții de actualizare, filtrare și joncțiuni.', '/sql-university.html?mod=test'],
+      ['SQL · Lab 4', 'Modifică salariile', 'Mărește cu 100 salariile mai mici de 3 000.', '/sql-university.html?ex=4-8.1'],
     ];
     return `<section class="home-practice" aria-labelledby="home-practice-title">
       <h2 id="home-practice-title">Exersează acum</h2>

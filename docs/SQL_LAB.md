@@ -36,9 +36,9 @@ Variabilele `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` și `POLYMATH_SQL_LAB=1` 
 
 ## Administrare
 
-Panoul existent a fost adaptat pentru numărul de exerciții SQL rezolvate, cele de repetat și progresul proiectului. El este doar pentru citire și nu returnează parole, hashuri sau încercări SQL private.
+Panoul **Panou admin** apare în antet pentru administratorii laboratorului. Permite căutarea conturilor, consultarea progresului și acordarea rolului de administrator unui cont existent. Primul rol se acordă în baza de laborator pentru UUID-ul exact al contului ales. Rolul nu se acordă automat când se înregistrează o adresă de email.
 
-Proiectul nou pornește fără administratori permanenți. Pentru proprietar: creează un cont în laborator și solicită acordarea rolului pentru UUID-ul exact al acelui cont. Nu se acordă rol automat după email, fiindcă emailul nu este verificat. Drepturile administratorului și refuzul accesului altor conturi au fost testate într-o tranzacție anulată, fără rol de test rămas activ.
+Din avatar, un utilizator își poate schimba numele afișat și parola, reseta progresul salvat sau șterge contul. Ștergerea folosește o sesiune proaspătă și funcția instalată de migrarea `202611180001_self_delete.sql`. Funcțiile de administrare sunt instalate de `202611180002_admin_grants.sql`. Rezultatele atelierului sunt stocate în browser și pot fi incluse separat la resetare.
 
 ## Verificare locală
 

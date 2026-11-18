@@ -228,3 +228,47 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 @media (max-width: 480px) {
   .app-header .explore-toggle { flex-basis: 38px; width: 38px; height: 38px; }
 }
+
+/* Account controls use the same compact surfaces as the lab navigation. */
+#account-control:not([hidden]) { display: flex; align-items: center; gap: 7px; }
+.account-button.account-avatar, .settings-avatar {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 42px; height: 42px; padding: 0; border-radius: 50%;
+  background: var(--teal-soft); color: var(--teal-dark);
+  border: 1px solid #bccfc1; font-size: 14px; font-weight: 750;
+}
+.account-button.account-avatar:hover, .admin-entry:hover { background: #d6e6d9; }
+.admin-entry {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 7px 10px; border-radius: 9px;
+  background: var(--paper); border: 1px solid var(--line);
+  color: var(--teal-dark); font-size: 12px; font-weight: 650;
+}
+.admin-entry img { width: 17px; height: 17px; }
+.settings-identity { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.settings-identity div { min-width: 0; overflow-wrap: anywhere; line-height: 1.45; }
+.settings-identity div span { display: block; color: var(--muted); font-size: 13px; }
+.settings-form { margin: 10px 0 16px; }
+.settings-form p { margin: 0; color: var(--muted); font-size: 13px; }
+.settings-group { border-top: 1px solid var(--line); }
+.settings-group summary { padding: 10px 0; color: var(--ink); cursor: pointer; font-weight: 650; }
+.settings-group summary:hover { color: var(--teal-dark); }
+.settings-form .settings-check { display: flex; align-items: start; gap: 8px; }
+.settings-form .settings-check input { width: auto; margin-top: 3px; accent-color: var(--teal); }
+.settings-danger {
+  padding: 8px 12px; border: 1px solid #dfc0b3; border-radius: 8px;
+  background: #f5e8e1; color: #873e29; font-weight: 650;
+}
+.settings-danger:hover { background: #eedbd0; }
+.settings-footer { padding-top: 10px; border-top: 1px solid var(--line); }
+.settings-footer button { margin: 4px 6px 0 0; }
+.settings-feedback:not(:empty) { padding: 8px 10px; border-radius: 7px; background: var(--sand); }
+.settings-feedback:empty { margin: 0; }
+.admin-grant-confirm { padding: 12px; margin: 10px 0; border-radius: 9px; background: var(--teal-soft); }
+.admin-grant-confirm p { margin-bottom: 8px; }
+.admin-role { color: var(--teal-dark); font-weight: 650; }
+@media (max-width: 480px) {
+  .admin-entry { padding: 6px; min-height: 36px; min-width: 36px; }
+  .admin-entry span { display: none; }
+  .account-button.account-avatar { width: 38px; height: 38px; }
+}

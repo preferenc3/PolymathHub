@@ -6,7 +6,7 @@
   const text = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const accountIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
   async function api(path, options = {}) {
-    const response = await fetch(path, { ...options, credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json", ...options.headers }, signal: AbortSignal.timeout(12000) });
+    const response = await fetch(path, { ...options, credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json", ...options.headers }, signal: AbortSignal.timeout(options.method === "POST" ? 28_000 : 12_000) });
     let data; try { data = await response.json(); } catch { data = {}; }
     if (!response.ok) { const error = new Error(data.error || "Serviciul nu este disponibil momentan."); error.status = response.status; throw error; }
     return data;
@@ -40,10 +40,16 @@
       window.PolymathApp.replaceProgress(course, userId);
     } finally { account.restoring = false; }
   }
+  function initials(user) {
+    const parts = (user.name || user.email || "").trim().split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map(part => [...part][0].toUpperCase()).join("") || "?";
+  }
   function renderControl() {
     const control = $("account-control"); control.hidden = !account.configured;
     if (!account.configured) return;
-    control.innerHTML = `<button type="button" class="account-button" data-open-account>${accountIcon}<span>${account.user ? "Contul meu" : "Intră în cont"}</span></button>`;
+    const label = account.user ? "Setări cont" : "Intră în cont";
+    control.innerHTML = `${account.admin ? '<button type="button" class="admin-entry" data-open-admin aria-haspopup="dialog" aria-label="Panou administrator" title="Panou administrator"><img src="assets/icons/list.svg" alt=""><span>Panou admin</span></button>' : ""}
+      <button type="button" class="account-button account-avatar" data-open-account aria-haspopup="dialog" aria-label="${label}" title="${label}">${account.user ? `<span aria-hidden="true">${text(initials(account.user))}</span>` : accountIcon}</button>`;
     if ($("account-sync")) $("account-sync").textContent = account.sync;
     window.dispatchEvent(new Event("polymath:account"));
   }
@@ -113,8 +119,8 @@
         account.dirty = true;
         account.ready = false;
         window.PolymathApp.toast(error.status === 412 ? error.message
-          : error.status === 409 ? "Progres actualizat în altă sesiune. Deschide Contul meu pentru reîncărcare."
-          : "Progresul contului nu s-a putut sincroniza. Verifică din Contul meu.");
+          : error.status === 409 ? "Progres actualizat în altă sesiune. Deschide setările contului pentru reîncărcare."
+          : "Progresul contului nu s-a putut sincroniza. Verifică setările contului.");
       })
       .finally(() => {
         account.saving = null;
@@ -143,15 +149,43 @@
     if (account.loading || account.authenticating) return;
     const element = dialog();
     if (account.user) {
-      element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide contul">×</button><span class="eyebrow">POLYMATHHUB</span><h2 id="auth-title" class="dialog-heading" tabindex="-1">Contul meu</h2><p class="auth-intro">${window.PolymathSqlCourse ? "Exercițiile și greșelile tale, salvate în contul laboratorului." : "Lecțiile și cuvintele tale, în același cont."}</p><div class="account-summary"><strong>${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div><p id="account-sync" class="account-sync" role="status">${text(account.sync)}</p><button class="studio-secondary" type="button" data-reload-account>Reîncarcă progresul din cont</button><p class="auth-note">Reîncărcarea preia ultima versiune salvată în cont și înlocuiește modificările care nu s-au sincronizat.</p><button type="button" class="studio-primary" data-logout-account style="margin-top:18px;width:100%">Ieși din cont</button><div id="auth-feedback" role="status"></div>`;
-      if (account.admin) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "studio-secondary";
-        button.dataset.openAdmin = "";
-        button.textContent = "Panou administrator";
-        element.querySelector(".account-summary").after(button);
-      }
+      element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide setările">×</button>
+        <h2 id="auth-title" class="dialog-heading" tabindex="-1">Setările contului</h2>
+        <div class="settings-identity"><span class="settings-avatar" aria-hidden="true">${text(initials(account.user))}</span><div><strong id="settings-account-name">${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div></div>
+        <form class="auth-form settings-form" data-account-action="profile">
+          <label>Nume afișat<input type="text" name="name" autocomplete="nickname" maxlength="60" required value="${text(account.user.name)}"></label>
+          <button class="studio-primary" type="submit">Salvează numele</button>
+        </form>
+        <details class="settings-group"><summary>Schimbă parola</summary>
+          <form class="auth-form settings-form" data-account-action="password">
+            <label>Parola actuală<input type="password" name="currentPassword" autocomplete="current-password" maxlength="128" required></label>
+            <label>Parola nouă<input type="password" name="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+            <label>Repetă parola nouă<input type="password" name="repeatPassword" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+            <button class="studio-primary" type="submit">Salvează parola</button>
+          </form>
+        </details>
+        <details class="settings-group"><summary>Resetează progresul</summary>
+          <form class="auth-form settings-form" data-account-action="reset">
+            <p>Șterge exercițiile, greșelile și punctele salvate în cont. Rezultatele atelierului SQL sunt stocate separat în browser.</p>
+            <label>Scrie RESETEAZĂ<input name="confirmation" autocomplete="off" maxlength="10" required></label>
+            ${window.PolymathSqlCourse ? '<label class="settings-check"><input type="checkbox" name="includeWorkshop"> Include bifările atelierului din acest browser</label>' : ""}
+            <button class="settings-danger" type="submit">Resetează progresul</button>
+          </form>
+        </details>
+        <details class="settings-group"><summary>Șterge contul</summary>
+          <form class="auth-form settings-form" data-account-action="delete">
+            <p>Contul și progresul salvat în el vor fi șterse definitiv.</p>
+            <label>Parola actuală<input type="password" name="currentPassword" autocomplete="current-password" maxlength="128" required></label>
+            <label>Scrie ȘTERGE<input name="confirmation" autocomplete="off" maxlength="6" required></label>
+            <button class="settings-danger" type="submit">Șterge definitiv contul</button>
+          </form>
+        </details>
+        <p id="auth-feedback" class="settings-feedback" role="status"></p>
+        <div class="settings-footer">
+          <p id="account-sync" class="account-sync" role="status">${text(account.sync)}</p>
+          <button class="studio-secondary" type="button" data-reload-account>Reîncarcă progresul</button>
+          <button type="button" class="studio-secondary" data-logout-account>Deconectează-te</button>
+        </div>`;
       if (account.dirty || !account.ready) {
         const retry = document.createElement("button");
         retry.type = "button"; retry.className = "studio-primary"; retry.dataset.retryAccount = "";
@@ -163,7 +197,7 @@
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide autentificarea">×</button><span class="eyebrow">POLYMATHHUB</span><h2 id="auth-title">${register ? "Creează un cont" : "Conectează-te"}</h2><p class="auth-intro">Salvează progresul și revino la el de pe alt dispozitiv.</p><form id="auth-form" class="auth-form" data-mode="${mode}"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Parolă<input type="password" name="password" autocomplete="${register ? "new-password" : "current-password"}" minlength="10" maxlength="128" required></label><button class="studio-primary" type="submit">${register ? "Creează contul" : "Conectează-te"}</button></form><div id="auth-feedback" role="status" aria-live="polite"></div><p class="auth-switch">${register ? 'Ai deja cont? <button type="button" data-auth-mode="login">Conectează-te</button>' : 'Nu ai cont? <button type="button" data-auth-mode="register">Creează unul</button>'}</p>${register ? '<p class="auth-note">Folosește un email în format valid ca identificator și o parolă de minimum 10 caractere. Nu trebuie să ai acces la căsuța poștală.</p>' : ""}`;
     }
     if (!element.open) element.showModal();
-    (element.querySelector("input") || element.querySelector("#auth-title[tabindex]"))?.focus();
+    (account.user ? element.querySelector("#auth-title") : element.querySelector("input"))?.focus();
   }
 
   const adminDateFormat = new Intl.DateTimeFormat("ro-RO", { dateStyle: "short", timeStyle: "short" });
@@ -174,16 +208,17 @@
   }
 
   function openAdmin() {
-    if (!account.admin || !account.user || account.loading || account.authenticating) return;
+    if (!account.admin || !account.user || account.loading || account.authenticating || $("admin-dialog")) return;
     const userId = account.user.id;
     const element = document.createElement("dialog");
+    element.id = "admin-dialog";
     element.className = "auth-dialog admin-dialog";
     element.setAttribute("aria-labelledby", "admin-title");
     element.innerHTML = `
       <button type="button" class="dialog-close" data-close-admin aria-label="Închide panoul">×</button>
       <span class="eyebrow">POLYMATHHUB · ADMINISTRARE</span>
-      <h2 id="admin-title">Conturi și progres</h2>
-      <p class="auth-intro">Statistici din progresul salvat în cont.</p>
+      <h2 id="admin-title">Panou administrator</h2>
+      <p class="auth-intro">Caută utilizatori, consultă progresul și acordă rolul de administrator.</p>
       <dl class="admin-summary" hidden>
         <div><dt>Conturi în total</dt><dd data-stat="total"></dd></div>
         <div><dt>Conectate în ultimele 7 zile</dt><dd data-stat="active_7d"></dd></div>
@@ -195,10 +230,15 @@
         <button type="submit" class="studio-primary">Caută</button></div>
       </form>
       <p class="account-sync" role="status" data-admin-status></p>
+      <div class="admin-grant-confirm" data-admin-confirm hidden>
+        <p data-admin-recipient></p>
+        <button type="button" class="studio-primary" data-admin-grant>Confirmă rolul</button>
+        <button type="button" class="studio-secondary" data-admin-cancel>Anulează</button>
+      </div>
       <div class="admin-table-wrap" hidden>
         <table class="admin-table">
           <thead><tr><th scope="col">Nume și email</th><th scope="col">Creat la</th><th scope="col">Ultima conectare</th>
-            <th scope="col">XP</th><th scope="col">${window.PolymathSqlCourse ? "Exerciții SQL" : "Lecții parcurse"}</th><th scope="col">${window.PolymathSqlCourse ? "De repetat" : "Cuvinte salvate"}</th>${window.PolymathSqlCourse ? '<th scope="col">Proiect final</th>' : ""}</tr></thead>
+            <th scope="col">XP</th><th scope="col">${window.PolymathSqlCourse ? "Exerciții SQL" : "Lecții parcurse"}</th><th scope="col">${window.PolymathSqlCourse ? "De repetat" : "Cuvinte salvate"}</th>${window.PolymathSqlCourse ? '<th scope="col">Proiect final</th>' : ""}<th scope="col">Rol</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -218,8 +258,17 @@
     let page = 1;
     let query = "";
     let requestId = 0;
+    let granting = false;
+    let selected = null;
+    const confirmation = select("[data-admin-confirm]");
+    const grant = select("[data-admin-grant]");
+    function clearSelection() {
+      selected = null;
+      confirmation.hidden = true;
+    }
 
-    async function loadAccounts(requestedPage) {
+    async function loadAccounts(requestedPage, message = "") {
+      clearSelection();
       const currentRequest = ++requestId;
       const isCurrent = () => element.open && requestId === currentRequest && account.user?.id === userId;
       const params = new URLSearchParams({ page: requestedPage, q: query });
@@ -241,13 +290,15 @@
           <th scope="row"><strong>${text(row.name)}</strong><span>${text(row.email || "—")}</span></th>
           <td>${text(formatAdminDate(row.created_at))}</td><td>${text(formatAdminDate(row.last_sign_in_at))}</td>
           <td>${text(row.xp)}</td><td>${text(window.PolymathSqlCourse ? row.sql_completed : row.lessons)}</td><td>${text(window.PolymathSqlCourse ? row.sql_review : row.saved_words)}</td>${window.PolymathSqlCourse ? `<td>${text(row.sql_project)}/3</td>` : ""}
+          <td>${row.is_admin ? '<span class="admin-role">Administrator</span>'
+            : row.id ? `<button type="button" class="studio-secondary" data-pick-admin="${text(row.id)}" aria-label="Acordă rol de administrator pentru ${text(row.email || row.name)}">Acordă rol</button>` : "Utilizator"}</td>
         </tr>`).join("");
         table.hidden = data.accounts.length === 0;
         pager.hidden = pages === 1;
         prev.disabled = page === 1;
         next.disabled = page >= pages;
         select("[data-admin-page]").textContent = `Pagina ${page} din ${pages}`;
-        status.textContent = data.matched === 0 ? "Niciun cont găsit." : `Conturi găsite: ${data.matched}`;
+        status.textContent = message || (data.matched === 0 ? "Niciun cont găsit." : `Conturi găsite: ${data.matched}`);
       } catch (error) {
         if (!isCurrent()) return;
         stats.hidden = true;
@@ -260,20 +311,143 @@
       query = select("input").value.trim();
       loadAccounts(1);
     });
+    table.addEventListener("click", event => {
+      const button = event.target.closest("[data-pick-admin]");
+      if (!button || granting) return;
+      selected = { id: button.dataset.pickAdmin, label: button.closest("tr").querySelector("th span").textContent, button };
+      select("[data-admin-recipient]").textContent = `Acest cont va putea vedea progresul tuturor utilizatorilor și acorda roluri de administrator. Confirmi pentru ${selected.label}?`;
+      confirmation.hidden = false;
+      select("[data-admin-cancel]").focus();
+    });
+    select("[data-admin-cancel]").addEventListener("click", () => {
+      selected?.button.focus();
+      clearSelection();
+    });
+    grant.addEventListener("click", async () => {
+      if (!selected || granting) return;
+      granting = true;
+      grant.disabled = true;
+      const target = selected;
+      try {
+        await api("/api/admin-accounts?action=grant", {
+          method: "POST", headers: { "X-Polymath-Account": userId }, body: JSON.stringify({ userId: target.id })
+        });
+        if (element.open) {
+          select("input").focus();
+          await loadAccounts(page, "Rolul de administrator a fost acordat.");
+        }
+      } catch (error) {
+        if (element.open) status.textContent = error.message;
+      } finally {
+        granting = grant.disabled = false;
+      }
+    });
     prev.addEventListener("click", () => loadAccounts(page - 1));
     next.addEventListener("click", () => loadAccounts(page + 1));
     select("[data-close-admin]").addEventListener("click", () => element.close());
     element.addEventListener("close", () => {
       element.remove();
-      $("account-control")?.querySelector("button")?.focus();
+      $("account-control")?.querySelector("[data-open-admin]")?.focus();
     });
-    dialog().close();
+    $("account-dialog")?.close();
     document.body.appendChild(element);
     element.showModal();
     select("input").focus();
     loadAccounts(1);
   }
+  function clearAccountCache(userId) {
+    for (const prefix of ["pm_learning_workspace_v1:", "pm_sql_practice_v1:", "polymath_edtech_state_v2:", "polymath_vocabulary_v1:", "polymath_pending_progress_v1:"]) {
+      try { localStorage.removeItem(prefix + userId); } catch { /* Storage may be unavailable. */ }
+    }
+  }
+
+  function returnToGuest() {
+    clearTimeout(account.timer);
+    account.user = null;
+    account.admin = account.ready = account.dirty = false;
+    account.revision = null;
+    restoreProgress(window.PolymathApp.guestProgress(), stored("polymath_vocabulary_v1", emptyVocabulary()), null);
+    renderControl();
+    $("account-dialog")?.close();
+  }
+
+  async function saveSetting(form) {
+    if (!account.user || account.loading || account.authenticating) return;
+    const action = form.dataset.accountAction;
+    const values = new FormData(form);
+    const body = Object.fromEntries(values);
+    const feedback = $("auth-feedback");
+    const submit = form.querySelector('button[type="submit"]');
+    if (action === "password" && body.password !== body.repeatPassword) {
+      feedback.textContent = "Parolele noi trebuie să coincidă.";
+      form.elements.repeatPassword.focus();
+      return;
+    }
+    delete body.repeatPassword;
+    const changesProgress = action === "reset" || action === "delete";
+    const wasReady = account.ready;
+    const userId = account.user.id;
+    account.authenticating = true;
+    if (changesProgress) {
+      account.ready = false;
+      clearTimeout(account.timer);
+    }
+    submit.disabled = true;
+    feedback.textContent = "Se salvează…";
+    try {
+      if (account.saving) await account.saving;
+      const path = action === "reset" ? "/api/progress?action=reset" : "/api/account?action=" + action;
+      const result = await api(path, {
+        method: "POST", headers: { "X-Polymath-Account": userId }, body: JSON.stringify(body)
+      });
+      if (action === "delete") {
+        clearAccountCache(userId);
+        returnToGuest();
+        window.PolymathApp.toast("Contul a fost șters.");
+      } else if (action === "reset") {
+        clearAccountCache(userId);
+        if (body.includeWorkshop === "on") {
+          try { localStorage.removeItem("polymath-university-sql-completed"); } catch { /* Storage may be unavailable. */ }
+        }
+        account.dirty = false;
+        account.revision = result.revision;
+        account.ready = true;
+        account.sync = "Progresul contului a fost resetat.";
+        restoreProgress(null, emptyVocabulary(), userId);
+        renderControl();
+        form.reset();
+        feedback.textContent = account.sync;
+      } else {
+        account.user = result.user;
+        renderControl();
+        if (action === "profile") {
+          $("settings-account-name").textContent = result.user.name;
+          $("account-dialog").querySelector(".settings-avatar").textContent = initials(result.user);
+          form.elements.name.value = result.user.name;
+          feedback.textContent = "Numele a fost actualizat.";
+        } else {
+          form.reset();
+          feedback.textContent = "Parola a fost actualizată.";
+        }
+      }
+    } catch (error) {
+      if (changesProgress && account.user) {
+        account.ready = wasReady && ![409, 412].includes(error.status);
+        if (account.ready && account.dirty) queueSave();
+      }
+      feedback.textContent = error.message;
+    } finally {
+      account.authenticating = false;
+      submit.disabled = false;
+    }
+  }
+
   document.addEventListener("submit", async event => {
+    if (event.target.matches("[data-account-action]")) {
+      event.preventDefault();
+      await saveSetting(event.target);
+      return;
+    }
     if (event.target.id !== "auth-form") return;
     event.preventDefault(); const form = event.target; const values = new FormData(form); const mode = form.dataset.mode;
     if (account.authenticating || account.loading || account.user) return;
@@ -314,10 +488,8 @@
         await api("/api/account?action=logout", {
           method: "POST", headers: { "X-Polymath-Account": account.user.id }, body: "{}"
         });
-        clearTimeout(account.timer); account.user = null; account.admin = false; account.ready = false; account.loading = true;
-        window.PolymathStudio.replaceVocabulary(stored("polymath_vocabulary_v1", emptyVocabulary()));
-        window.PolymathApp.replaceProgress(window.PolymathApp.guestProgress(), null);
-        account.loading = false; renderControl(); $("account-dialog").close(); window.PolymathApp.toast("Ai ieșit din cont.");
+        returnToGuest();
+        window.PolymathApp.toast("Ai ieșit din cont.");
       } catch (error) { $("auth-feedback").textContent = error.message; button.disabled = false; }
       finally { account.authenticating = false; }
     }

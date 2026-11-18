@@ -52,25 +52,58 @@
     return item.id.slice(2) + '. ' + item.title + (completed.has(item.id) ? ' ✓' : '');
   }
 
+  const taskList = $('lab-task-list');
+
+  function updateTaskSelection(id) {
+    const current = taskList.querySelector('[aria-current]');
+    const next = taskList.querySelector(`[data-lab-task="${CSS.escape(id)}"]`);
+    if (current !== next) current?.removeAttribute('aria-current');
+    if (!next) return;
+    next.setAttribute('aria-current', 'step');
+    const bounds = taskList.getBoundingClientRect();
+    const row = next.getBoundingClientRect();
+    if (row.top < bounds.top || row.bottom > bounds.bottom) {
+      taskList.scrollTop += row.top - bounds.top;
+    }
+  }
+
   function drawOptions() {
     const groups = new Map();
     exercise.replaceChildren();
+    taskList.replaceChildren();
     for (const item of exercisesInLab()) {
       if (!groups.has(item.group)) {
-        const group = node('optgroup');
-        group.label = item.group;
-        groups.set(item.group, group);
-        exercise.append(group);
+        const options = node('optgroup');
+        options.label = item.group;
+        exercise.append(options);
+        const heading = node('h2', item.group);
+        const list = node('ul');
+        taskList.append(heading, list);
+        groups.set(item.group, {options, list});
       }
-      groups.get(item.group).append(new Option(optionLabel(item), item.id));
+      const {options, list} = groups.get(item.group);
+      const label = optionLabel(item);
+      options.append(new Option(label, item.id));
+      const row = node('li');
+      const button = node('button', label);
+      button.type = 'button';
+      button.dataset.labTask = item.id;
+      row.append(button);
+      list.append(row);
     }
   }
+
+  taskList.addEventListener('click', event => {
+    const button = event.target.closest('[data-lab-task]');
+    if (button) showExercise(button.dataset.labTask, true);
+  });
 
   function showExercise(id, focus = false) {
     active = mode === 'console' ? consoleExercise : catalog.find(item => item.id === id);
     if (mode === 'exercises') lastExercise = id;
     revision++;
     exercise.value = id;
+    updateTaskSelection(id);
     const url = new URL(location.href);
     url.searchParams.set('ex', id);
     if (mode === 'exercises') url.searchParams.delete('mod');
@@ -294,7 +327,9 @@
         feedback(result.message, result.correct ? 'success' : 'error');
         if (result.correct) {
           completed.add(id);
-          exercise.selectedOptions[0].textContent = optionLabel(active);
+          const label = optionLabel(active);
+          exercise.selectedOptions[0].textContent = label;
+          taskList.querySelector('[aria-current]').textContent = label;
           try { localStorage.setItem(storageKey, JSON.stringify([...completed])); } catch {}
         }
       }
@@ -342,9 +377,10 @@
 
   function changeMode(next, requested) {
     mode = next;
+    document.body.dataset.labMode = mode;
     document.querySelector('.lab-controls').hidden = mode === 'console';
     lab.closest('label').hidden = mode === 'test';
-    for (const name of ['exercises', 'console', 'test']) {
+    for (const name of ['exercises', 'console']) {
       $('mode-' + name).setAttribute('aria-pressed', String(name === mode));
     }
     if (mode === 'console') {
@@ -357,7 +393,7 @@
     }
   }
 
-  for (const name of ['exercises', 'console', 'test']) {
+  for (const name of ['exercises', 'console']) {
     $('mode-' + name).onclick = () => { if (catalog.length) changeMode(name); };
   }
 
@@ -400,5 +436,20 @@
     }
   }
   $('retry-catalog').onclick = load;
+  function refreshCompletion() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (!Array.isArray(saved)) return;
+      completed.clear();
+      saved.forEach(id => completed.add(id));
+      if (active && mode === 'exercises') {
+        drawOptions();
+        exercise.value = active.id;
+        updateTaskSelection(active.id);
+      }
+    } catch { /* Storage may be unavailable. */ }
+  }
+  window.addEventListener('storage', event => { if (event.key === storageKey) refreshCompletion(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) refreshCompletion(); });
   load();
 })();

@@ -1,13 +1,16 @@
-import { ApiError, configuration, send, provider, sessionFor, fail, checkExpectedAccount } from "../server/auth.mjs";
+import { ApiError, configuration, send, provider, sessionFor, fail, checkExpectedAccount, sameOrigin, readJson } from "../server/auth.mjs";
 
 export function createAdminAccountsHandler({ env = process.env, fetcher = fetch } = {}) {
   return async function handler(req, res) {
     try {
-      if (req.method !== "GET") {
-        res.setHeader("Allow", "GET");
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const grant = req.method === "POST" && params.get("action") === "grant";
+      if (req.method !== "GET" && !grant) {
+        res.setHeader("Allow", "GET, POST");
         throw new ApiError(405, "Metodă indisponibilă.");
       }
 
+      if (grant && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
       const config = configuration(env);
       if (!config) throw new ApiError(503, "Administrarea conturilor nu este disponibilă.");
       const call = provider(config, fetcher);
@@ -15,7 +18,19 @@ export function createAdminAccountsHandler({ env = process.env, fetcher = fetch 
       if (!session) throw new ApiError(401, "Conectează-te pentru a accesa panoul.");
       checkExpectedAccount(req, session.user);
 
-      const params = new URL(req.url, "http://localhost").searchParams;
+      if (grant) {
+        if (!req.headers["x-polymath-account"]) throw new ApiError(412, "Reîncarcă panoul și încearcă din nou.");
+        const { userId } = await readJson(req, 1024);
+        if (typeof userId !== "string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(userId)) {
+          throw new ApiError(400, "Contul selectat nu este valid.");
+        }
+        const result = await call("/rest/v1/rpc/polymath_grant_administrator", {
+          method: "POST", token: session.token, body: { p_user_id: userId }
+        });
+        if (result !== true) throw new ApiError(403, "Rolul nu a putut fi acordat. Verifică drepturile și dacă mai există contul.");
+        return send(res, 200, { granted: true });
+      }
+
       const page = Number(params.get("page") ?? "1");
       if (!Number.isSafeInteger(page) || page < 1 || page > 1_000_000) {
         throw new ApiError(400, "Pagina cerută nu este validă.");

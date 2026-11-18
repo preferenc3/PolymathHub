@@ -236,3 +236,92 @@ test("attempts made while reconnecting are not replaced by the earlier local sna
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(browser.state().xp, 50);
 });
+
+test("account settings update only the authenticated user's display name", async () => {
+  const handler = createAccountHandler({ env, fetcher: async (url, options) => {
+    assert.ok(url.endsWith("/user"));
+    if (options.method === "GET") return result(user);
+    assert.equal(options.method, "PUT");
+    assert.equal(options.headers.Authorization, "Bearer old");
+    assert.deepEqual(JSON.parse(options.body), { data: { display_name: "Ana Maria" } });
+    return result({ ...user, user_metadata: { display_name: "Ana Maria" } });
+  } });
+  const options = { method: "POST", url: "/api/account?action=profile", body: { name: " Ana Maria ", id: "other" } };
+  assert.equal((await run(handler, options)).statusCode, 401);
+  const headers = { cookie: "__Host-pm_access=old", "x-polymath-account": id };
+  assert.equal((await run(handler, { ...options, headers: { ...headers, "x-polymath-account": "wrong" } })).statusCode, 412);
+  const response = await run(handler, { ...options, headers });
+  assert.deepEqual(response.body.user, { id, email: user.email, name: "Ana Maria" });
+});
+
+test("password update and self-deletion require the current password and bind a fresh session to the current account", async () => {
+  const calls = [];
+  const handler = createAccountHandler({ env, fetcher: async (url, options) => {
+    calls.push([url, options.method]);
+    if (url.endsWith("/user") && options.method === "GET") return result(user);
+    const body = JSON.parse(options.body);
+    if (url.includes("grant_type=password")) {
+      assert.equal(body.email, user.email);
+      return body.password === "old-password" ? result(session) : result({}, 401);
+    }
+    assert.equal(options.headers.Authorization, "Bearer private-access-token");
+    if (url.endsWith("/user")) {
+      assert.deepEqual(body, { password: "new-password", current_password: "old-password" });
+      return result(user);
+    }
+    assert.match(url, /polymath_delete_own_account$/);
+    assert.deepEqual(body, {});
+    return result(true);
+  } });
+  const headers = { cookie: "__Host-pm_access=old", "x-polymath-account": id };
+  const post = (action, body) => run(handler, { method: "POST", url: "/api/account?action=" + action, body, headers });
+  assert.equal((await post("delete", { currentPassword: "old-password" })).statusCode, 400);
+  assert.equal((await post("password", { currentPassword: "wrong", password: "new-password" })).statusCode, 401);
+  assert.equal(calls.some(([, method]) => method === "PUT"), false);
+  const changed = await post("password", { currentPassword: "old-password", password: "new-password" });
+  assert.equal(changed.statusCode, 200);
+  assert.match(changed.headers["set-cookie"][0], /private-access-token/);
+  const removed = await post("delete", { currentPassword: "old-password", confirmation: "ȘTERGE", userId: "other" });
+  assert.deepEqual(removed.body, { user: null });
+  assert.match(removed.headers["set-cookie"][0], /Max-Age=0/);
+});
+
+test("reset writes an empty newer revision so stale progress cannot overwrite it", async () => {
+  const handler = createProgressHandler({ env, fetcher: async (url, options) => {
+    if (url.endsWith("/user")) return result(user);
+    if (options.method === "GET") {
+      assert.match(url, /select=revision$/);
+      return result([{ revision: 7 }]);
+    }
+    assert.match(url, /revision=eq\.7$/);
+    assert.equal(options.method, "PATCH");
+    const body = JSON.parse(options.body);
+    assert.equal(body.user_id, id);
+    assert.equal(body.revision, 8);
+    assert.deepEqual(body.course.completedLessons, []);
+    assert.deepEqual(body.vocabulary, { saved: [], learned: [], cache: [] });
+    return result([{ revision: 8 }]);
+  } });
+  const headers = { cookie: "__Host-pm_access=old", "x-polymath-account": id };
+  const options = { method: "POST", url: "/api/progress?action=reset", headers };
+  assert.equal((await run(handler, { ...options, body: {} })).statusCode, 400);
+  assert.equal((await run(handler, { ...options, body: { confirmation: "RESETEAZĂ" } })).body.revision, 8);
+});
+
+test("administrator grant is scoped to the verified session and requires database authorization", async () => {
+  const target = "22222222-2222-4222-8222-222222222222";
+  let allowed = false;
+  const handler = createAdminAccountsHandler({ env, fetcher: async (url, options) => {
+    if (url.endsWith("/user")) return result(user);
+    assert.match(url, /polymath_grant_administrator$/);
+    assert.equal(options.headers.Authorization, "Bearer access");
+    assert.deepEqual(JSON.parse(options.body), { p_user_id: target });
+    return result(allowed);
+  } });
+  const headers = { cookie: "__Host-pm_access=access", "x-polymath-account": id };
+  const options = { method: "POST", url: "/api/admin-accounts?action=grant", body: { userId: target }, headers };
+  assert.equal((await run(handler, { ...options, headers: { ...headers, origin: "https://other.example" } })).statusCode, 403);
+  assert.equal((await run(handler, options)).statusCode, 403);
+  allowed = true;
+  assert.deepEqual((await run(handler, options)).body, { granted: true });
+});

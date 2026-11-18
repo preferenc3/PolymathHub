@@ -1,5 +1,59 @@
 import { ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, publicUser, credentials, setSession, fail, checkExpectedAccount } from "../server/auth.mjs";
 
+const settingsActions = ["profile", "password", "delete"];
+
+async function settings(req, res, action, body, call) {
+  const session = await sessionFor(req, res, call);
+  if (!session?.user?.id) throw new ApiError(401, "Conectează-te pentru a modifica setările.");
+  if (!req.headers["x-polymath-account"]) throw new ApiError(412, "Reîncarcă setările contului și încearcă din nou.");
+  checkExpectedAccount(req, session.user);
+
+  if (action === "profile") {
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    if (!name || name.length > 60 || /[\u0000-\u001f\u007f]/.test(name)) {
+      throw new ApiError(400, "Introdu un nume între 1 și 60 de caractere.");
+    }
+    const user = await call("/auth/v1/user", { method: "PUT", token: session.token, body: { data: { display_name: name } } });
+    if (user.id !== session.user.id) throw new ApiError(503, "Numele nu a putut fi actualizat.");
+    return send(res, 200, { user: publicUser(user) });
+  }
+
+  const { currentPassword } = body;
+  if (typeof currentPassword !== "string" || !currentPassword || currentPassword.length > 128) {
+    throw new ApiError(400, "Introdu parola actuală.");
+  }
+  if (action === "delete" && body.confirmation !== "ȘTERGE") {
+    throw new ApiError(400, "Scrie ȘTERGE pentru a confirma.");
+  }
+  const password = action === "password" ? credentials({ email: session.user.email, password: body.password }).password : null;
+  if (password === currentPassword) throw new ApiError(400, "Alege o parolă diferită de cea actuală.");
+
+  let fresh;
+  try {
+    fresh = await call("/auth/v1/token?grant_type=password", {
+      method: "POST", body: { email: session.user.email, password: currentPassword }
+    });
+  } catch (error) {
+    if (error.status === 401) throw new ApiError(401, "Parola actuală este incorectă.");
+    throw error;
+  }
+  if (fresh.user?.id !== session.user.id || !fresh.access_token || !fresh.refresh_token) {
+    throw new ApiError(401, "Nu am putut confirma contul activ.");
+  }
+  if (action === "delete") {
+    const deleted = await call("/rest/v1/rpc/polymath_delete_own_account", { method: "POST", token: fresh.access_token, body: {} });
+    if (deleted !== true) throw new ApiError(409, "Ștergerea nu a fost confirmată. Încearcă din nou.");
+    setSession(req, res, null);
+    return send(res, 200, { user: null });
+  }
+  const user = await call("/auth/v1/user", {
+    method: "PUT", token: fresh.access_token, body: { password, current_password: currentPassword }
+  });
+  if (user.id !== session.user.id) throw new ApiError(503, "Parola nu a putut fi actualizată.");
+  setSession(req, res, fresh);
+  return send(res, 200, { user: publicUser(user) });
+}
+
 export function createAccountHandler({ env = process.env, fetcher = fetch } = {}) {
   return async function handler(req, res) {
     try {
@@ -12,7 +66,7 @@ export function createAccountHandler({ env = process.env, fetcher = fetch } = {}
         const session = await sessionFor(req, res, call);
         return send(res, 200, { user: session ? publicUser(session.user) : null });
       }
-      if (req.method !== "POST" || !["login", "register", "logout"].includes(action)) { res.setHeader("Allow", "GET, POST"); throw new ApiError(405, "Metodă indisponibilă."); }
+      if (req.method !== "POST" || !["login", "register", "logout", ...settingsActions].includes(action)) { res.setHeader("Allow", "GET, POST"); throw new ApiError(405, "Metodă indisponibilă."); }
       if (!sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
       if (action === "logout") {
         const session = await sessionFor(req, res, call);
@@ -21,6 +75,7 @@ export function createAccountHandler({ env = process.env, fetcher = fetch } = {}
         setSession(req, res, null); return send(res, 200, { user: null });
       }
       const body = await readJson(req, 4096);
+      if (settingsActions.includes(action)) return await settings(req, res, action, body, call);
       const input = credentials(body);
       let session;
       if (action === "register") {

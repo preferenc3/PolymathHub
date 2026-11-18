@@ -34,8 +34,9 @@ export function validateProgress(body) {
 export function createProgressHandler({ env = process.env, fetcher = fetch } = {}) {
   return async function handler(req, res) {
     try {
-      if (!["GET", "PUT"].includes(req.method)) { res.setHeader("Allow", "GET, PUT"); throw new ApiError(405, "Metodă indisponibilă."); }
-      if (req.method === "PUT" && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
+      const reset = req.method === "POST" && new URL(req.url, "http://localhost").searchParams.get("action") === "reset";
+      if (!["GET", "PUT"].includes(req.method) && !reset) { res.setHeader("Allow", "GET, PUT, POST"); throw new ApiError(405, "Metodă indisponibilă."); }
+      if (req.method !== "GET" && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
       const config = configuration(env); if (!config) throw new ApiError(503, "Sincronizarea contului nu este activată momentan.");
       const call = provider(config, fetcher); const session = await sessionFor(req, res, call);
       if (!session) throw new ApiError(401, "Conectează-te pentru a accesa progresul contului.");
@@ -47,7 +48,16 @@ export function createProgressHandler({ env = process.env, fetcher = fetch } = {
         const rows = await call(`${base}?user_id=eq.${userId}&select=course,vocabulary,revision,updated_at`, { token: session.token });
         return send(res, 200, { progress: rows[0] || null });
       }
-      const progress = validateProgress(await readJson(req));
+      const body = await readJson(req);
+      let input = body;
+      if (reset) {
+        if (!req.headers["x-polymath-account"]) throw new ApiError(412, "Reîncarcă setările contului și încearcă din nou.");
+        if (body.confirmation !== "RESETEAZĂ") throw new ApiError(400, "Scrie RESETEAZĂ pentru a confirma.");
+        const rows = await call(`${base}?user_id=eq.${userId}&select=revision`, { token: session.token });
+        // Keep a revision even for empty progress so another browser cannot replay its old snapshot.
+        input = { revision: rows[0]?.revision ?? null, course: {}, vocabulary: {} };
+      }
+      const progress = validateProgress(input);
       const revision = progress.revision;
       const data = { user_id: userId, course: progress.course, vocabulary: progress.vocabulary, revision: revision === null ? 0 : revision + 1, updated_at: new Date().toISOString() };
       const rows = await call(revision === null ? `${base}?on_conflict=user_id` : `${base}?user_id=eq.${userId}&revision=eq.${revision}`, { token: session.token, method: revision === null ? "POST" : "PATCH", body: data, headers: { Prefer: revision === null ? "resolution=ignore-duplicates,return=representation" : "return=representation" } });
