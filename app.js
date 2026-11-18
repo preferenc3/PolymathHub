@@ -255,6 +255,51 @@
     return html;
   }
 
+  function renderSqlExample(pre) {
+    const code = pre.querySelector("code");
+    if (!code) return;
+    const original = code.textContent;
+    const lines = original.trimEnd().split("\n");
+    const outputStart = lines.findIndex(line => /^\s*--\s*(output|rezultat(?:ul)?):\s*$/i.test(line));
+    const cells = line => line.trim().replace(/^--\s*/, "").match(/^\|(.*)\|$/)?.[1].split("|").map(cell => cell.trim());
+    const rows = outputStart < 0 ? [] : lines.slice(outputStart + 1).filter(line => line.trim()).map(cells);
+    const hasTable = rows.length > 1 && rows[0]?.length > 1 && rows.every(row => row?.length === rows[0].length);
+    const figure = document.createElement("figure");
+    figure.className = "sql-read-example";
+    const label = document.createElement("figcaption");
+    label.textContent = "Exemplu SQL";
+    pre.before(figure);
+    figure.append(label, pre);
+    code.textContent = hasTable ? lines.slice(0, outputStart).join("\n").trimEnd() : original;
+    if (!hasTable) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "sql-example-table";
+    wrapper.tabIndex = 0;
+    wrapper.setAttribute("aria-label", "Rezultatul exemplului SQL");
+    const table = document.createElement("table");
+    table.createCaption().textContent = "Rezultatul interogării";
+    const header = table.createTHead().insertRow();
+    for (const column of rows[0]) {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = column;
+      header.append(cell);
+    }
+    const body = table.createTBody();
+    for (const row of rows.slice(1)) {
+      if (row.every(value => /^:?-{2,}:?$/.test(value))) continue;
+      const tr = body.insertRow();
+      row.forEach(value => {
+        const cell = tr.insertCell();
+        cell.textContent = value;
+        if (/^[+-]?\d+(?:[.,]\d+)?$/.test(value)) cell.className = "sql-number";
+      });
+    }
+    wrapper.append(table);
+    figure.append(wrapper);
+  }
+
   function formatTheoryContent(theory, lesson) {
     if (!theory && !lesson) return "";
     let html = parseMarkdownToHtml(theory || "");
@@ -570,7 +615,6 @@
     // Header & Navigație Top SPA
     brandHomeBtn: document.getElementById("brand-home-btn"),
     navCatalogBtn: document.getElementById("nav-catalog-btn"),
-    navStudyBtn: document.getElementById("nav-study-btn"),
     navLabBtn: document.getElementById("nav-lab-btn"),
     navActivityBtn: document.getElementById("nav-activity-btn"),
     navLeaguesBtn: document.getElementById("nav-leagues-btn"),
@@ -593,7 +637,6 @@
     dailyProgressLabel: document.getElementById("daily-progress-label"),
     goalTooltipTitle: document.getElementById("goal-tooltip-title"),
     goalTooltipText: document.getElementById("goal-tooltip-text"),
-    themeSelector: document.getElementById("theme-selector"),
 
     // View 1: Catalog
     catalogView: document.getElementById("catalog-view"),
@@ -709,10 +752,14 @@
     confettiCanvas: document.getElementById("confetti-canvas")
   };
 
+  function preferredTheme() {
+    try { return localStorage.getItem("polymath_appearance") || state.theme; }
+    catch { return state.theme; }
+  }
+
   function applyTheme(themeName) {
     const validTheme = themeName || "emerald-forest";
     document.documentElement.setAttribute("data-theme", validTheme);
-    if (els.themeSelector) els.themeSelector.value = validTheme;
     state.theme = validTheme;
     saveState();
   }
@@ -1270,7 +1317,9 @@
     updateBookmarkUI();
 
     els.lessonTitle.textContent = formatRomanianTypography(lesson.title);
+    const isSql = lesson.track === "SQL";
     els.lessonTheory.innerHTML = formatTheoryContent(lesson.theory, lesson);
+    if (isSql) els.lessonTheory.querySelectorAll("pre").forEach(renderSqlExample);
 
     // Dicționar & Tabel de Concepte / Vocabular
     const glossaryItems = lesson.glossary || getMatchingPairsForLesson(lesson).map(p => ({ term: p.left, def: p.right }));
@@ -1288,14 +1337,18 @@
       els.lessonDictionary.appendChild(div);
     });
 
+    const examplePre = els.lessonExample.closest("pre");
+    const previousExample = examplePre.closest(".sql-read-example");
+    if (previousExample) previousExample.replaceWith(examplePre);
     els.lessonExample.textContent = lesson.example || lesson.starterCode || "";
+    if (isSql) renderSqlExample(examplePre);
     els.lessonXpTag.textContent = `+${lesson.xp || 30} XP`;
     els.lessonPrompt.textContent = formatRomanianTypography(lesson.prompt || lesson.task || "");
 
     // Resetare casetă scriere
     els.inputZone.classList.remove("state-error", "state-success");
     const starter = lesson.starterCode || "";
-    els.userAnswerInput.value = isWrittenAnswerCorrect(lesson, starter) ? "" : starter;
+    els.userAnswerInput.value = isSql || isWrittenAnswerCorrect(lesson, starter) ? "" : starter;
     document.getElementById("sql-lab-note").hidden = lesson.id !== "sql-1";
     document.getElementById("sql-lab-result").replaceChildren();
     els.validationFeedback.textContent = "Citește cerința evidențiată mai sus și tastează răspunsul.";
@@ -2730,14 +2783,12 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
     }
 
     // Comutator Teme Header
-    if (els.themeSelector) {
-      els.themeSelector.addEventListener("change", e => applyTheme(e.target.value));
-    }
+
 
   }
 
   function renderAll() {
-    applyTheme(state.theme);
+    applyTheme(preferredTheme());
     renderStats();
     const route = readRoute();
     switchView(route.view, { params: route.params, history: "replace" });
@@ -2747,11 +2798,12 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
     navigate: (view, params = {}) => switchView(view, { params }),
     snapshot: () => ({ state, lessons: allLessons, tracks: getTracks() }),
     toast: showToast,
+    setTheme: applyTheme,
     replaceProgress: (course, accountId) => {
       STORAGE_KEY = "polymath_edtech_state_v2" + (accountId ? ":" + accountId : "");
       state = { ...structuredClone(defaultState), ...(course || {}), user: structuredClone(defaultState.user) };
       if (!allLessons.some(lesson => lesson.id === state.activeLessonId)) state.activeLessonId = allLessons[0]?.id;
-      applyTheme(state.theme);
+      applyTheme(preferredTheme());
       const route = readRoute(); switchView(route.view, { params: route.params, history: "replace" });
     },
     guestProgress: () => { try { return JSON.parse(localStorage.getItem("polymath_edtech_state_v2") || "null"); } catch { return null; } },

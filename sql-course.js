@@ -47,6 +47,7 @@
   }
   window.PolymathApp = {
     snapshot:()=>({state:snapshot()}),
+    setTheme(theme) { state.previous = {...state.previous, theme}; persist(); },
     replaceProgress(raw, user) {
       generation++; owner = user; state = cleanWorkspace(raw, user); drafts.clear(); languageDraft = null;
       try { localStorage.setItem(key(owner), JSON.stringify(snapshot())); } catch {}

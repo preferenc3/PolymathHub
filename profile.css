@@ -1,0 +1,88 @@
+/* Shared profile controls and appearance palette for home and the library. */
+html[data-theme="daylight-clean"] {
+  --bg-primary: #f5f2e8; --bg-secondary: #fdfcf7; --bg-reader: #fdfcf7;
+  --bg-elevated: #eee8db; --text-primary: #242820; --text-secondary: #62695d;
+  --accent-primary: #286c63; --accent-hover: #1b514a; --accent-soft: #e3ece5; --border-color: #dcd9cc;
+}
+html[data-theme="emerald-forest"] { --page: #edf4ee; --paper: #fcfdfa; --ink: #1d322a; --muted: #52665a; --line: #c6d9cc; --teal: #226347; --teal-dark: #194731; --teal-soft: #dcebe1; --sand: #e4eee7; }
+html[data-theme="ocean-deep"] { --page: #edf3f9; --paper: #fcfdff; --ink: #1e2d43; --muted: #52647a; --line: #c9d7e6; --teal: #265f92; --teal-dark: #204970; --teal-soft: #dfebf6; --sand: #e4edf6; }
+html[data-theme="cyber-dark"] { color-scheme: dark; --page: #191c25; --paper: #222632; --ink: #f2f0eb; --muted: #bfc4cf; --line: #434958; --teal: #a4d3c1; --teal-dark: #8ebfae; --teal-soft: #2d413e; --sand: #303541; }
+html[data-theme="sepia-book"] { --page: #f4ead7; --paper: #fef8ed; --ink: #38281e; --muted: #6f5948; --line: #dbc7a6; --teal: #765536; --teal-dark: #5d3d26; --teal-soft: #efe0c6; --sand: #efe2cb; }
+html[data-theme="neon-amethyst"] { --page: #f3edf8; --paper: #fdfaff; --ink: #31243d; --muted: #665773; --line: #d8cbe4; --teal: #68458c; --teal-dark: #4e326e; --teal-soft: #eae0f2; --sand: #eee4f5; }
+html[data-theme="sunset-amber"] { --page: #fcf1df; --paper: #fffaf0; --ink: #3f2d1e; --muted: #755e47; --line: #e8d2ad; --teal: #83531f; --teal-dark: #693d13; --teal-soft: #f4e5cb; --sand: #f6e8ce; }
+html[data-theme="ruby-clay"] { --page: #fbefea; --paper: #fffaf7; --ink: #422822; --muted: #72544d; --line: #e3cac1; --teal: #944635; --teal-dark: #72382c; --teal-soft: #f2dfd7; --sand: #f3e2db; }
+html[data-theme="emerald-forest"], html[data-theme="ocean-deep"], html[data-theme="cyber-dark"] { color-scheme: dark; --page: #191c25; --paper: #222632; --ink: #f2f0eb; --muted: #bfc4cf; --line: #434958; --teal: #a4d3c1; --teal-dark: #8ebfae; --teal-soft: #2d413e; --sand: #303541; }
+html[data-theme="sepia-book"] { --page: #f4ead7; --paper: #fef8ed; --ink: #38281e; --muted: #6f5948; --line: #dbc7a6; --teal: #765536; --teal-dark: #5d3d26; --teal-soft: #efe0c6; --sand: #efe2cb; }
+html[data-theme="neon-amethyst"] { --page: #f3edf8; --paper: #fdfaff; --ink: #31243d; --muted: #665773; --line: #d8cbe4; --teal: #68458c; --teal-dark: #4e326e; --teal-soft: #eae0f2; --sand: #eee4f5; }
+html[data-theme="sunset-amber"] { --page: #fcf1df; --paper: #fffaf0; --ink: #3f2d1e; --muted: #755e47; --line: #e8d2ad; --teal: #83531f; --teal-dark: #693d13; --teal-soft: #f4e5cb; --sand: #f6e8ce; }
+html[data-theme="ruby-clay"] {
+  --bg-primary: var(--page); --bg-secondary: var(--paper); --bg-reader: var(--paper); --bg-elevated: var(--sand);
+  --text-primary: var(--ink); --text-secondary: var(--muted); --accent-primary: var(--teal); --accent-hover: var(--teal-dark);
+  --accent-soft: var(--teal-soft); --border-color: var(--line);
+  --code-bg: var(--teal-soft); --code-text: var(--teal-dark); --code-border: var(--line);
+  --code-pre-bg: var(--sand); --code-pre-text: var(--ink);
+  --success-green: #28633b; --success-bg: #e3f2e5; --error-red: #a13e35; --error-bg: #fbe7e4;
+  --shadow-card: 0 3px 12px #24282016;
+}
+html[data-theme="cyber-dark"] { --success-green: #8ed4a3; --error-red: #ffaca3; }
+html[data-theme="cyber-dark"] .learning-app :is(.resume-entry, .home-recall, .explore-destination, .explore-drawer, .app-header) { background: var(--paper); color: var(--ink); border-color: var(--line); }
+#account-dialog { width: min(94vw, 540px); }
+#account-dialog .settings-identity { align-items: center; }
+#account-dialog .settings-identity strong, #account-dialog .settings-identity div span { display: block; overflow-wrap: anywhere; }
+#account-dialog .settings-group { border-top: 1px solid var(--border-color); }
+#account-dialog .settings-group summary { min-height: 44px; padding: .7rem 0; cursor: pointer; font-size: .95rem; font-weight: 700; }
+#account-dialog fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+#account-dialog legend { font-size: .85rem; font-weight: 700; padding: 0; margin-bottom: .45rem; }
+#account-dialog .avatar-picker { display: block; }
+#account-dialog .avatar-category { display: grid; gap: .35rem; cursor: default; }
+#account-dialog .avatar-category select { min-height: 44px; width: 100%; border: 1px solid var(--border-color); border-radius: .5rem; background: var(--bg-secondary); color: var(--text-primary); font: inherit; padding: .5rem; }
+#account-dialog .avatar-grid, #account-dialog .appearance-picker { display: grid; gap: .5rem; margin-block: .65rem; }
+#account-dialog .avatar-grid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); }
+#account-dialog .avatar-grid[hidden] { display: none; }
+#account-dialog .avatar-grid label { position: relative; }
+#account-dialog .avatar-grid input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; opacity: 0; margin: 0; cursor: pointer; }
+#account-dialog .avatar-grid .avatar-mark { display: grid; place-items: center; width: 100%; min-height: 48px; height: auto; font-size: 1.45rem; border: 1px solid var(--border-color); border-radius: .65rem; background: var(--bg-elevated); }
+#account-dialog .avatar-grid input:checked + .avatar-mark { border: 2px solid var(--accent-primary); background: var(--accent-soft); }
+#account-dialog .avatar-grid input:focus-visible + .avatar-mark { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.avatar-mark.avatar-mono { filter: grayscale(1); }
+.avatar-mark.avatar-duo { filter: grayscale(1) sepia(1) hue-rotate(143deg) saturate(3); }
+#account-dialog .appearance-picker { grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); }
+#account-dialog .appearance-picker label { min-height: 44px; padding: .45rem; display: flex; align-items: center; gap: .42rem; border: 1px solid var(--border-color); border-radius: .5rem; cursor: pointer; font-size: .88rem; }
+#account-dialog .appearance-picker label:has(:checked) { background: var(--accent-soft); border-color: var(--accent-primary); }
+#account-dialog .appearance-picker input { accent-color: var(--accent-primary); }
+.theme-swatch { width: 1rem; height: 1rem; border-radius: 50%; background: #f1e6cc; border: 1px solid #887a6c; }
+.theme-swatch[data-palette="emerald-forest"] { background: #286444; }
+.theme-swatch[data-palette="ocean-deep"] { background: #2f6298; }
+.theme-swatch[data-palette="ruby-clay"] { background: #b4523e; }
+.theme-swatch[data-palette="cyber-dark"] { background: #25273b; }
+.theme-swatch[data-palette="sepia-book"] { background: #c39a62; }
+.theme-swatch[data-palette="neon-amethyst"] { background: #7d4dc8; }
+.theme-swatch[data-palette="sunset-amber"] { background: #e7933e; }
+#admin-dialog .admin-search label { font-size: 1rem; }
+#admin-search-input { width: 100%; min-height: 48px; padding: .65rem .8rem; font-size: 1rem; }
+#admin-dialog .admin-search button, #account-dialog button { min-height: 44px; }
+@media (max-width: 520px) {
+  #admin-dialog .admin-search > div { display: grid; }
+}
+
+#account-dialog .settings-identity { display: flex; gap: .8rem; margin: .75rem 0 1rem; }
+#account-dialog .settings-avatar {
+  display: grid; place-items: center; flex: 0 0 50px; width: 50px; height: 50px;
+  border-radius: 50%; background: var(--accent-soft); color: var(--accent-hover); font-size: 1.25rem; font-weight: 700;
+}
+#account-dialog .settings-identity div { min-width: 0; }
+#account-dialog .settings-identity div span { color: var(--text-secondary); font-size: .875rem; }
+#account-dialog .settings-admin-entry {
+  display: inline-flex; align-items: center; gap: .6rem; margin-bottom: 1rem; padding: .55rem .8rem;
+  color: var(--text-primary); background: var(--accent-soft); border: 1px solid var(--border-color);
+  border-radius: .6rem; font-weight: 650;
+}
+#account-dialog .settings-admin-entry:hover { border-color: var(--accent-primary); }
+#account-dialog .settings-admin-entry img { width: 18px; height: 18px; flex: none; }
+#account-dialog .dialog-close, #admin-dialog .dialog-close { min-width: 44px; min-height: 44px; }
+#admin-dialog .admin-views { display: flex; flex-wrap: wrap; gap: .5rem; margin: .8rem 0 1.15rem; }
+#admin-dialog .admin-views button {
+  min-height: 44px; padding: .55rem .8rem; border: 1px solid var(--border-color); border-radius: .6rem;
+  color: var(--text-primary); background: var(--bg-secondary); font-weight: 650;
+}
+#admin-dialog .admin-views button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-primary); }
