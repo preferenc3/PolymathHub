@@ -1,0 +1,49 @@
+.university [hidden] { display: none !important; }
+.university .app-header nav { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.university .app-header nav a[aria-current] { color: var(--teal-dark); font-weight: 700; }
+.university-main { width: min(100% - 32px, 1000px); margin: 34px auto 48px; }
+.university-heading, .university-task, .lab-pagination {
+  display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px;
+}
+.university-heading h1 { margin: 0 0 16px; }
+.university-task { align-items: start; margin: 20px 0; }
+.university-task > div { flex: 1 1 360px; }
+.university-task h2, .university-task p { margin: 0 0 8px; }
+#exercise-prompt { white-space: pre-wrap; }
+.lab-controls { display: grid; grid-template-columns: 1fr 1.5fr; gap: 14px; }
+.lab-controls label, #table-browser label { display: block; min-width: 0; font-weight: 650; }
+.university select {
+  display: block; width: 100%; min-width: 0; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink);
+}
+.university-terminal { overflow: hidden; background: #1f2925; color: #edfaee; }
+.university-terminal .editor-caption { background: #2a3932; color: #edfaee; }
+.university-terminal .editor-caption label, .university-terminal .editor-caption small { color: #d0e5d5; }
+.terminal-input-line { display: flex; align-items: flex-start; gap: 12px; padding: 16px; }
+.terminal-input-line span, #terminal-input, #university-solution {
+  font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.terminal-input-line span { color: #abdfb4; }
+#terminal-input {
+  width: 100%; min-width: 0; min-height: 9rem; resize: vertical; padding: 0 0 3px 3px;
+  background: #1f2925; color: #edfaee; border: 0; border-radius: 2px;
+}
+#terminal-input::placeholder { color: #b1c2b8; }
+#university-solution { overflow: auto; padding: 16px; background: var(--paper); border: 1px solid var(--line); }
+.lab-pagination { margin-top: 24px; }
+.university .table-scroll { border: 1px solid var(--line); border-radius: 8px; margin: 8px 0; }
+.university .table-scroll:focus-visible { outline-offset: 2px; }
+.university .table-details { display: flex; gap: 12px; }
+.university .table-details span { min-width: 9em; align-self: center; }
+.university .table-details button { min-height: 36px; }
+.university #table-details h3 { margin: 20px 0 8px; }
+@media (max-width: 620px) {
+  .lab-controls { grid-template-columns: 1fr; }
+  .university-main { margin-top: 22px; }
+  .university-task { gap: 4px; }
+  .terminal-input-line { gap: 8px; padding: 12px; }
+}
+
+.lab-modes { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.lab-modes button[aria-pressed="true"] { color: #fff; background: var(--teal-dark); border-color: var(--teal-dark); }
+.university .table-details button { padding-inline: 12px; }

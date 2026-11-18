@@ -8,7 +8,7 @@ import adminAccounts from "../api/admin-accounts.mjs";
 import { readJson, send, fail } from "../server/auth.mjs";
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml" };
-const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress)\.(?:html|css|js)|language-practice\.js|assets\/icons\/[a-z-]+\.svg)$/;
+const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university)\.(?:html|css|js)|language-practice\.js|assets\/icons\/[a-z-]+\.svg)$/;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/api/account") return account(req, res);
@@ -20,9 +20,9 @@ const server = http.createServer(async (req, res) => {
       return send(res, 405, { error: "Trimite interogarea prin POST." });
     }
     try {
-      const body = req.method === "GET" ? "{}" : JSON.stringify(await readJson(req, 8192));
-      if (Buffer.byteLength(body) > 8192) return send(res, 413, { error: "Cererea este prea mare." });
-      const child = execFile("python3", [path.join(root, "api", "sql-lab.py"), ...(req.method === "GET" ? ["--catalog"] : [])], { timeout: 5000, maxBuffer: 65536 }, (error, stdout) => {
+      const body = req.method === "GET" ? "{}" : JSON.stringify(await readJson(req, 80000));
+      if (Buffer.byteLength(body) > 80000) return send(res, 413, { error: "Cererea este prea mare." });
+      const child = execFile("python3", [path.join(root, "api", "sql-lab.py"), ...(req.method === "GET" ? ["--catalog"] : [])], { timeout: 5000, maxBuffer: 2_000_000 }, (error, stdout) => {
         if (error) return send(res, 503, { error: "Laboratorul SQL nu este disponibil. Verifică instalarea Python 3." });
         try {
           const [status, payload] = req.method === "GET" ? [200, JSON.parse(stdout)] : JSON.parse(stdout);

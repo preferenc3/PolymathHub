@@ -10,7 +10,11 @@ from collections import Counter
 from contextlib import closing
 from http.server import BaseHTTPRequestHandler
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from server import university_sql
+
 MAX_BODY = 8192
+MAX_UNIVERSITY_BODY = 80000
 MAX_QUERY = 2000
 DEMO = [(1, 0), (2, 1), (3, 42), (4, 100), (5, 101)]
 CHECK = [(11, None), (12, -1), (13, 2), (14, 99), (15, 150)]
@@ -194,12 +198,18 @@ def evaluate_course(payload):
 
 
 def evaluate(body):
-    if len(body) > MAX_BODY:
+    if len(body) > MAX_UNIVERSITY_BODY:
         return 413, {"error": "Cererea este prea mare."}
     try:
         payload = json.loads(body)
     except (ValueError, UnicodeError, RecursionError):
+        if len(body) > MAX_BODY:
+            return 413, {"error": "Cererea este prea mare."}
         return 400, {"error": "Cererea trebuie să conțină JSON valid."}
+    if isinstance(payload, dict) and "university" in payload:
+        return university_sql.handle(payload)
+    if len(body) > MAX_BODY:
+        return 413, {"error": "Cererea este prea mare."}
     if isinstance(payload, dict) and "exerciseId" in payload:
         return evaluate_course(payload)
     query = payload.get("query") if isinstance(payload, dict) else None
@@ -244,11 +254,11 @@ class handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
             length = 0
-        if not 0 < length <= MAX_BODY:
+        if not 0 < length <= MAX_UNIVERSITY_BODY:
             self.reply(413 if length > MAX_BODY else 400, {"error": "Dimensiunea cererii nu este validă."})
             return
         self.reply(*evaluate(self.rfile.read(length)))
 
 
 if __name__ == "__main__":
-    print(json.dumps(public_course() if "--catalog" in sys.argv else evaluate(sys.stdin.buffer.read(MAX_BODY + 1))))
+    print(json.dumps(public_course() if "--catalog" in sys.argv else evaluate(sys.stdin.buffer.read(MAX_UNIVERSITY_BODY + 1))))

@@ -95,6 +95,12 @@
     let destination = french ? frLink(state.stage) : sqlLink(current.id, nextLesson ? 'teorie' : state.stage, state.sql.records[current.id]?.variant || 0);
     let action = started ? (nextLesson && !french ? 'Următorul pas' : 'Continuă') : 'Începe cu teoria';
     let note = french ? 'Înțelege dialogul, apoi completează cele trei replici.' : 'O explicație, un exemplu și două exerciții pentru fiecare idee.';
+    const firstLab = !french && !started;
+    if (firstLab) {
+      destination = '/sql-university.html';
+      action = 'Deschide terminalul';
+      note = 'Alege un exercițiu și consultă tabelele înainte de a scrie răspunsul.';
+    }
     if (finished) {
       if (totals().toReview) { destination = '#greseli'; action = 'Repetă greșelile'; note = 'Ai încheiat activitatea. Revino la răspunsurile care mai au nevoie de atenție.'; }
       else if (french && sql.completed < sql.total) { destination = sqlLink(current.id, 'teorie'); action = 'Continuă cu SQL'; note = 'Lecția de franceză este încheiată. Următorul pas: traseul SQL.'; }
@@ -102,12 +108,12 @@
       else { destination = french ? frLink('exemple') : sqlLink('p1','practica',1); action = french ? 'Repetă conversația' : 'Reia pe alte date'; note = 'Ai încheiat traseul. Repetarea consolidează ce ai învățat, fără XP suplimentar.'; }
     }
     return `<div class="home"><p class="home-greeting"><strong id="user-greeting"></strong></p>
-      ${!started?'<p class="home-intro">Un loc pentru idei pe care le înțelegi și le pui în practică. Alege SQL sau franceză; începe cu o lecție scurtă, în ritmul tău.</p>':''}
-      <section aria-labelledby="resume-title"><h2 id="resume-title" class="section-label">${started?'Următorul tău pas':'Prima ta lecție'}</h2>
-      <div class="resume-entry"><span class="resume-icon">${icon(french?'translate':'code')}</span><div class="resume-copy"><div class="meta">${french?'Franceză · Conversație':'SQL · Lecția '+(course.lessons.indexOf(lesson)+1 || 'finală')}</div><h1>${esc(french?'Au marché — La piață':lesson.title)}</h1><div class="progress-track" role="progressbar" aria-label="Progresul cursului" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress*100)}"><span style="width:${Math.round(progress*100)}%"></span></div><small>${french?fr.correct+'/3 răspunsuri corecte':sql.completed+'/15 exerciții rezolvate'}</small></div><a class="primary" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></div><p class="resume-note">${note}</p></section>
+      ${!started?'<p class="home-intro">Un loc pentru idei pe care le înțelegi și le pui în practică. Alege laboratoarele SQL sau începe o lecție de franceză.</p>':''}
+      <section aria-labelledby="resume-title"><h2 id="resume-title" class="section-label">${started?'Următorul tău pas':'Începe aici'}</h2>
+      <div class="resume-entry"><span class="resume-icon">${icon(french?'translate':'code')}</span><div class="resume-copy"><div class="meta">${firstLab?'SQL · SQLite':french?'Franceză · Conversație':'SQL · Lecția '+(course.lessons.indexOf(lesson)+1 || 'finală')}</div><h1>${esc(firstLab?'Laboratoarele 4 și 5':french?'Au marché — La piață':lesson.title)}</h1>${firstLab?'':`<div class="progress-track" role="progressbar" aria-label="Progresul cursului" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress*100)}"><span style="width:${Math.round(progress*100)}%"></span></div><small>${french?fr.correct+'/3 răspunsuri corecte':sql.completed+'/15 exerciții rezolvate'}</small>`}</div><a class="primary" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></div><p class="resume-note">${note}</p></section>
       <section class="explore-section" aria-labelledby="explore-title"><h2 id="explore-title" class="section-label">Explorează</h2><div class="domain-doors">
-      <a class="domain-door" href="#cursuri?domeniu=programare">${icon('code','domain-symbol')}<span class="section-label">De la prima linie de cod</span><h2>Programare</h2><p>SQL, de la prima interogare la un proiect al tău.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
-      <a class="domain-door language" href="#cursuri?domeniu=limbi">${icon('translate','domain-symbol')}<span class="section-label">Cu româna ca punct de pornire</span><h2>Limbi străine</h2><p>Franceză în context. Ascultă, înțelege și răspunde.</p><span class="door-arrow">${icon('arrow-right')}</span></a></div></section>
+      <a class="domain-door" href="/sql-university.html">${icon('code','domain-symbol')}<h2>SQL</h2><p>Laboratoarele 4 și 5 · terminal, tabele și verificare.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
+      <a class="domain-door language" href="#cursuri?domeniu=limbi">${icon('translate','domain-symbol')}<h2>Limbi străine</h2><p>Franceză în context. Ascultă, înțelege și răspunde.</p><span class="door-arrow">${icon('arrow-right')}</span></a></div></section>
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
       ${saveNote()}</div>`;
   }
@@ -117,9 +123,9 @@
     return `<a class="course-row" href="${sqlLink(ex,'teorie')}"><span class="row-number">${String(index+1).padStart(2,'0')}</span><span class="row-copy"><h3>${esc(lesson.title)}</h3><p>${esc(lesson.description)}</p></span><span class="row-status">${done}/2 rezolvate</span>${icon('arrow-right')}</a>`;
   }
   function catalog(domain) {
-    const showSQL = domain !== 'limbi', showFR = domain !== 'programare';
+    const showSQL = domain !== 'limbi', showFR = !['programare', 'sql'].includes(domain);
     return `<div class="catalog"><p class="section-label">Alege următorul pas</p><h1>Cursurile tale</h1><p class="page-intro">Începe cu o idee, înțelege-o și pune-o în practică. Poți reveni oricând.</p>
-      ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>SQL de la zero</h2></div>${course.lessons.map(courseRow).join('')}<div class="project-intro"><h2>Un magazin. Trei rapoarte.</h2><p class="page-intro">Proiectul final leagă filtrarea, relațiile dintre tabele și totalurile.</p><a class="secondary" href="#proiect">Deschide proiectul · ${P.summary(state.sql).projectDone}/3 ${icon('arrow-right','icon-small')}</a></div></section>`:''}
+      ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>SQL</h2></div><a class="course-row" href="/sql-university.html"><span class="row-copy"><h3>Laboratoarele 4 și 5</h3><p>Deschide tabelele și rezolvă exercițiile în terminalul SQLite.</p></span>${icon('arrow-right')}</a><h3>Bazele SQL</h3>${course.lessons.map(courseRow).join('')}<div class="project-intro"><h2>Un magazin. Trei rapoarte.</h2><p class="page-intro">Proiectul final leagă filtrarea, relațiile dintre tabele și totalurile.</p><a class="secondary" href="#proiect">Deschide proiectul · ${P.summary(state.sql).projectDone}/3 ${icon('arrow-right','icon-small')}</a></div></section>`:''}
       ${showFR?`<section><div class="catalog-heading">${icon('translate')}<h2>Franceză, în context</h2></div><a class="course-row" href="${frLink('teorie')}"><span class="row-number">01</span><span class="row-copy"><h3>Au marché — La piață</h3><p>O conversație, pronunție și trei propoziții de completat.</p></span><span class="row-status">${L.summary(state.french).correct}/3 corecte</span>${icon('arrow-right')}</a></section>`:''}${saveNote()}</div>`;
   }
   function project() {

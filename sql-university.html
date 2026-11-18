@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratoare SQL · PolymathHub</title>
+  <link rel="stylesheet" href="sql-course.css">
+  <link rel="stylesheet" href="sql-university.css">
+</head>
+<body class="learning-app university">
+  <a class="skip-link" href="#university-main">Sari la conținut</a>
+  <header class="app-header">
+    <a class="wordmark" href="/" aria-label="PolymathHub — Acasă">Polymath<span>Hub</span></a>
+    <nav aria-label="Domenii">
+      <a href="/sql-university.html" aria-current="page">SQL</a>
+      <a href="/#cursuri?domeniu=limbi">Alte domenii</a>
+    </nav>
+  </header>
+  <main class="university-main" id="university-main">
+    <div class="university-heading">
+      <h1>Laboratoare SQL</h1>
+      <a href="/#cursuri?domeniu=sql">Bazele SQL</a>
+    </div>
+    <nav class="lab-modes" aria-label="Mod de lucru">
+      <button class="secondary" id="mode-exercises" type="button" aria-pressed="true">Exerciții</button>
+      <button class="secondary" id="mode-console" type="button" aria-pressed="false">Consolă liberă</button>
+      <button class="secondary" id="mode-test" type="button" aria-pressed="false">Simulare test</button>
+    </nav>
+    <div class="lab-controls">
+      <label>Laborator
+        <select id="lab-select" disabled>
+          <option value="4">Lab 4 · Structură și modificări</option>
+          <option value="5">Lab 5 · Interogări</option>
+        </select>
+      </label>
+      <label>Exercițiu
+        <select id="exercise-select" disabled></select>
+      </label>
+    </div>
+    <p id="lab-status" role="status">Se încarcă exercițiile…</p>
+    <button id="retry-catalog" class="secondary" type="button" hidden>Reîncearcă</button>
+    <section id="exercise-workspace" hidden>
+      <section id="terminal-panel" aria-labelledby="exercise-title">
+        <header class="university-task">
+          <div><h2 id="exercise-title" tabindex="-1"></h2><p id="exercise-prompt"></p></div>
+          <button type="button" class="secondary" id="show-tables">Vezi tabelele</button>
+        </header>
+        <form id="terminal-form">
+          <div class="editor-frame university-terminal">
+            <div class="editor-caption"><label for="terminal-input">Terminal SQLite</label><small>Ctrl/⌘ + Enter</small></div>
+            <div class="terminal-input-line"><span aria-hidden="true">sqlite&gt;</span>
+              <textarea id="terminal-input" rows="8" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" maxlength="12000" placeholder="Scrie comanda SQL aici…"></textarea>
+            </div>
+          </div>
+          <div class="editor-actions">
+            <button class="secondary" id="run-command" type="submit">Rulează</button>
+            <button class="primary" id="check-answer" type="submit">Verifică răspunsul</button>
+            <button class="secondary" id="show-hint" type="button" aria-expanded="false" aria-controls="university-hint">Indiciu</button>
+            <button class="text-button" id="show-solution" type="button" aria-expanded="false" aria-controls="university-solution" hidden>Vezi soluția</button>
+            <button class="text-button" id="reset-terminal" type="button">Curăță terminalul</button>
+          </div>
+        </form>
+        <p id="university-hint" class="hint-content" hidden></p>
+        <p id="university-feedback" role="status" aria-live="polite"></p>
+        <pre id="university-solution" hidden></pre>
+        <section id="university-results" aria-label="Rezultate"></section>
+      </section>
+      <section id="university-tables" aria-labelledby="tables-title" hidden>
+        <header class="university-task">
+          <div><h2 id="tables-title">Tabele</h2><p id="tables-context"></p></div>
+          <button class="secondary" id="back-to-terminal" type="button">Înapoi la terminal</button>
+        </header>
+        <p id="tables-status" role="status"></p>
+        <div id="table-browser" hidden>
+          <label for="table-select">Tabel</label>
+          <select id="table-select"></select>
+          <div id="table-details"></div>
+        </div>
+      </section>
+      <nav class="lab-pagination" aria-label="Navigare între exerciții">
+        <button class="secondary" id="previous-exercise" type="button">← Anteriorul</button>
+        <button class="secondary" id="next-university-exercise" type="button">Următorul →</button>
+      </nav>
+    </section>
+  </main>
+  <script src="sql-university.js"></script>
+</body>
+</html>
