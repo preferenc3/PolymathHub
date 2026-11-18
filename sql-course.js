@@ -7,9 +7,10 @@
   const key = user => 'pm_learning_workspace_v1' + (user ? ':' + user : '');
   function stored(name) { try { return JSON.parse(localStorage.getItem(name) || 'null'); } catch { return null; } }
   function cleanWorkspace(raw, user = null) {
+    const sql = P.clean(raw?.sqlPractice), french = L.clean(raw?.languagePractice);
+    const priorXp = Math.max(0, (Number(raw?.xp) || 0) - P.summary(sql).xp - L.summary(french).xp);
     return {
-      sql: P.clean(raw?.sqlPractice),
-      french: L.clean(raw?.languagePractice),
+      previous: raw || {}, priorXp, sql, french,
       catalogMistake:raw?.catalogMistake || null,
       area: raw?.activeTrack === 'Franceză' ? 'fr' : 'sql',
       stage: ['teorie','exemple','practica'].includes(raw?.activeDualPane) ? raw.activeDualPane : 'teorie'
@@ -27,12 +28,12 @@
   window.PolymathSqlCourse = true;
   function totals() {
     const sql = P.summary(state.sql), fr = L.summary(state.french);
-    return {...sql, xp:sql.xp + fr.xp, toReview:sql.toReview + fr.toReview, resolved:sql.resolved + fr.resolved, french:fr};
+    return {...sql, xp:state.priorXp + sql.xp + fr.xp, toReview:sql.toReview + fr.toReview, resolved:sql.resolved + fr.resolved, french:fr};
   }
   function snapshot() {
-    return {sqlPractice:P.clean(state.sql), languagePractice:L.clean(state.french), catalogMistake:state.catalogMistake,
+    return {...state.previous, sqlPractice:P.clean(state.sql), languagePractice:L.clean(state.french), catalogMistake:state.catalogMistake,
       activeTrack:state.area === 'fr' ? 'Franceză' : 'SQL', activeDualPane:state.stage,
-      xp:totals().xp, completedLessons:[...(course?.lessons || []).filter(l=>l.exercises.every(id=>state.sql.records[id]?.passed)).map(l=>l.id),...(state.french.completed?['fr-market']:[])]};
+      xp:totals().xp, completedLessons:[...new Set([...(state.previous.completedLessons || []), ...(course?.lessons || []).filter(l=>l.exercises.every(id=>state.sql.records[id]?.passed)).map(l=>l.id),...(state.french.completed?['fr-market']:[])])]};
   }
   function toast(message) {
     $('sql-toast').textContent = message; $('sql-toast').hidden = false;
@@ -54,7 +55,11 @@
     guestProgress:()=>stored(key(null)) || {sqlPractice:P.clean(stored('pm_sql_practice_v1'))},
     accountProgress:user=>stored(key(user)) || {sqlPractice:P.clean(stored('pm_sql_practice_v1:'+user))}, toast
   };
-  window.PolymathStudio = {vocabularySnapshot:()=>({saved:[],learned:[],cache:[]}),replaceVocabulary:()=>{}};
+  let vocabulary = stored('polymath_vocabulary_v1') || {saved:[],learned:[],cache:[]};
+  window.PolymathStudio = {
+    vocabularySnapshot:()=>structuredClone(vocabulary),
+    replaceVocabulary:value=>{ vocabulary = value || {saved:[],learned:[],cache:[]}; }
+  };
   function accountNote() {
     const a = window.PolymathAccount;
     return a?.user ? (a.sync || 'Progresul se salvează în cont.') : 'Progres salvat în acest browser. Conectează-te pentru a continua și pe alt dispozitiv.';

@@ -55,8 +55,7 @@
     const control = $("account-control"); control.hidden = !account.configured;
     if (!account.configured) return;
     const label = account.user ? "Setări cont" : "Intră în cont";
-    control.innerHTML = `${account.admin ? '<button type="button" class="admin-entry" data-open-admin aria-haspopup="dialog" aria-label="Panou administrator" title="Panou administrator"><img src="assets/icons/list.svg" alt=""><span>Panou admin</span></button>' : ""}
-      <button type="button" class="account-button account-avatar" data-open-account aria-haspopup="dialog" aria-label="${label}" title="${label}">${account.user ? `<span aria-hidden="true">${text(avatarText(account.user))}</span>` : accountIcon}</button>`;
+    control.innerHTML = `<button type="button" class="account-button account-avatar" data-open-account aria-haspopup="dialog" aria-label="${label}" title="${label}">${account.user ? `<span aria-hidden="true">${text(avatarText(account.user))}</span>` : accountIcon}</button>`;
     if ($("account-sync")) $("account-sync").textContent = account.sync;
     window.dispatchEvent(new Event("polymath:account"));
   }
@@ -159,6 +158,7 @@
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide setările">×</button>
         <h2 id="auth-title" class="dialog-heading" tabindex="-1">Setările contului</h2>
         <div class="settings-identity"><span class="settings-avatar" aria-hidden="true">${text(avatarText(account.user))}</span><div><strong id="settings-account-name">${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div></div>
+        ${account.admin ? '<button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog"><img src="/assets/icons/list.svg" alt="">Panou administrator</button>' : ""}
         <details class="settings-group" name="account-section" open><summary>Profil și avatar</summary>
         <form class="auth-form settings-form" data-account-action="profile">
           ${avatarPicker(account.user)}
@@ -374,9 +374,10 @@
     select("[data-close-admin]").addEventListener("click", () => element.close());
     element.addEventListener("close", () => {
       element.remove();
-      $("account-control")?.querySelector("[data-open-admin]")?.focus();
+      const profile = $("account-dialog");
+      if (!account.admin) profile?.querySelector("[data-open-admin]")?.remove();
+      (profile?.querySelector("[data-open-admin]") || profile?.querySelector("#auth-title"))?.focus();
     });
-    $("account-dialog")?.close();
     document.body.appendChild(element);
     element.showModal();
     select("#admin-search-input").focus();
