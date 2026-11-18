@@ -308,7 +308,7 @@
           <th scope="row"><strong>${text(row.name)}</strong><span>${text(row.email || "—")}</span></th>
           <td>${text(formatAdminDate(row.created_at))}</td><td>${text(formatAdminDate(row.last_sign_in_at))}</td>
           <td>${text(row.xp)}</td><td>${text(window.PolymathSqlCourse ? row.sql_completed : row.lessons)}</td><td>${text(window.PolymathSqlCourse ? row.sql_review : row.saved_words)}</td>${window.PolymathSqlCourse ? `<td>${text(row.sql_project)}/3</td>` : ""}
-          <td>${row.is_admin ? '<span class="admin-role">Administrator</span>'
+          <td>${row.is_admin ? `<span class="admin-role">Administrator</span> <button type="button" class="studio-secondary" data-pick-admin="${text(row.id)}" data-role-action="revoke" aria-label="Retrage rolul de administrator pentru ${text(row.email || row.name)}">Retrage rolul</button>`
             : row.id ? `<button type="button" class="studio-secondary" data-pick-admin="${text(row.id)}" aria-label="Acordă rol de administrator pentru ${text(row.email || row.name)}">Acordă rol</button>` : "Utilizator"}</td>
         </tr>`).join("");
         table.hidden = data.accounts.length === 0;
@@ -332,8 +332,12 @@
     table.addEventListener("click", event => {
       const button = event.target.closest("[data-pick-admin]");
       if (!button || granting) return;
-      selected = { id: button.dataset.pickAdmin, label: button.closest("tr").querySelector("th span").textContent, button };
-      select("[data-admin-recipient]").textContent = `Acest cont va putea vedea progresul tuturor utilizatorilor și acorda roluri de administrator. Confirmi pentru ${selected.label}?`;
+      selected = { action: button.dataset.roleAction || "grant", id: button.dataset.pickAdmin, label: button.closest("tr").querySelector("th span").textContent, button };
+      const revoke = selected.action === "revoke";
+      grant.textContent = revoke ? "Confirmă retragerea" : "Confirmă acordarea";
+      select("[data-admin-recipient]").textContent = revoke
+        ? `Retragi rolul de administrator pentru ${selected.label}? Contul și progresul se păstrează.`
+        : `Acorzi rolul de administrator pentru ${selected.label}? Va putea gestiona utilizatori, roluri și conținut.`;
       confirmation.hidden = false;
       select("[data-admin-cancel]").focus();
     });
@@ -347,12 +351,17 @@
       grant.disabled = true;
       const target = selected;
       try {
-        await api("/api/admin-accounts?action=grant", {
+        await api("/api/admin-accounts?action=" + target.action, {
           method: "POST", headers: { "X-Polymath-Account": userId }, body: JSON.stringify({ userId: target.id })
         });
-        if (element.open) {
+        if (target.action === "revoke" && target.id === userId) {
+          account.admin = false;
+          renderControl();
+          element.close();
+          window.PolymathApp.toast("Rolul tău de administrator a fost retras.");
+        } else if (element.open) {
           select("#admin-search-input").focus();
-          await loadAccounts(page, "Rolul de administrator a fost acordat.");
+          await loadAccounts(page, target.action === "revoke" ? "Rolul de administrator a fost retras." : "Rolul de administrator a fost acordat.");
         }
       } catch (error) {
         if (element.open) status.textContent = error.message;

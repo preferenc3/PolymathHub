@@ -325,3 +325,23 @@ test("administrator grant is scoped to the verified session and requires databas
   allowed = true;
   assert.deepEqual((await run(handler, options)).body, { granted: true });
 });
+
+test("revocation checks the actor, preserves the last administrator and tolerates a retry", async () => {
+  const target = "22222222-2222-4222-8222-222222222222";
+  let decision = "forbidden";
+  const handler = createAdminAccountsHandler({ env, fetcher: async (url, options) => {
+    if (url.endsWith("/user")) return result(user);
+    assert.match(url, /polymath_revoke_administrator$/);
+    assert.equal(options.headers.Authorization, "Bearer access");
+    assert.deepEqual(JSON.parse(options.body), { p_user_id: target });
+    return result(decision);
+  } });
+  const headers = { cookie: "__Host-pm_access=access", "x-polymath-account": id };
+  const options = { method: "POST", url: "/api/admin-accounts?action=revoke", body: { userId: target }, headers };
+  assert.equal((await run(handler, { ...options, headers: { ...headers, origin: "https://other.example" } })).statusCode, 403);
+  assert.equal((await run(handler, { ...options, headers: { ...headers, "x-polymath-account": target } })).statusCode, 412);
+  assert.equal((await run(handler, options)).statusCode, 403);
+  decision = "last_admin";
+  assert.equal((await run(handler, options)).statusCode, 409);
+  for (decision of ["revoked", "absent"]) assert.deepEqual((await run(handler, options)).body, { revoked: true });
+});

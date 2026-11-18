@@ -4,13 +4,14 @@ export function createAdminAccountsHandler({ env = process.env, fetcher = fetch 
   return async function handler(req, res) {
     try {
       const params = new URL(req.url, "http://localhost").searchParams;
-      const grant = req.method === "POST" && params.get("action") === "grant";
-      if (req.method !== "GET" && !grant) {
+      const roleAction = params.get("action");
+      const changeRole = req.method === "POST" && ["grant", "revoke"].includes(roleAction);
+      if (req.method !== "GET" && !changeRole) {
         res.setHeader("Allow", "GET, POST");
         throw new ApiError(405, "Metodă indisponibilă.");
       }
 
-      if (grant && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
+      if (changeRole && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
       const config = configuration(env);
       if (!config) throw new ApiError(503, "Administrarea conturilor nu este disponibilă.");
       const call = provider(config, fetcher);
@@ -18,11 +19,20 @@ export function createAdminAccountsHandler({ env = process.env, fetcher = fetch 
       if (!session) throw new ApiError(401, "Conectează-te pentru a accesa panoul.");
       checkExpectedAccount(req, session.user);
 
-      if (grant) {
+      if (changeRole) {
         if (!req.headers["x-polymath-account"]) throw new ApiError(412, "Reîncarcă panoul și încearcă din nou.");
         const { userId } = await readJson(req, 1024);
         if (typeof userId !== "string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(userId)) {
           throw new ApiError(400, "Contul selectat nu este valid.");
+        }
+        if (roleAction === "revoke") {
+          const result = await call("/rest/v1/rpc/polymath_revoke_administrator", {
+            method: "POST", token: session.token, body: { p_user_id: userId }
+          });
+          if (result === "last_admin") throw new ApiError(409, "Acesta este ultimul administrator. Acordă mai întâi rolul unui alt cont.");
+          if (result === "absent") return send(res, 200, { revoked: true });
+          if (result !== "revoked") throw new ApiError(403, "Ai nevoie de rolul de administrator.");
+          return send(res, 200, { revoked: true });
         }
         const result = await call("/rest/v1/rpc/polymath_grant_administrator", {
           method: "POST", token: session.token, body: { p_user_id: userId }
