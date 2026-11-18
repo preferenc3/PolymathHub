@@ -125,100 +125,173 @@
     return node;
   }
 
-  function showAttempt(host, items) {
-    const form = element("form");
-    const result = element("h3");
-    result.tabIndex = -1;
-    const fields = items.map((item, index) => {
+  function button(label, className = "test-primary") {
+    const control = element("button", label);
+    control.type = "button";
+    control.className = className;
+    return control;
+  }
+
+  function showResult(host, items, answers, track, start, choose) {
+    const score = items.filter((item, index) => item.correctIndex === answers[index]).length;
+    const summary = element("header");
+    summary.className = "test-summary";
+    const title = element("h3", score + " din " + items.length + " răspunsuri corecte");
+    title.tabIndex = -1;
+    const actions = element("div");
+    actions.className = "test-actions";
+    const replay = button("Încearcă un test nou");
+    const back = button("Alege alt domeniu", "test-secondary");
+    replay.onclick = () => start(track);
+    back.onclick = () => choose(track.name);
+    actions.append(replay, back);
+    summary.append(element("p", track.name), title, actions);
+
+    const review = element("ol");
+    review.className = "test-results";
+    items.forEach((item, index) => {
+      const correct = answers[index] === item.correctIndex;
+      const row = element("li");
+      const status = element("strong", correct ? "Corect" : "De repetat");
+      status.className = correct ? "test-correct" : "test-incorrect";
+      row.append(status, element("h4", item.question),
+        element("p", "Ai ales: " + item.options[answers[index]]));
+      if (!correct) row.append(element("p", "Răspuns corect: " + item.options[item.correctIndex]));
+      row.append(element("p", item.explanation));
+      if (item.lesson) {
+        const link = element("a", "Reia lecția · " + item.lesson.title);
+        link.href = "#invata?" + new URLSearchParams({lesson: item.lesson.id});
+        row.append(link);
+      }
+      review.append(row);
+    });
+    host.replaceChildren(summary, review);
+    title.focus();
+  }
+
+  function showAttempt(host, items, track, start, choose) {
+    const answers = new Array(items.length);
+    function showQuestion(index) {
+      const item = items[index];
+      const toolbar = element("header");
+      toolbar.className = "test-toolbar";
+      const leave = button("Ieși din test", "test-secondary");
+      leave.onclick = () => {
+        if (!answers.some(answer => answer !== undefined) || window.confirm("Ieși din test? Răspunsurile acestei încercări se vor pierde.")) {
+          choose(track.name);
+        }
+      };
+      toolbar.append(element("strong", track.name), leave);
+
+      const progress = element("progress");
+      progress.max = items.length;
+      progress.value = index + 1;
+      progress.setAttribute("aria-label", "Întrebarea curentă");
+      const position = element("p", "Întrebarea " + (index + 1) + " din " + items.length);
+      position.className = "test-position";
+
+      const form = element("form");
       const group = element("fieldset");
-      group.append(element("legend", (index + 1) + ". " + item.question));
+      group.append(element("legend", item.question));
       item.options.forEach((option, choice) => {
         const label = element("label");
         const input = element("input");
         input.type = "radio";
-        input.name = "question-" + index;
+        input.name = "answer";
         input.value = choice;
         input.required = true;
+        input.checked = answers[index] === choice;
+        input.onchange = () => { answers[index] = choice; };
         label.append(input, element("span", option));
         group.append(label);
       });
-      form.append(group);
-      return group;
-    });
-    const submit = element("button", "Verifică testul");
-    submit.type = "submit";
-    form.append(submit);
-    host.replaceChildren(result, form);
-    form.addEventListener("submit", event => {
-      event.preventDefault();
-      let score = 0;
-      fields.forEach((group, index) => {
-        const item = items[index];
-        const selected = Number(group.querySelector(":checked").value);
-        const correct = selected === item.correctIndex;
-        score += Number(correct);
-        group.disabled = true;
-        const review = element("div");
-        review.className = "test-review";
-        review.append(element("strong", correct ? "Corect." : "Răspuns corect: " + item.options[item.correctIndex]));
-        if (item.explanation) review.append(element("p", item.explanation));
-        if (item.lesson) {
-          const link = element("a", "Reia lecția · " + item.lesson.title);
-          link.href = "#invata?" + new URLSearchParams({lesson: item.lesson.id});
-          review.append(link);
-        }
-        group.append(review);
-      });
-      submit.remove();
-      result.textContent = "Rezultat: " + score + " / " + items.length;
-      result.focus();
-    }, {once: true});
+
+      const actions = element("div");
+      actions.className = "test-actions";
+      if (index > 0) {
+        const previous = button("Întrebarea anterioară", "test-secondary");
+        previous.onclick = () => showQuestion(index - 1);
+        actions.append(previous);
+      }
+      const last = index + 1 === items.length;
+      const next = button(last ? "Vezi rezultatul" : "Întrebarea următoare");
+      next.type = "submit";
+      actions.append(next);
+      form.append(group, actions);
+      form.onsubmit = event => {
+        event.preventDefault();
+        if (last) showResult(host, items, answers, track, start, choose);
+        else showQuestion(index + 1);
+      };
+      host.replaceChildren(toolbar, position, progress, form);
+      position.tabIndex = -1;
+      position.focus();
+    }
+    showQuestion(0);
   }
 
-  function render(tracks, lessons, getQuiz, activeTrack, loadContent) {
+  function render(tracks, lessons, getQuiz, loadContent) {
     const root = document.getElementById("curriculum-test");
-    const controls = element("div");
-    controls.className = "test-controls";
-    const label = element("label", "Alege domeniul");
-    const select = element("select");
-    tracks.forEach(track => select.add(new Option(track.name, track.name)));
-    select.value = activeTrack;
-    if (select.selectedIndex < 0) select.selectedIndex = 0;
-    label.append(select);
-    const start = element("button", "Începe testul");
-    start.type = "button";
     const host = element("div");
-    controls.append(label, start);
-    root.replaceChildren(controls, host);
-    select.addEventListener("change", () => {
-      host.replaceChildren();
-      start.textContent = "Începe testul";
-    });
-    start.addEventListener("click", async () => {
-      const track = select.value;
-      const pending = lessons.filter(lesson => lesson.track === track && lesson.contentUrl);
-      if (pending.length) {
-        start.disabled = true;
-        start.textContent = "Se încarcă…";
-        select.disabled = true;
-        try {
-          await loadContent(pending);
-        } catch {
-          host.replaceChildren(element("p", "Întrebările nu s-au putut încărca. Încearcă din nou."));
-          start.textContent = "Reîncearcă";
-          return;
-        } finally {
-          start.disabled = false;
-          select.disabled = false;
-        }
+    host.className = "test-screen";
+    root.replaceChildren(host);
+
+    async function start(track) {
+      const status = element("p", "Pregătim întrebările pentru " + track.name + "…");
+      status.setAttribute("role", "status");
+      status.tabIndex = -1;
+      host.replaceChildren(status);
+      status.focus();
+      try {
+        const domainLessons = lessons.filter(lesson => lesson.track === track.name);
+        if (domainLessons.some(lesson => lesson.contentUrl)) await loadContent(domainLessons);
+        if (!host.isConnected || root.closest(".hidden")) return;
+        const items = buildTest(track.name, lessons, getQuiz);
+        showAttempt(host, items, track, start, choose);
+      } catch {
+        if (!host.isConnected || root.closest(".hidden")) return;
+        status.textContent = "Întrebările nu s-au putut încărca.";
+        const retry = button("Reîncearcă");
+        const back = button("Înapoi la domenii", "test-secondary");
+        retry.onclick = () => start(track);
+        back.onclick = () => choose(track.name);
+        host.append(retry, back);
       }
-      if (!root.contains(host) || root.closest(".hidden")) return;
-      const items = buildTest(track, lessons, getQuiz);
-      if (!items.length) return;
-      showAttempt(host, items);
-      start.textContent = "Test nou";
-      host.querySelector("input")?.focus();
-    });
+    }
+
+    function choose(focusTrack) {
+      const intro = element("p", "Alege un domeniu pentru un test de cinci întrebări. La final vezi ce ai răspuns corect și ce merită repetat.");
+      intro.className = "test-intro";
+      host.replaceChildren(intro);
+      for (const [heading, division] of [
+        ["Informatică și programare", "Informatică și Programare"],
+        ["Limbi străine", "Limbi Străine & Comunicare"]
+      ]) {
+        const section = element("section");
+        section.className = "test-domains";
+        section.append(element("h3", heading));
+        const grid = element("ul");
+        for (const track of tracks.filter(item => item.division === division)) {
+          const cell = element("li");
+          const control = button(track.name, "test-domain");
+          control.setAttribute("aria-label", "Începe testul de " + track.name);
+          const icon = element("img");
+          icon.alt = "";
+          icon.src = "/assets/icons/caret-right.svg";
+          control.append(icon);
+          control.onclick = () => start(track);
+          cell.append(control);
+          grid.append(cell);
+        }
+        section.append(grid);
+        host.append(section);
+      }
+      if (focusTrack) {
+        [...host.querySelectorAll("button")].find(control => control.textContent === focusTrack)?.focus();
+      }
+    }
+
+    choose();
   }
 
   window.CurriculumTests = {render};

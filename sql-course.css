@@ -188,45 +188,30 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
   .home-practice-list li:last-child a { border-radius: 0 0 14px 14px; }
 }
 
-.home-side { display: none; }
-.home-frame .home { min-width: 0; }
-@media (min-width: 1360px) {
-  .home-frame {
-    display: grid;
-    grid-template-columns: 190px minmax(0, 890px) 190px;
-    gap: clamp(50px, 4.4vw, 82px);
-    width: min(100% - 64px, 1534px);
-    margin-inline: auto;
-    align-items: start;
-    justify-content: center;
-  }
-  .home-frame .home { max-width: none; width: 100%; padding-inline: 0; }
-  .home-side { display: block; margin-top: 51px; }
-  .home-side .section-label { padding: 0 9px; margin-bottom: 8px; }
-  .home-explore { padding: 13px 5px 7px; border: 1px solid #e7e2d6; border-radius: 13px; background: #f7f4ed; }
-  .home-explore .explore-destination { font-size: 13px; gap: 7px; padding-inline: 7px; }
-  .home-activity summary {
-    width: fit-content;
-    padding: 3px 5px;
-    color: var(--muted);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .home-activity summary:hover { color: var(--teal-dark); }
-  .activity-list { list-style: none; padding: 0 0 0 4px; margin: 6px 0 0; }
-  .activity-list a {
-    display: flex; justify-content: space-between; gap: 7px;
-    padding: 7px 5px; border-radius: 6px;
-    color: var(--muted); text-decoration: none; font-size: 12px; line-height: 1.45;
-  }
-  .activity-list a:hover { color: var(--teal-dark); background: var(--teal-soft); }
-  .activity-list a span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.home-explore { margin-top: 2.5rem; }
+.home-explore > h2 { font: 700 clamp(1.55rem, 4vw, 2.1rem)/1.15 var(--serif); margin: 0 0 .95rem; }
+.home-destinations, .home-destinations [data-catalog-links] {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem;
+}
+.home-destinations [data-catalog-links] { grid-column: 1 / -1; }
+.home-destinations [data-catalog-links]:empty { display: none; }
+.home-destinations .explore-destination { min-height: 72px; padding: .8rem; border: 1px solid var(--line); background: var(--paper); }
+.home-destinations .explore-destination:hover { background: var(--teal-soft); }
+.home-destinations .explore-destination small { font-size: .85rem; }
+.home-activity { margin-top: 1rem; border-top: 1px solid var(--line); }
+.home-activity summary { width: fit-content; padding: .75rem 0; min-height: 44px; cursor: pointer; }
+.activity-list { list-style: none; padding: 0; margin: 0; }
+.activity-list a { min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: 0 .65rem; border-radius: .4rem; color: var(--teal-dark); }
+.activity-list a:hover { background: var(--teal-soft); }
+@media (max-width: 580px) {
+  .home-destinations, .home-destinations [data-catalog-links] { grid-template-columns: 1fr; }
+  .home-explore { margin-top: 2rem; }
 }
 @media (max-width: 760px) {
   .app-header .explore-toggle { margin-right: 0; }
 }
 @media (max-width: 480px) {
-  .app-header .explore-toggle { flex-basis: 38px; width: 38px; height: 38px; }
+  .app-header .explore-toggle { flex-basis: 44px; width: 44px; height: 44px; }
 }
 
 /* Account controls use the same compact surfaces as the lab navigation. */
@@ -301,4 +286,11 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
   .admin-entry { padding: 6px; min-height: 36px; min-width: 36px; }
   .admin-entry span { display: none; }
   .account-button.account-avatar { width: 38px; height: 38px; }
+}
+
+.app-header .account-button.account-avatar { width: 44px; height: 44px; }
+
+@media (max-width: 760px) {
+  .app-header #global-nav a { min-height: 44px; }
+  .app-header .wordmark { display: inline-flex; align-items: center; min-height: 44px; }
 }

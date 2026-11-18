@@ -913,7 +913,7 @@
     if (target === "catalog") renderCatalogView();
     else if (target === "study") renderStudyView();
     else if (target === "lab") renderLabView();
-    else if (target === "tests") window.CurriculumTests.render(getTracks(), allLessons, getQuizForLesson, params.track || state.activeTrack, loadLessonContent);
+    else if (target === "tests") window.CurriculumTests.render(getTracks(), allLessons, getQuizForLesson, loadLessonContent);
     else if (target === "activity") renderActivityView();
     else if (target === "leagues") renderLeaguesView();
     if (window.PolymathStudio && target !== "study") window.PolymathStudio.render(target, params);

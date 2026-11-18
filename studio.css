@@ -420,24 +420,44 @@ body[data-view="study"] .study-content-area { width:100%; }
  body[data-view="study"] .dual-nav-footer button { font-size:9px; padding:6px 8px; min-height:31px; }
 }
 
-#tests-view { max-width: 960px; min-width: 0; }
-#tests-view h2 { font-size: clamp(1.8rem, 4vw, 3rem); }
-#curriculum-test { display: grid; gap: 1.5rem; }
-#curriculum-test .test-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; }
-#curriculum-test .test-controls label { display: grid; gap: .3rem; min-width: 0; }
-#curriculum-test select, #curriculum-test button { min-height: 44px; max-width: 100%; border-radius: .6rem; font: inherit; }
-#curriculum-test select { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: .5rem; }
-#curriculum-test button { background: var(--accent-primary); color: var(--bg-primary); border: 0; padding: .55rem 1.1rem; font-weight: 700; }
-#curriculum-test form { display: grid; gap: 1.1rem; }
-#curriculum-test form button { justify-self: start; }
-#curriculum-test fieldset { min-width: 0; margin: 0; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: .8rem; overflow-wrap: anywhere; }
-#curriculum-test legend { max-width: 100%; padding: 0 .35rem; font-weight: 700; white-space: pre-line; }
-#curriculum-test fieldset label { display: flex; align-items: baseline; gap: .65rem; padding: .5rem; border-radius: .4rem; cursor: pointer; white-space: pre-wrap; }
-#curriculum-test fieldset label:has(:checked) { background: var(--accent-soft); }
-#curriculum-test input { width: 1rem; height: 1rem; flex: none; accent-color: var(--accent-primary); }
-#curriculum-test .test-review { border-top: 1px solid var(--border-color); padding: .7rem .5rem 0; margin-top: .5rem; }
-#curriculum-test .test-review a { color: var(--accent-primary); text-decoration: underline; }
-#curriculum-test h3:not(:empty) { margin-bottom: 1rem; }
+#tests-view.page-enter { animation: none; }
+#tests-view { max-width: 1000px; min-width: 0; font-size: 1rem; }
+#tests-view > h2 { font-family: Georgia, serif; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; margin-bottom: .65rem; }
+#curriculum-test { --quiz-accent: var(--accent-primary); }
+#curriculum-test .test-intro { max-width: 59ch; margin-bottom: 2rem; color: var(--text-secondary); }
+#curriculum-test .test-domains { margin-block: 1.4rem 2rem; }
+#curriculum-test .test-domains h3 { margin-bottom: .75rem; font-size: 1.1rem; }
+#curriculum-test .test-domains ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .65rem; }
+#curriculum-test button { min-height: 48px; border-radius: .55rem; font: inherit; font-weight: 650; padding: .65rem .95rem; touch-action: manipulation; }
+#curriculum-test .test-domain { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; height: 100%; text-align: left; line-height: 1.25; color: var(--text-primary); background: var(--bg-secondary); border: 1px solid var(--border-color); }
+#curriculum-test .test-domain img { width: 1rem; height: 1rem; opacity: .7; flex: none; }
+#curriculum-test .test-domain:is(:hover, :focus-visible), #curriculum-test .test-secondary:is(:hover, :focus-visible) { border-color: var(--quiz-accent); background: var(--accent-soft); }
+#curriculum-test .test-primary { background: var(--quiz-accent); color: var(--bg-primary); border: 1px solid transparent; }
+#curriculum-test .test-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+#curriculum-test .test-toolbar, #curriculum-test .test-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; }
+#curriculum-test .test-toolbar { justify-content: space-between; margin-bottom: 1rem; }
+#curriculum-test .test-position { color: var(--text-secondary); font-weight: 650; scroll-margin-top: 95px; }
+#curriculum-test progress { accent-color: var(--quiz-accent); width: 100%; height: .55rem; margin: .5rem 0 1.35rem; }
+#curriculum-test form, #curriculum-test .test-summary { max-width: 760px; }
+#curriculum-test fieldset { min-width: 0; margin: 0; padding: 0; border: 0; overflow-wrap: anywhere; }
+#curriculum-test legend { max-width: 100%; padding: 0 0 1rem; font-size: clamp(1.13rem, 3vw, 1.6rem); line-height: 1.4; font-weight: 700; white-space: pre-line; }
+#curriculum-test fieldset label { display: flex; align-items: flex-start; gap: .75rem; min-height: 52px; padding: .75rem 1rem; margin-bottom: .6rem; border: 1px solid var(--border-color); border-radius: .65rem; background: var(--bg-secondary); cursor: pointer; white-space: pre-wrap; }
+#curriculum-test fieldset label:has(:checked) { background: var(--accent-soft); border-color: var(--quiz-accent); }
+#curriculum-test input { width: 1.1rem; height: 1.1rem; margin-top: .2rem; flex: none; accent-color: var(--quiz-accent); }
+#curriculum-test .test-actions { margin-top: 1.1rem; }
+#curriculum-test .test-summary { padding: clamp(1rem, 4vw, 2rem); background: var(--accent-soft); border: 1px solid var(--border-color); border-radius: .8rem; }
+#curriculum-test .test-summary h3 { font-family: Georgia, serif; font-size: clamp(1.4rem, 4vw, 2.3rem); line-height: 1.2; scroll-margin-top: 95px; }
+#curriculum-test .test-results { max-width: 760px; list-style-position: inside; padding: 0; }
+#curriculum-test .test-results li { margin-block: .9rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: .65rem; overflow-wrap: anywhere; background: var(--bg-secondary); }
+#curriculum-test .test-results h4 { line-height: 1.4; margin-block: .45rem; }
+#curriculum-test .test-results p { white-space: pre-wrap; margin-bottom: .35rem; }
+#curriculum-test .test-correct { color: var(--success-green); }
+#curriculum-test .test-incorrect { color: var(--error-red); }
+#curriculum-test .test-results a { display: inline-flex; align-items: center; min-height: 44px; color: var(--quiz-accent); text-decoration: underline; }
+@media (max-width: 480px) {
+  #curriculum-test .test-domains ul { grid-template-columns: 1fr; }
+  #curriculum-test .test-actions { display: grid; grid-template-columns: 1fr; }
+}
 @media (max-width: 760px) {
   body:is([data-view="home"], [data-view="catalog"]) .shell-menu-toggle {
     display: flex; align-items: center; justify-content: center; width: 40px; min-height: 40px;
@@ -459,3 +479,5 @@ body[data-view="study"] .study-content-area { width:100%; }
 #study-load { display: none; }
 #study-view[data-loading] > :not(#study-load) { display: none; }
 #study-view[data-loading] #study-load { display: block; grid-column: 1 / -1; }
+
+body[data-view="tests"] .shell-menu-toggle { min-width: 44px; min-height: 44px; }
