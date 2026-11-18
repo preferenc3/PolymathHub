@@ -419,3 +419,39 @@ body[data-view="study"] .study-content-area { width:100%; }
  body[data-view="study"] .dual-nav-footer { grid-column:2; grid-row:1; }
  body[data-view="study"] .dual-nav-footer button { font-size:9px; padding:6px 8px; min-height:31px; }
 }
+
+#tests-view { max-width: 960px; min-width: 0; }
+#tests-view h2 { font-size: clamp(1.8rem, 4vw, 3rem); }
+#curriculum-test { display: grid; gap: 1.5rem; }
+#curriculum-test .test-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; }
+#curriculum-test .test-controls label { display: grid; gap: .3rem; min-width: 0; }
+#curriculum-test select, #curriculum-test button { min-height: 44px; max-width: 100%; border-radius: .6rem; font: inherit; }
+#curriculum-test select { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: .5rem; }
+#curriculum-test button { background: var(--accent-primary); color: var(--bg-primary); border: 0; padding: .55rem 1.1rem; font-weight: 700; }
+#curriculum-test form { display: grid; gap: 1.1rem; }
+#curriculum-test form button { justify-self: start; }
+#curriculum-test fieldset { min-width: 0; margin: 0; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: .8rem; overflow-wrap: anywhere; }
+#curriculum-test legend { max-width: 100%; padding: 0 .35rem; font-weight: 700; white-space: pre-line; }
+#curriculum-test fieldset label { display: flex; align-items: baseline; gap: .65rem; padding: .5rem; border-radius: .4rem; cursor: pointer; white-space: pre-wrap; }
+#curriculum-test fieldset label:has(:checked) { background: var(--accent-soft); }
+#curriculum-test input { width: 1rem; height: 1rem; flex: none; accent-color: var(--accent-primary); }
+#curriculum-test .test-review { border-top: 1px solid var(--border-color); padding: .7rem .5rem 0; margin-top: .5rem; }
+#curriculum-test .test-review a { color: var(--accent-primary); text-decoration: underline; }
+#curriculum-test h3:not(:empty) { margin-bottom: 1rem; }
+@media (max-width: 760px) {
+  body:is([data-view="home"], [data-view="catalog"]) .shell-menu-toggle {
+    display: flex; align-items: center; justify-content: center; width: 40px; min-height: 40px;
+    border: 1px solid var(--border-color); border-radius: .5rem; background: var(--bg-secondary); color: var(--text-primary);
+  }
+  body:is([data-view="home"], [data-view="catalog"]) .shell-menu-toggle span { display: none; }
+  body:is([data-view="home"], [data-view="catalog"]) .top-nav-links {
+    display: none; position: absolute; inset: 60px 12px auto auto; width: min(250px, 90vw);
+    max-height: calc(100dvh - 75px); overflow-y: auto; background: var(--bg-secondary);
+    border: 1px solid var(--border-color); border-radius: .7rem; padding: .5rem; box-shadow: var(--shadow-card);
+  }
+  body:is([data-view="home"], [data-view="catalog"]) .menu-open .top-nav-links { display: flex; }
+  body:is([data-view="home"], [data-view="catalog"]) .nav-link-btn {
+    flex-direction: row; justify-content: flex-start; gap: .65rem; padding: .5rem; min-height: 42px;
+  }
+  body:is([data-view="home"], [data-view="catalog"]) .nav-link-btn span { font-size: .8rem; }
+}

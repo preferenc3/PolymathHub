@@ -179,7 +179,9 @@
       ${homePractice()}
       <section class="explore-section" aria-labelledby="explore-title"><h2 id="explore-title" class="section-label">Explorează</h2><div class="domain-doors">
       <a class="domain-door" href="/sql-university.html">${icon('code','domain-symbol')}<h2>SQL</h2><p>Laboratoarele 4 și 5 · terminal, tabele și verificare.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
-      <a class="domain-door language" href="#cursuri?domeniu=limbi">${icon('translate','domain-symbol')}<h2>Limbi străine</h2><p>Franceză în context. Ascultă, înțelege și răspunde.</p><span class="door-arrow">${icon('arrow-right')}</span></a></div></section>
+      <a class="domain-door language" href="/biblioteca.html#exploreaza?division=languages">${icon('translate','domain-symbol')}<h2>Limbi străine</h2><p>Engleză, franceză și spaniolă, de la teorie la conversație.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
+      <a class="domain-door" href="/biblioteca.html#exploreaza"><h2>Toate domeniile</h2><p>Răsfoiește capitolele de programare și limbi străine.</p><span class="door-arrow">${icon('arrow-right')}</span></a>
+      <a class="domain-door language" href="/biblioteca.html#teste"><h2>Teste pe domenii</h2><p>Alege materia și verifică ce ai reținut.</p><span class="door-arrow">${icon('arrow-right')}</span></a></div></section>
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
       ${saveNote()}</div>${homeActivity()}</div>`;
   }
@@ -190,7 +192,7 @@
   }
   function catalog(domain) {
     const showSQL = domain !== 'limbi', showFR = !['programare', 'sql'].includes(domain);
-    return `<div class="catalog"><p class="section-label">Alege următorul pas</p><h1>Cursurile tale</h1><p class="page-intro">Începe cu o idee, înțelege-o și pune-o în practică. Poți reveni oricând.</p>
+    return `<div class="catalog"><p class="section-label">Alege următorul pas</p><h1>Cursurile tale</h1><a class="secondary" href="/biblioteca.html#exploreaza">Deschide catalogul complet</a><p class="page-intro">Începe cu o idee, înțelege-o și pune-o în practică. Poți reveni oricând.</p>
       ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>SQL</h2></div><a class="course-row" href="/sql-university.html"><span class="row-copy"><h3>Laboratoarele 4 și 5</h3><p>Deschide tabelele și rezolvă exercițiile în terminalul SQLite.</p></span>${icon('arrow-right')}</a><h3>Bazele SQL</h3>${course.lessons.map(courseRow).join('')}<div class="project-intro"><h2>Un magazin. Trei rapoarte.</h2><p class="page-intro">Proiectul final leagă filtrarea, relațiile dintre tabele și totalurile.</p><a class="secondary" href="#proiect">Deschide proiectul · ${P.summary(state.sql).projectDone}/3 ${icon('arrow-right','icon-small')}</a></div></section>`:''}
       ${showFR?`<section><div class="catalog-heading">${icon('translate')}<h2>Franceză, în context</h2></div><a class="course-row" href="${frLink('teorie')}"><span class="row-number">01</span><span class="row-copy"><h3>Au marché — La piață</h3><p>O conversație, pronunție și trei propoziții de completat.</p></span><span class="row-status">${L.summary(state.french).correct}/3 corecte</span>${icon('arrow-right')}</a></section>`:''}<div data-catalog-view="list" data-domain="${esc(domain)}"></div>${saveNote()}</div>`;
   }
@@ -292,6 +294,10 @@
   function render() {
     generation++; if(!course)return;
     let [view,search='']=location.hash.slice(1).split('?');const params=new URLSearchParams(search);
+    if (['exploreaza', 'invata', 'laborator', 'vocabular', 'realizari', 'teste'].includes(view)) {
+      location.replace('/biblioteca.html' + location.hash);
+      return;
+    }
     if(view==='traseu'){view='cursuri';params.set('domeniu','programare');}
     if(!['acasa','cursuri','lectie','limba','proiect','greseli','progres','material'].includes(view))view='acasa';
     const ex=exercise(params.get('ex'))||exercise(P.resume(state.sql));

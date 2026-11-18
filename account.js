@@ -493,7 +493,10 @@
   });
   document.addEventListener("click", async event => {
     const button = event.target.closest("button"); if (!button) return;
-    if (button.hasAttribute("data-open-account")) open();
+    if (button.hasAttribute("data-open-account")) {
+      if (!window.PolymathSqlCourse) location.assign("/?profil=1");
+      else open();
+    }
     else if (button.hasAttribute("data-open-admin")) openAdmin();
     else if (button.hasAttribute("data-close-account")) $("account-dialog").close();
     else if (button.dataset.authMode) open(button.dataset.authMode);
@@ -534,6 +537,14 @@
       if (!account.configured) return;
       const result = await api("/api/account?action=session"); if (result.user) await applyUser(result.user);
     } catch { /* The public learning experience remains usable without accounts. */ }
-    finally { renderControl(); }
+    finally {
+      renderControl();
+      if (window.PolymathSqlCourse && account.configured && window.location?.search && new URLSearchParams(window.location.search).get("profil") === "1") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("profil");
+        history.replaceState(history.state, "", url);
+        open();
+      }
+    }
   });
 })();

@@ -40,7 +40,8 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
-  const file = ["/","/index.html"].includes(url.pathname) ? "sql-course.html" : url.pathname.slice(1);
+  const requested = url.pathname === "/biblioteca.html" ? "index.html" : url.pathname.slice(1);
+  const file = ["/","/index.html"].includes(url.pathname) ? "sql-course.html" : requested;
   if (!assets.test(file)) { res.writeHead(404); return res.end("Not found"); }
   try { const body = await fs.readFile(path.join(root, file)); res.writeHead(200, { "Content-Type": types[path.extname(file)], "Cache-Control": "no-store" }); res.end(body); }
   catch { res.writeHead(404); res.end("Not found"); }

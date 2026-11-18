@@ -10,6 +10,7 @@ for (const required of ["index.html", "app.js", "studio.js", "vocabulary.js", "s
 }
 console.log(`Static build ready: ${files.length} assets in dist/`);
 
+fs.copyFileSync(path.join(root, "index.html"), path.join(output, "biblioteca.html"));
 fs.copyFileSync(path.join(root, "sql-course.html"), path.join(output, "index.html"));
 
 fs.cpSync(path.join(root, "assets/icons"), path.join(output, "assets/icons"), { recursive: true });

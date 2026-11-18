@@ -766,7 +766,7 @@
   };
 
   let currentDivisionFilter = "ALL";
-  let domainsExpanded = false;
+  let domainsExpanded = true;
   const DOMAINS_LIMIT = 6;
 
   function getTracks() {
@@ -839,8 +839,8 @@
   // =========================================================================
   // VIEW SWITCHING (SPA MULTI-PAGE: CATALOG, STUDY, ACTIVITY, LEAGUES)
   // =========================================================================
-  const ROUTES = { home: "acasa", catalog: "exploreaza", study: "invata", lab: "laborator", vocabulary: "vocabular", activity: "progres", leagues: "realizari" };
-  const VIEW_LABELS = { home: "Acasă", catalog: "Explorează", study: "Învățare", lab: "Laborator Cod", vocabulary: "Vocabular", activity: "Progresul meu", leagues: "Realizări" };
+  const ROUTES = { home: "acasa", catalog: "exploreaza", study: "invata", lab: "laborator", vocabulary: "vocabular", activity: "progres", leagues: "realizari", tests: "teste" };
+  const VIEW_LABELS = { home: "Acasă", catalog: "Explorează", study: "Învățare", lab: "Laborator Cod", vocabulary: "Vocabular", activity: "Progresul meu", leagues: "Realizări", tests: "Teste pe domenii" };
 
   function readRoute() {
     const [path, query = ""] = window.location.hash.slice(1).split("?");
@@ -877,7 +877,7 @@
       if (!tracks.some(track => track.name === state.activeTrack) && tracks.length) state.activeTrack = tracks[0].name;
       document.querySelectorAll(".division-pill-btn").forEach(button => button.classList.toggle("active", button.dataset.division === currentDivisionFilter));
       if (!allLessons.some(lesson => lesson.id === state.activeLessonId && lesson.track === state.activeTrack)) state.activeLessonId = allLessons.find(lesson => lesson.track === state.activeTrack)?.id;
-      domainsExpanded = false;
+      domainsExpanded = true;
     }
     saveState();
     document.querySelectorAll("body > main").forEach(view => view.classList.add("hidden"));
@@ -892,6 +892,7 @@
     if (target === "catalog") renderCatalogView();
     else if (target === "study") renderStudyView();
     else if (target === "lab") renderLabView();
+    else if (target === "tests") window.CurriculumTests.render(getTracks(), allLessons, getQuizForLesson, params.track || state.activeTrack);
     else if (target === "activity") renderActivityView();
     else if (target === "leagues") renderLeaguesView();
     if (window.PolymathStudio && target !== "study") window.PolymathStudio.render(target, params);
@@ -2378,11 +2379,11 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
   function bindEvents() {
     // Navigare Brand spre Pagina Principală (Catalog)
     if (els.brandHomeBtn) {
-      els.brandHomeBtn.addEventListener("click", () => switchView("home"));
+      els.brandHomeBtn.addEventListener("click", () => location.assign("/"));
       els.brandHomeBtn.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          switchView("home");
+          location.assign("/");
         }
       });
     }
@@ -2392,7 +2393,8 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
       if (btn) {
         btn.addEventListener("click", () => {
           const view = btn.getAttribute("data-view");
-          if (view) switchView(view);
+          if (view === "home") location.assign("/");
+          else if (view) switchView(view);
         });
       }
     });
@@ -2525,7 +2527,7 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
         document.querySelectorAll(".division-pill-btn").forEach(p => p.classList.remove("active"));
         pill.classList.add("active");
         currentDivisionFilter = pill.getAttribute("data-division") || "ALL";
-        domainsExpanded = false;
+        domainsExpanded = true;
         renderCatalogView();
         syncRoute();
       });
