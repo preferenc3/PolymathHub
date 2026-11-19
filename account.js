@@ -395,40 +395,69 @@
       const request = payload => api("/api/admin-accounts?action=progress", {
         method: "POST", headers: { "X-Polymath-Account": userId }, body: JSON.stringify({ userId: target, ...payload })
       });
+      const name = trigger.closest("tr").querySelector("th strong").textContent;
+      element.classList.add("viewing-progress");
+      element.setAttribute("aria-labelledby", "dossier-title");
       progressPanel.hidden = false;
-      progressPanel.textContent = "Se încarcă fișa…";
+      progressPanel.innerHTML = `
+        <div class="dossier-nav"><button type="button" data-dismiss><span aria-hidden="true">←</span> Utilizatori</button>
+          <button type="button" data-refresh>Actualizează</button></div>
+        <div class="dossier-cover"><span>Fișă de progres</span><h2 id="dossier-title" tabindex="-1">${text(name)}</h2>
+          ${label !== name ? `<p>${text(label)}</p>` : ""}</div>
+        <div class="dossier-body" data-dossier-body><p role="status">Se încarcă progresul…</p></div>`;
+      const get = selector => progressPanel.querySelector(selector);
+      get("#dossier-title").focus();
+      element.scrollTop = 0;
+      get("[data-dismiss]").onclick = () => {
+        progressSelection++;
+        progressPanel.hidden = true;
+        element.classList.remove("viewing-progress");
+        element.setAttribute("aria-labelledby", "admin-title");
+        trigger.focus();
+      };
+      get("[data-refresh]").onclick = () => inspectProgress(trigger);
       try {
         const data = await request({action: "inspect"});
         if (!current()) return;
         const labels = {bonus: "Bonus XP", restore: "Restabilire serie", goal: "Obiectiv zilnic"};
-        progressPanel.innerHTML = `
-          <header><h3 tabindex="-1">Fișa de progres</h3><button type="button" data-dismiss class="studio-secondary">Închide fișa</button></header>
-          <p>${text(label)}</p>
-          <dl class="admin-summary"><div><dt>XP</dt><dd>${text(data.xp)}</dd></div><div><dt>Serie activă</dt><dd>${text(data.streak)} zile</dd></div><div><dt>Lecții parcurse</dt><dd>${text(data.lessons)}</dd></div><div><dt>Obiectiv zilnic</dt><dd>${text(data.goal)}</dd></div></dl>
-          <form><label>Acțiune<select name="operation"><option value="bonus">Acordă XP bonus</option><option value="restore"${data.restorable ? "" : " disabled"}>Restabilește seria</option><option value="goal">Schimbă obiectivul zilnic</option></select></label>
-          <p>${data.restorable ? `Serie recuperabilă · ${text(data.restorable)} zile` : "Istoricul nu conține o serie pierdută de recuperat."}</p>
-          <label data-amount><span>XP de adăugat</span><input name="amount" type="number" min="1" max="10000" step="1" required></label>
-          <label>Motiv<input name="reason" maxlength="240" required></label>
-          <button class="studio-primary" type="submit">Acordă bonusul</button></form>
-          <details><summary>Istoricul intervențiilor</summary><ol></ol></details>
-          <p role="status" data-result></p><button type="button" data-refresh class="studio-secondary">Actualizează fișa</button>`;
-        const get = selector => progressPanel.querySelector(selector);
-        get("h3").focus();
-        get("[data-result]").textContent = notice;
         const entries = data.history || [];
-        get("ol").innerHTML = entries.map(row => `<li><strong>${text(labels[row.action])} · ${text(row.before_value)} → ${text(row.after_value)}</strong><br>${text(row.reason)}<br>${text(row.actor)} · ${text(formatAdminDate(row.created_at))}</li>`).join("");
-        if (!entries.length) get("ol").replaceWith(document.createTextNode("Nicio intervenție înregistrată."));
-        get("[data-dismiss]").onclick = () => { progressSelection++; progressPanel.hidden = true; trigger.focus(); };
-        get("[data-refresh]").onclick = () => inspectProgress(trigger);
+        const number = value => Number(value).toLocaleString("ro-RO");
+        get("[data-dossier-body]").innerHTML = `
+          <dl class="dossier-stats">
+            <div><dt>Puncte XP</dt><dd>${number(data.xp)}</dd></div>
+            <div><dt>Serie activă</dt><dd>${number(data.streak)} <small>zile</small></dd></div>
+            <div><dt>Lecții parcurse</dt><dd>${number(data.lessons)}</dd></div>
+            <div><dt>Obiectiv zilnic</dt><dd>${number(data.goal)} <small>ex./zi</small></dd></div>
+          </dl>
+          <div class="dossier-columns">
+          <form class="dossier-form"><fieldset><legend>Intervenție</legend><div class="dossier-options">
+            <label><input type="radio" name="operation" value="bonus" checked><span>Bonus XP</span></label>
+            <label><input type="radio" name="operation" value="restore"><span>Serie</span></label>
+            <label><input type="radio" name="operation" value="goal"><span>Obiectiv</span></label>
+          </div></fieldset>
+          <p data-restore-note hidden>${data.restorable ? `Poți recupera ${number(data.restorable)} zile din ultima serie pierdută.` : "Nu există o serie pierdută de recuperat."}</p>
+          <label class="dossier-field" data-amount><span>XP de adăugat</span><input name="amount" type="number" inputmode="numeric" min="1" max="10000" step="1" required></label>
+          <label class="dossier-field">Motiv<textarea name="reason" rows="2" maxlength="240" required></textarea></label>
+          <button class="dossier-submit" type="submit">Acordă bonusul</button>
+          <p role="status" data-result></p></form>
+          <section class="dossier-history"><h3>Istoricul intervențiilor</h3>
+          ${entries.length ? `<ol>${entries.map(row => `<li><strong>${text(labels[row.action])}</strong>
+            <span class="dossier-change">${number(row.before_value)} → ${number(row.after_value)}</span>
+            <p>${text(row.reason)}</p><small>${text(row.actor)} · ${text(formatAdminDate(row.created_at))}</small></li>`).join("")}</ol>`
+            : '<p class="dossier-empty">Nicio intervenție înregistrată.</p>'}</section></div>`;
+        get("[data-result]").textContent = notice;
         const form = get("form"), {operation, amount, reason} = form.elements;
         const submit = get("button[type=submit]");
-        operation.onchange = () => {
+        form.querySelector("fieldset").onchange = () => {
           const goal = operation.value === "goal";
-          get("[data-amount]").hidden = amount.disabled = operation.value === "restore";
+          const restoring = operation.value === "restore";
+          get("[data-amount]").hidden = amount.disabled = restoring;
+          get("[data-restore-note]").hidden = !restoring;
           get("[data-amount] span").textContent = goal ? "Exerciții pe zi" : "XP de adăugat";
           amount.max = goal ? 100 : 10000;
           amount.value = goal ? data.goal : "";
-          submit.textContent = goal ? "Salvează obiectivul" : amount.disabled ? "Restabilește seria" : "Acordă bonusul";
+          submit.disabled = restoring && !data.restorable;
+          submit.textContent = goal ? "Salvează obiectivul" : restoring ? "Restabilește seria" : "Acordă bonusul";
         };
         let lastPayload, requestId;
         form.onsubmit = async event => {
@@ -438,6 +467,7 @@
           if (JSON.stringify(change) !== lastPayload) requestId = crypto.randomUUID();
           lastPayload = JSON.stringify(change);
           submit.disabled = true;
+          form.querySelector("fieldset").disabled = true;
           get("[data-result]").textContent = "Se salvează…";
           try {
             await request({...change, requestId});
@@ -445,11 +475,11 @@
             if (change.action === "bonus") trigger.closest("tr").cells[3].textContent = String(data.xp + change.value);
             await inspectProgress(trigger, "Modificarea a fost salvată.");
           } catch (error) {
-            if (current()) { get("[data-result]").textContent = error.message; submit.disabled = false; }
+            if (current()) { get("[data-result]").textContent = error.message; submit.disabled = false; form.querySelector("fieldset").disabled = false; }
           }
         };
       } catch (error) {
-        if (current()) progressPanel.textContent = error.message;
+        if (current()) get("[data-dossier-body] [role=status]").textContent = error.message;
       }
     }
 
