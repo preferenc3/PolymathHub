@@ -298,3 +298,33 @@
   .university .app-header nav { gap: 10px; font-size: 12px; }
   .lab-foundations { min-height: 36px; padding-block: 5px; font-size: 13px; }
 }
+
+.sql-workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+.sql-workbench-editor { min-width: 0; grid-row: 1; }
+.terminal-schema {
+  min-width: 0; border: 1px solid var(--lab-line); border-radius: .75rem; background: #fffdf7; color: var(--ink);
+}
+.terminal-schema > summary { padding: .7rem .85rem; min-height: 44px; font-weight: 750; cursor: pointer; }
+.terminal-schema-body { padding: .15rem .62rem .65rem; }
+#schema-guidance { font-size: .82rem; line-height: 1.4; color: var(--muted); margin: .15rem 0 .68rem; }
+.schema-table { border-top: 1px solid var(--lab-line); padding: .22rem 0; }
+.schema-table button, .schema-table summary { min-height: 44px; overflow-wrap: anywhere; }
+.schema-table-name { width: 100%; text-align: left; font: 650 .95rem var(--mono); padding: .45rem; border: 1px solid transparent; border-radius: .4rem; background: transparent; color: var(--ink); }
+.terminal-schema[data-context="table"] .schema-table-name, .schema-table-name:hover { background: #e3eee7; border-color: var(--lab-line); }
+.schema-table details summary { padding: .55rem .45rem; font-size: .82rem; cursor: pointer; }
+.schema-columns { display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0; }
+.schema-columns button { font: .8rem var(--mono); border: 1px solid var(--lab-line); border-radius: .4rem; background: #f6f3eb; color: var(--ink); padding: .25rem .4rem; text-align: left; }
+.terminal-schema[data-context="column"] .schema-columns button, .schema-columns button:hover { background: #e3eee7; }
+.terminal-schema .sql-table-section { margin-block: .5rem; }
+.terminal-schema .sql-table-section h3 { font-size: .95rem; }
+@media (min-width: 1060px) {
+  .sql-workbench { grid-template-columns: minmax(170px, 225px) minmax(0, 1fr); }
+  .sql-workbench-editor { grid-column: 2; }
+  .terminal-schema { grid-column: 1; grid-row: 1; align-self: start; max-height: min(66dvh, 620px); overflow: auto; }
+}
+#jump-to-schema { min-height: 44px; padding: .35rem .6rem; color: inherit; border: 1px solid #acbdb183; border-radius: .4rem; background: transparent; }
+@media (min-width: 1060px) { #jump-to-schema { display: none; } }
+@media (max-width: 1059px) { .sql-workbench .editor-caption small { display: none; } }
+@media (min-width: 1060px) {
+  .terminal-schema > summary { position: sticky; top: 0; z-index: 1; background: #fffdf7; border-bottom: 1px solid var(--lab-line); }
+}

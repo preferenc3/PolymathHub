@@ -58,7 +58,8 @@
     ...(typeof CPP_EXPANDED_CURRICULUM !== "undefined" ? CPP_EXPANDED_CURRICULUM : []),
     ...(typeof MEGA_EXPANDED_CURRICULUM !== "undefined" ? MEGA_EXPANDED_CURRICULUM : []),
     ...(typeof RUST_RESOURCES_CURRICULUM !== "undefined" ? RUST_RESOURCES_CURRICULUM : []),
-    ...(typeof GO_AI_SECURITY_CURRICULUM !== "undefined" ? GO_AI_SECURITY_CURRICULUM : [])
+    ...(typeof GO_AI_SECURITY_CURRICULUM !== "undefined" ? GO_AI_SECURITY_CURRICULUM : []),
+    ...(typeof FOUNDATION_CURRICULUM !== "undefined" ? FOUNDATION_CURRICULUM : [])
   ];
 
   // Deduplicare inteligentă pe baza ID-ului
@@ -305,7 +306,7 @@
     let html = parseMarkdownToHtml(theory || "");
 
     // Asigură că fiecare capitol de studiu conține un bloc vizual de cod practic ilustrativ
-    if (lesson && !html.includes("<pre>") && (lesson.example || lesson.starterCode)) {
+    if (lesson && !lesson.unit && !html.includes("<pre>") && (lesson.example || lesson.starterCode)) {
       const code = (lesson.example || lesson.starterCode || "").trim();
       if (code) {
         const isLang = lesson.track && (lesson.track.includes("Franceză") || lesson.track.includes("Spaniolă") || lesson.track.includes("Engleză"));
@@ -641,10 +642,6 @@
     // View 1: Catalog
     catalogView: document.getElementById("catalog-view"),
     catalogDomainsGrid: document.getElementById("catalog-domains-grid"),
-    catalogDomainsToggleWrap: document.getElementById("catalog-domains-toggle-wrap"),
-    btnToggleDomains: document.getElementById("btn-toggle-domains"),
-    btnToggleDomainsText: document.getElementById("btn-toggle-domains-text"),
-    btnToggleDomainsIcon: document.getElementById("btn-toggle-domains-icon"),
     catalogDomainSubtitle: document.getElementById("catalog-domain-subtitle"),
     catalogSelectedDomainTitle: document.getElementById("catalog-selected-domain-title"),
     catalogLevelFilter: document.getElementById("catalog-level-filter"),
@@ -654,18 +651,12 @@
     // View 2: Study
     studyView: document.getElementById("study-view"),
     backToCatalogBtn: document.getElementById("back-to-catalog-btn"),
-    studyTrackIndicator: document.getElementById("study-track-indicator"),
-    openPocketDrawerBtn: document.getElementById("open-pocket-drawer-btn"),
 
     // Dual Split Nav in Study View
     dualSplitTopicNav: document.getElementById("dual-split-topic-nav"),
-    dualTrackTitle: document.getElementById("dual-track-title"),
-    dualChapterSelect: document.getElementById("dual-chapter-select"),
     dualTabTheory: document.getElementById("dual-tab-theory"),
     dualTabExamples: document.getElementById("dual-tab-examples"),
     dualTabPractice: document.getElementById("dual-tab-practice"),
-    dualPrevBtn: document.getElementById("dual-prev-btn"),
-    dualNextBtn: document.getElementById("dual-next-btn"),
     theoryCard: document.getElementById("theory-card"),
     exampleCard: document.getElementById("example-card"),
     practiceCard: document.getElementById("practice-card"),
@@ -722,12 +713,6 @@
     quizFeedbackMsg: document.getElementById("quiz-feedback-msg"),
 
     // Pocket Drawer
-    pocketDrawerBackdrop: document.getElementById("pocket-drawer-backdrop"),
-    pocketDrawer: document.getElementById("pocket-drawer"),
-    closePocketDrawerBtn: document.getElementById("close-pocket-drawer-btn"),
-    pocketTrackTabs: document.getElementById("pocket-track-tabs"),
-    pocketCompletionBadge: document.getElementById("pocket-completion-badge"),
-    pocketLessonList: document.getElementById("pocket-lesson-list"),
 
     // View 3: Activitate & Calendar Lunar
     activityView: document.getElementById("activity-view"),
@@ -834,8 +819,7 @@
   };
 
   let currentDivisionFilter = "ALL";
-  let domainsExpanded = true;
-  const DOMAINS_LIMIT = 6;
+  let catalogTrack = null;
 
   function getTracks() {
     const tracksOrder = [
@@ -918,14 +902,27 @@
 
   function syncRoute(mode = "push", params = {}) {
     const query = new URLSearchParams(params);
-    if (state.activeView === "study") query.set("lesson", state.activeLessonId);
+    if (state.activeView === "study") {
+      query.set("lesson", state.activeLessonId);
+      if (state.activeDualPane !== "theory") query.set("pane", state.activeDualPane);
+      else query.delete("pane");
+    }
     if (state.activeView === "catalog") {
-      query.set("track", state.activeTrack);
-      if (currentDivisionFilter !== "ALL") query.set("division", currentDivisionFilter === "Limbi Străine & Comunicare" ? "languages" : "coding");
+      if (catalogTrack) query.set("track", catalogTrack);
+      else query.delete("track");
+      const division = Object.keys(CATALOG_DIVISIONS).find(key => CATALOG_DIVISIONS[key] === currentDivisionFilter);
+      if (division) query.set("division", division);
+      else query.delete("division");
     }
     const hash = `#${ROUTES[state.activeView]}${query.size ? "?" + query.toString() : ""}`;
     if (window.location.hash !== hash) window.history[mode === "replace" ? "replaceState" : "pushState"]({}, "", hash);
   }
+
+  const CATALOG_DIVISIONS = {
+    languages: "Limbi Străine & Comunicare",
+    coding: "Informatică și Programare",
+    favorites: "FAVORITES"
+  };
 
   function switchView(viewName, options = {}) {
     const target = Object.hasOwn(ROUTES, viewName) ? viewName : "home";
@@ -939,13 +936,18 @@
     document.body.dataset.view = target;
     document.querySelector(".top-bar").classList.remove("menu-open");
     document.getElementById("shell-menu-toggle")?.setAttribute("aria-expanded", "false");
-    if (target === "catalog" && params.division) {
-      currentDivisionFilter = params.division === "languages" ? "Limbi Străine & Comunicare" : params.division === "coding" ? "Informatică și Programare" : "ALL";
-      const tracks = getTracks().filter(track => currentDivisionFilter === "ALL" || track.division === currentDivisionFilter);
-      if (!tracks.some(track => track.name === state.activeTrack) && tracks.length) state.activeTrack = tracks[0].name;
-      document.querySelectorAll(".division-pill-btn").forEach(button => button.classList.toggle("active", button.dataset.division === currentDivisionFilter));
-      if (!allLessons.some(lesson => lesson.id === state.activeLessonId && lesson.track === state.activeTrack)) state.activeLessonId = allLessons.find(lesson => lesson.track === state.activeTrack)?.id;
-      domainsExpanded = true;
+    if (target === "catalog") {
+      catalogTrack = getTracks().some(track => track.name === params.track) ? params.track : null;
+      currentDivisionFilter = CATALOG_DIVISIONS[params.division] || "ALL";
+      document.querySelectorAll(".division-pill-btn").forEach(button =>
+        button.classList.toggle("active", button.dataset.division === currentDivisionFilter));
+      els.catalogSearchInput.value = "";
+      els.catalogLevelFilter.value = "ALL";
+      document.getElementById("catalog-track-outline").open = !window.matchMedia("(max-width: 740px)").matches;
+    }
+    if (target === "study") {
+      state.activeDualPane = ["examples", "practice"].includes(params.pane) ? params.pane : "theory";
+      document.getElementById("study-outline").open = !window.matchMedia("(max-width: 740px)").matches;
     }
     saveState();
     document.querySelectorAll("body > main").forEach(view => view.classList.add("hidden"));
@@ -954,7 +956,6 @@
       btn.classList.toggle("active", active);
       if (active) btn.setAttribute("aria-current", "page"); else btn.removeAttribute("aria-current");
     });
-    closePocketDrawer();
     const view = document.getElementById(`${target}-view`);
     if (view) { view.classList.remove("hidden"); view.classList.remove("page-enter"); void view.offsetWidth; view.classList.add("page-enter"); }
     if (target === "catalog") renderCatalogView();
@@ -984,6 +985,16 @@
     const favBadge = document.getElementById("favorite-count-badge");
     if (favBadge) favBadge.textContent = (state.bookmarkedLessons || []).length;
 
+    const selected = Boolean(catalogTrack);
+    document.getElementById("catalog-track-layout").hidden = !selected;
+    for (const selector of [".catalog-hero", "#catalog-division-pills", "#catalog-domains-grid"]) {
+      document.querySelector(selector).hidden = selected;
+    }
+    if (selected) {
+      renderTrackCatalog(tracks);
+      return;
+    }
+
     const visibleTracks = tracks.filter(track => {
       if (!currentDivisionFilter || currentDivisionFilter === "ALL") return true;
       if (currentDivisionFilter === "FAVORITES") {
@@ -993,42 +1004,26 @@
       return track.division === currentDivisionFilter;
     });
 
-    const shouldLimit = !domainsExpanded && visibleTracks.length > DOMAINS_LIMIT;
-    let tracksToRender = visibleTracks;
-
-    if (shouldLimit) {
-      tracksToRender = visibleTracks.slice(0, DOMAINS_LIMIT);
-      // Asigură că dacă domeniul activ curent este în visibleTracks, el este vizibil
-      if (!tracksToRender.some(t => t.name === state.activeTrack)) {
-        const activeObj = visibleTracks.find(t => t.name === state.activeTrack);
-        if (activeObj) {
-          tracksToRender[DOMAINS_LIMIT - 1] = activeObj;
-        }
-      }
-    }
-
-    tracksToRender.forEach(track => {
+    if (!visibleTracks.length) els.catalogDomainsGrid.textContent = "Nu ai teme salvate la favorite.";
+    visibleTracks.forEach(track => {
       const trackLessons = allLessons.filter(l => l.track === track.name);
       const completedCount = trackLessons.filter(l => (state.masteryPoints[l.id] || 0) > 0).length;
       const pct = trackLessons.length ? Math.round((completedCount / trackLessons.length) * 100) : 0;
-      const isActive = state.activeTrack === track.name;
-
-      const card = document.createElement("div");
-      card.className = `domain-card ${isActive ? "active" : ""}`;
-      card.setAttribute("role", "button");
-      card.setAttribute("tabindex", "0");
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "domain-card";
       card.innerHTML = `
         <div class="domain-card-header">
           <span class="domain-card-icon" aria-hidden="true">${track.icon}</span>
           <div style="display:flex; gap:0.4rem; align-items:center;">
             <span class="domain-division-badge">${track.division === "Informatică și Programare" ? "Informatică" : "Limbi Străine"}</span>
-            <span class="domain-card-badge">${trackLessons.length} capitole</span>
+            <span class="domain-card-badge">${trackLessons.length} teme</span>
           </div>
         </div>
         <h3 class="domain-card-title">${track.name}</h3>
         <p class="domain-card-desc">${track.description}</p>
         <div class="domain-progress-row">
-          <span>Progres Măiestrie</span>
+          <span>Teme exersate</span>
           <strong>${completedCount}/${trackLessons.length} (${pct}%)</strong>
         </div>
         <div class="domain-progress-bar" aria-hidden="true">
@@ -1036,58 +1031,48 @@
         </div>
       `;
 
-      function selectDomainAndScroll() {
-        state.activeTrack = track.name;
-        if (!trackLessons.some(lesson => lesson.id === state.activeLessonId)) state.activeLessonId = trackLessons.find(lesson => !state.masteryPoints[lesson.id])?.id || trackLessons[0]?.id;
-        saveState();
-        renderCatalogView();
-        syncRoute();
-        const chaptersSection = document.getElementById("catalog-chapters-section") || els.catalogSelectedDomainTitle;
-        if (chaptersSection) {
-          chaptersSection.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }
-
-      card.addEventListener("click", selectDomainAndScroll);
-
-      card.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          selectDomainAndScroll();
-        }
-      });
-
+      card.onclick = () => openTrack(track.name, currentDivisionFilter === "FAVORITES");
       els.catalogDomainsGrid.appendChild(card);
     });
+  }
 
-    // Buton Toggle Afișare / Restrângere Domenii Suplimentare
-    if (els.catalogDomainsToggleWrap && els.btnToggleDomains) {
-      if (visibleTracks.length <= DOMAINS_LIMIT) {
-        els.catalogDomainsToggleWrap.classList.add("hidden");
-      } else {
-        els.catalogDomainsToggleWrap.classList.remove("hidden");
-        const total = visibleTracks.length;
-        if (domainsExpanded) {
-          if (els.btnToggleDomainsText) els.btnToggleDomainsText.textContent = `Restrânge la ${DOMAINS_LIMIT} discipline`;
-          if (els.btnToggleDomainsIcon) els.btnToggleDomainsIcon.innerHTML = `<polyline points="18 15 12 9 6 15"></polyline>`;
-        } else {
-          if (els.btnToggleDomainsText) els.btnToggleDomainsText.textContent = `Afișează toate domeniile (${total}) ▾`;
-          if (els.btnToggleDomainsIcon) els.btnToggleDomainsIcon.innerHTML = `<polyline points="6 9 12 15 18 9"></polyline>`;
-        }
-      }
+  function openTrack(track, favorites = false) {
+    switchView("catalog", {params: {track, ...(favorites ? {division: "favorites"} : {})}});
+  }
+
+  function renderTrackCatalog(tracks) {
+    const rail = document.getElementById("catalog-track-links");
+    const back = document.createElement("button");
+    back.type = "button";
+    back.textContent = "← Toate domeniile";
+    back.onclick = () => switchView("catalog");
+    rail.replaceChildren(back);
+    for (const track of tracks) {
+      const control = document.createElement("button");
+      control.type = "button";
+      control.textContent = track.name;
+      if (track.name === catalogTrack) control.setAttribute("aria-current", "page");
+      control.onclick = () => openTrack(track.name);
+      rail.append(control);
     }
 
-    // Actualizare Antet Capitole Domeniu Selectat
-    els.catalogDomainSubtitle.textContent = `DOMENIUL SELECTAT: ${state.activeTrack.toUpperCase()}`;
-    els.catalogSelectedDomainTitle.textContent = `Capitole disponibile (${allLessons.filter(l => l.track === state.activeTrack).length})`;
-
+    const lessons = lessonsForTrack(catalogTrack);
+    const favorites = currentDivisionFilter === "FAVORITES";
+    const available = favorites ? lessons.filter(lesson => state.bookmarkedLessons?.includes(lesson.id)) : lessons;
+    const next = available.find(lesson => !state.masteryPoints[lesson.id]) || available[0];
+    const resume = document.getElementById("resume-track");
+    resume.hidden = !next;
+    resume.textContent = next && next !== available[0] ? "Continuă cu prima temă nerezolvată" : "Deschide prima temă";
+    resume.onclick = () => next && openLesson(next.id);
+    els.catalogDomainSubtitle.textContent = favorites ? "Teme favorite" : "Capitole și teme";
+    els.catalogSelectedDomainTitle.textContent = catalogTrack;
     updateCatalogFilterOptions();
     renderCatalogChapters();
   }
 
   function updateCatalogFilterOptions() {
     const currentVal = els.catalogLevelFilter ? els.catalogLevelFilter.value : "ALL";
-    const track = state.activeTrack || "";
+    const track = catalogTrack || "";
 
     if (track.includes("Franceză") || track.includes("Spaniolă")) {
       els.catalogLevelFilter.innerHTML = `
@@ -1131,6 +1116,8 @@
   }
 
   function sortLessonsCanonical(a, b) {
+    const sequence = (a.order ?? 500) - (b.order ?? 500);
+    if (sequence) return sequence;
     const lvlComp = (a.level || "").localeCompare(b.level || "");
     if (lvlComp !== 0) return lvlComp;
     const matchA = a.title ? a.title.match(/Capitolul\s+(\d+)/i) : null;
@@ -1141,139 +1128,121 @@
     return (a.id || "").localeCompare(b.id || "");
   }
 
+  function lessonsForTrack(track) {
+    return allLessons.filter(lesson => lesson.track === track).sort(sortLessonsCanonical);
+  }
+
+  function chapterGroups(lessons) {
+    const grouped = new Map();
+    for (const lesson of lessons) {
+      const label = lesson.unit || lesson.level || "Lecții";
+      if (!grouped.has(label)) grouped.set(label, []);
+      grouped.get(label).push(lesson);
+    }
+    return [...grouped].flatMap(([title, topics]) => {
+      const groups = [];
+      for (let index = 0; index < topics.length; index += 10) {
+        const name = topics.length <= 10 ? title : title + " · partea " + (index / 10 + 1);
+        groups.push({title: name, topics: topics.slice(index, index + 10)});
+      }
+      return groups;
+    });
+  }
+
+  function topicTitle(lesson) {
+    return lesson.title.replace(/^Capitolul\s+\d+\s*[:.]\s*/i, "");
+  }
+
+  function openLesson(id) {
+    switchView("study", {params: {lesson: id}});
+  }
+
   function renderCatalogChapters(searchLoaded = false) {
-    const allTrackLessons = allLessons
-      .filter(l => l.track === state.activeTrack)
-      .sort(sortLessonsCanonical);
-
-    const selectedLevel = els.catalogLevelFilter ? els.catalogLevelFilter.value : "ALL";
-    const query = els.catalogSearchInput ? els.catalogSearchInput.value.trim().toLowerCase() : "";
-
-    if (query && searchLoaded !== true && allTrackLessons.some(lesson => lesson.contentUrl)) {
-      const track = state.activeTrack;
-      loadLessonContent(allTrackLessons).then(() => {
-        if (state.activeView === "catalog" && state.activeTrack === track) renderCatalogChapters();
+    if (!catalogTrack) return;
+    const track = catalogTrack;
+    const lessons = lessonsForTrack(track);
+    const level = els.catalogLevelFilter.value;
+    const query = els.catalogSearchInput.value.trim().toLowerCase();
+    if (query && searchLoaded !== true && lessons.some(lesson => lesson.contentUrl)) {
+      loadLessonContent(lessons).then(() => {
+        if (state.activeView === "catalog" && catalogTrack === track) renderCatalogChapters();
       }).catch(() => {
-        if (state.activeView !== "catalog" || state.activeTrack !== track) return;
+        if (state.activeView !== "catalog" || catalogTrack !== track) return;
         showToast("Textul lecțiilor nu s-a putut descărca. Caută după titlu sau încearcă din nou.");
         renderCatalogChapters(true);
       });
       return;
     }
 
-    const filteredLessons = allTrackLessons.filter(l => {
-      const matchesLevel = selectedLevel === "ALL" || (l.level && l.level.startsWith(selectedLevel));
-      const matchesQuery =
-        !query ||
-        l.title.toLowerCase().includes(query) ||
-        (l.theory && l.theory.toLowerCase().includes(query)) ||
-        (l.prompt && l.prompt.toLowerCase().includes(query));
-      const matchesFavorites = currentDivisionFilter !== "FAVORITES" || (state.bookmarkedLessons || []).includes(l.id);
-      return matchesLevel && matchesQuery && matchesFavorites;
-    });
+    const matches = lesson => (level === "ALL" || lesson.level?.startsWith(level)) &&
+      (currentDivisionFilter !== "FAVORITES" || state.bookmarkedLessons?.includes(lesson.id)) &&
+      (!query || [lesson.title, lesson.theory, lesson.prompt].some(text => text?.toLowerCase().includes(query)));
 
-    els.catalogChaptersGrid.innerHTML = "";
-
-    if (filteredLessons.length === 0) {
-      els.catalogChaptersGrid.innerHTML = `
-        <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-secondary);">
-          🔍 Niciun capitol nu corespunde criteriilor de căutare. Încearcă un alt termen sau schimbă filtrul de nivel.
-        </div>
-      `;
-      return;
-    }
-
-    filteredLessons.forEach(lesson => {
-      const realIndex = allTrackLessons.findIndex(item => item.id === lesson.id) + 1;
-      const mStatus = getLessonMasteryStatus(lesson);
-
-      const item = document.createElement("div");
-      item.className = "catalog-chapter-item";
-      item.innerHTML = `
-        <div class="chapter-info-col">
-          <span class="chapter-level-tag">${lesson.level || "Nivel"} • ${mStatus.tier} (${mStatus.current}/${mStatus.max})</span>
-          <span class="chapter-name">${realIndex}. ${formatRomanianTypography(lesson.title)}</span>
-        </div>
-        <button class="chapter-start-btn" aria-label="Studiază capitolul ${lesson.title}">
-          Studiază →
-        </button>
-      `;
-
-      item.addEventListener("click", () => {
-        state.activeLessonId = lesson.id;
-        lessonSessionAssisted = false;
-        saveState();
-        switchView("study");
-      });
-
-      els.catalogChaptersGrid.appendChild(item);
-    });
-  }
-
-  function renderDualSplitWorkspace() {
-    if (!els.dualChapterSelect) return;
-    const chapters = allLessons
-      .filter(l => l.track === state.activeTrack)
-      .sort(sortLessonsCanonical);
-
-    if (els.dualTrackTitle) {
-      els.dualTrackTitle.textContent = state.activeTrack || "SQL";
-    }
-
-    els.dualChapterSelect.innerHTML = "";
-    chapters.forEach((ch, idx) => {
-      const opt = document.createElement("option");
-      opt.value = ch.id;
-      const isMastered = !!state.masteryPoints[ch.id];
-      opt.textContent = `${idx + 1}. ${ch.title} ${isMastered ? "★" : ""}`;
-      if (ch.id === state.activeLessonId) opt.selected = true;
-      els.dualChapterSelect.appendChild(opt);
-    });
-
-    els.dualChapterSelect.onchange = e => {
-      const newLessonId = e.target.value;
-      if (newLessonId) {
-        state.activeLessonId = newLessonId;
-        saveState();
-        renderStudyView();
+    const host = els.catalogChaptersGrid;
+    host.replaceChildren();
+    for (const chapter of chapterGroups(lessons)) {
+      const topics = chapter.topics.filter(matches);
+      if (!topics.length) continue;
+      const section = document.createElement("section");
+      section.className = "topic-chapter";
+      const heading = document.createElement("h3");
+      heading.textContent = chapter.title;
+      section.append(heading);
+      const list = document.createElement("ol");
+      for (const lesson of topics) {
+        const row = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = "#invata?" + new URLSearchParams({lesson: lesson.id});
+        link.textContent = topicTitle(lesson);
+        if (state.masteryPoints[lesson.id]) link.className = "topic-done";
+        row.append(link);
+        list.append(row);
       }
-    };
-
-    const activePane = state.activeDualPane || "theory";
-    document.documentElement.setAttribute("data-dual-pane", activePane);
-    document.body.setAttribute("data-dual-pane", activePane);
-    if (els.studyView) els.studyView.setAttribute("data-dual-pane", activePane);
-    document.querySelectorAll(".dual-nav-tab").forEach(tab => {
-      tab.classList.toggle("active", tab.getAttribute("data-pane") === activePane);
-    });
+      section.append(list);
+      host.append(section);
+    }
+    if (!host.childElementCount) host.textContent = "Nu am găsit teme care corespund filtrelor.";
   }
 
-  function setActiveDualTab(tabEl, paneName) {
-    state.activeDualPane = paneName;
-    saveState();
-    document.documentElement.setAttribute("data-dual-pane", paneName);
-    document.body.setAttribute("data-dual-pane", paneName);
-    if (els.studyView) els.studyView.setAttribute("data-dual-pane", paneName);
-
-    document.querySelectorAll(".dual-nav-tab").forEach(t => t.classList.remove("active"));
-    if (tabEl) tabEl.classList.add("active");
-
-    const targetContainer = (paneName === "theory")
-      ? els.theoryCard
-      : (paneName === "examples" ? els.exampleCard : els.practiceCard);
-
-    if (targetContainer) {
-      targetContainer.classList.remove("dual-pane-animate");
-      void targetContainer.offsetWidth; // retrigger reflow
-      targetContainer.classList.add("dual-pane-animate");
-      targetContainer.scrollTop = 0;
-      targetContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+  function renderStudyOutline() {
+    const host = document.getElementById("study-topic-links");
+    host.replaceChildren();
+    for (const chapter of chapterGroups(lessonsForTrack(state.activeTrack))) {
+      const group = document.createElement("details");
+      const title = document.createElement("summary");
+      title.textContent = chapter.title;
+      group.open = chapter.topics.some(lesson => lesson.id === state.activeLessonId);
+      group.append(title);
+      for (const lesson of chapter.topics) {
+        const link = document.createElement("a");
+        link.href = "#invata?" + new URLSearchParams({lesson: lesson.id});
+        link.textContent = topicTitle(lesson);
+        if (lesson.id === state.activeLessonId) link.setAttribute("aria-current", "page");
+        if (state.masteryPoints[lesson.id]) link.className = "topic-done";
+        group.append(link);
+      }
+      host.append(group);
     }
   }
 
-  // =========================================================================
-  // VIEW 2: STUDY VIEW (WORKSPACEL DE LECTURĂ & ANTRENAMENT INTERACTIV)
-  // =========================================================================
+  function applyStudyPane(pane) {
+    els.studyView.dataset.dualPane = pane;
+    document.querySelectorAll(".dual-nav-tab").forEach(tab => {
+      const active = tab.dataset.pane === pane;
+      tab.classList.toggle("active", active);
+      if (active) tab.setAttribute("aria-current", "true");
+      else tab.removeAttribute("aria-current");
+    });
+  }
+
+  function setActiveDualTab(pane) {
+    if (state.activeDualPane === pane) return;
+    state.activeDualPane = pane;
+    applyStudyPane(pane);
+    saveState();
+    syncRoute();
+  }
+
   function renderStudyView() {
     ++sqlCheck;
     els.verifyBtn.disabled = false;
@@ -1286,7 +1255,12 @@
       view.dataset.loading = "true";
       status.replaceChildren("Se încarcă lecția…");
       loadLessonContent([lesson]).then(() => {
-        if (state.activeView === "study" && state.activeLessonId === lesson.id) renderStudyView();
+        if (state.activeView !== "study" || state.activeLessonId !== lesson.id) return;
+        renderStudyView();
+        if (document.activeElement === document.body) {
+          els.lessonTitle.tabIndex = -1;
+          els.lessonTitle.focus({preventScroll: true});
+        }
       }).catch(() => {
         if (state.activeView !== "study" || state.activeLessonId !== lesson.id) return;
         const retry = document.createElement("button");
@@ -1301,13 +1275,13 @@
 
     state.activeTrack = lesson.track;
     if (state.activeView === "study") syncRoute();
-    renderDualSplitWorkspace();
+    renderStudyOutline();
+    applyStudyPane(state.activeDualPane || "theory");
 
     // Resetare sesiune de asistență pentru capitolul curent
     lessonSessionAssisted = false;
 
     // Indicator temă curentă în navigația de sus
-    els.studyTrackIndicator.textContent = lesson.track;
 
     const mStatus = getLessonMasteryStatus(lesson);
 
@@ -1316,13 +1290,15 @@
     els.lessonStatusBadge.textContent = mStatus.label;
     updateBookmarkUI();
 
-    els.lessonTitle.textContent = formatRomanianTypography(lesson.title);
+    els.lessonTitle.textContent = formatRomanianTypography(topicTitle(lesson));
     const isSql = lesson.track === "SQL";
     els.lessonTheory.innerHTML = formatTheoryContent(lesson.theory, lesson);
     if (isSql) els.lessonTheory.querySelectorAll("pre").forEach(renderSqlExample);
 
     // Dicționar & Tabel de Concepte / Vocabular
-    const glossaryItems = lesson.glossary || getMatchingPairsForLesson(lesson).map(p => ({ term: p.left, def: p.right }));
+    view.toggleAttribute("data-guided", Boolean(lesson.unit));
+    const glossaryItems = lesson.glossary || (lesson.unit ? [] : getMatchingPairsForLesson(lesson).map(p => ({term: p.left, def: p.right})));
+    els.dictionaryBox.hidden = !glossaryItems.length;
     els.lessonDictionary.innerHTML = "";
     glossaryItems.forEach(item => {
       const div = document.createElement("div");
@@ -1340,6 +1316,7 @@
     const examplePre = els.lessonExample.closest("pre");
     const previousExample = examplePre.closest(".sql-read-example");
     if (previousExample) previousExample.replaceWith(examplePre);
+    document.getElementById("lesson-example-note").textContent = lesson.exampleNote || "";
     els.lessonExample.textContent = lesson.example || lesson.starterCode || "";
     if (isSql) renderSqlExample(examplePre);
     els.lessonXpTag.textContent = `+${lesson.xp || 30} XP`;
@@ -1349,9 +1326,15 @@
     els.inputZone.classList.remove("state-error", "state-success");
     const starter = lesson.starterCode || "";
     els.userAnswerInput.value = isSql || isWrittenAnswerCorrect(lesson, starter) ? "" : starter;
+    const practiceData = document.getElementById("lesson-practice-data-box");
+    practiceData.hidden = !lesson.practiceData;
+    practiceData.open = false;
+    document.getElementById("lesson-practice-data").innerHTML = lesson.practiceData || "";
     document.getElementById("sql-lab-note").hidden = lesson.id !== "sql-1";
     document.getElementById("sql-lab-result").replaceChildren();
-    els.validationFeedback.textContent = "Citește cerința evidențiată mai sus și tastează răspunsul.";
+    els.userAnswerInput.placeholder = isSql ? "Scrie SQL aici…" : lesson.language ? "Scrie răspunsul…" : "Scrie codul aici…";
+    els.userAnswerInput.rows = lesson.id === "path-sql-it-project" ? 10 : 4;
+    els.validationFeedback.textContent = "";
     els.hintDrawer.classList.add("hidden");
     els.solutionDrawer.classList.add("hidden");
     els.nextLessonBtn.classList.add("hidden");
@@ -1362,7 +1345,8 @@
 
     renderMatchingGame(lesson);
     renderQuizMode(lesson);
-    switchPracticeMode(state.activePracticeMode || "write", { activatePane: false });
+    switchPracticeMode(lesson.unit ? "write" : state.activePracticeMode || "write", { activatePane: false });
+    els.practiceCard.querySelector(".mode-switcher").hidden = Boolean(lesson.unit && (!lesson.language || !lesson.glossary?.length));
     if (window.PolymathStudio) window.PolymathStudio.render("study", {});
   }
 
@@ -1382,7 +1366,7 @@
 
     // Comută automat la tab-ul de practică în Dual Mode dacă era pe teorie sau exemple
     if (activatePane && state.activeDualPane !== "practice" && els.dualTabPractice) {
-      setActiveDualTab(els.dualTabPractice, "practice");
+      setActiveDualTab("practice");
     }
   }
 
@@ -1650,7 +1634,7 @@
     if (!lesson || els.verifyBtn.disabled) return;
     const rawInput = els.userAnswerInput.value;
     let isCorrect, failure;
-    if (lesson.id === "sql-1") {
+    if (lesson.courseSql || lesson.id === "sql-1") {
       document.getElementById("sql-lab-result").replaceChildren();
       if (rawInput.trim()) {
         const attempt = ++sqlCheck;
@@ -1660,12 +1644,12 @@
         try {
           const response = await fetch("/api/sql-lab", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: rawInput }), signal: AbortSignal.timeout(8000)
+            body: JSON.stringify({ query: rawInput, ...(lesson.courseSql ? {studySql: lesson.id} : {}) }), signal: AbortSignal.timeout(8000)
           });
           if (!response.ok && ![400, 413].includes(response.status)) throw new Error("API unavailable");
           const result = await response.json();
           if (!isCurrent()) return;
-          if (Array.isArray(result.rows)) renderSqlResult(result.columns, result.rows);
+          if (result.columns?.length && Array.isArray(result.rows)) renderSqlResult(result.columns, result.rows);
           isCorrect = result.correct === true;
           failure = result.error;
         } catch {
@@ -1716,90 +1700,6 @@
     }
   }
 
-  // =========================================================================
-  // BUZUNAR GLISANT OFF-CANVAS (POCKET DRAWER)
-  // =========================================================================
-  function openPocketDrawer() {
-    renderPocketDrawer();
-    els.pocketDrawer.inert = false;
-    els.pocketDrawer.setAttribute("aria-hidden", "false");
-    els.pocketDrawer.classList.add("open");
-    els.pocketDrawerBackdrop.classList.remove("hidden");
-    els.openPocketDrawerBtn.setAttribute("aria-expanded", "true");
-    els.closePocketDrawerBtn.focus();
-  }
-
-  function closePocketDrawer() {
-    if (els.pocketDrawer.contains(document.activeElement)) els.openPocketDrawerBtn.focus();
-    els.pocketDrawer.inert = true;
-    els.pocketDrawer.setAttribute("aria-hidden", "true");
-    els.pocketDrawer.classList.remove("open");
-    els.pocketDrawerBackdrop.classList.add("hidden");
-    els.openPocketDrawerBtn.setAttribute("aria-expanded", "false");
-  }
-
-  function renderPocketDrawer() {
-    const tracks = getTracks();
-    els.pocketTrackTabs.innerHTML = "";
-
-    tracks.forEach(t => {
-      const countInTrack = allLessons.filter(l => l.track === t.name).length;
-      const btn = document.createElement("button");
-      btn.className = `track-tab-btn ${state.activeTrack === t.name ? "active" : ""}`;
-      btn.innerHTML = `
-        <span style="display:flex; align-items:center; gap:0.4rem;">${t.icon} ${t.name}</span>
-        <span style="font-size:0.75rem; color:var(--text-secondary); opacity:0.85;">${countInTrack} cap.</span>
-      `;
-      btn.addEventListener("click", () => {
-        state.activeTrack = t.name;
-        saveState();
-        renderPocketDrawer();
-      });
-      els.pocketTrackTabs.appendChild(btn);
-    });
-
-    const trackLessons = allLessons
-      .filter(l => l.track === state.activeTrack)
-      .sort(sortLessonsCanonical);
-
-    const completedInTrack = trackLessons.filter(l => (state.masteryPoints[l.id] || 0) > 0).length;
-    const pct = trackLessons.length ? Math.round((completedInTrack / trackLessons.length) * 100) : 0;
-    els.pocketCompletionBadge.textContent = `${completedInTrack}/${trackLessons.length} (${pct}%)`;
-
-    els.pocketLessonList.innerHTML = "";
-    trackLessons.forEach((lesson, idx) => {
-      const mStatus = getLessonMasteryStatus(lesson);
-      const isActive = lesson.id === state.activeLessonId;
-
-      const li = document.createElement("li");
-      const button = document.createElement("button");
-      button.type = "button";
-      if (isActive) button.setAttribute("aria-current", "true");
-      button.className = `lesson-item ${isActive ? "active" : ""} ${mStatus.current > 0 ? "completed" : ""}`;
-      button.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
-          <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700;">${lesson.level || "Nivel"}</span>
-          <span style="word-break:break-word; text-wrap:pretty;">${idx + 1}. ${formatRomanianTypography(lesson.title)}</span>
-        </div>
-        <span class="lesson-mastery-pill">${mStatus.label}</span>
-      `;
-
-      button.addEventListener("click", () => {
-        state.activeLessonId = lesson.id;
-        lessonSessionAssisted = false;
-        saveState();
-        closePocketDrawer();
-        renderStudyView();
-      });
-
-      li.append(button);
-      els.pocketLessonList.appendChild(li);
-    });
-  }
-
-  // =========================================================================
-  // VIEW 3: PAGINĂ COMPLETĂ ACTIVITATE & CALENDAR (FĂRĂ POP-UP)
-  // =========================================================================
   function renderActivityView() {
     const today = getTodayKey();
     const todayAutonomous = state.dailyHistory[today] || 0;
@@ -2539,7 +2439,7 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
 
     // Buton Înapoi la Catalog din Studiul Focalizat
     if (els.backToCatalogBtn) {
-      els.backToCatalogBtn.addEventListener("click", () => switchView("catalog"));
+      els.backToCatalogBtn.addEventListener("click", () => openTrack(state.activeTrack));
     }
 
     // Butoane Rapide (Focus Quick Links)
@@ -2619,32 +2519,16 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
       });
     }
 
-    document.addEventListener("keydown", event => { if (event.key === "Escape" && els.pocketDrawer.classList.contains("open")) closePocketDrawer(); });
-
-    // Buzunar Glisant (Pocket Drawer)
-    if (els.openPocketDrawerBtn) els.openPocketDrawerBtn.addEventListener("click", openPocketDrawer);
-    if (els.closePocketDrawerBtn) els.closePocketDrawerBtn.addEventListener("click", closePocketDrawer);
-    if (els.pocketDrawerBackdrop) els.pocketDrawerBackdrop.addEventListener("click", closePocketDrawer);
-
     // Filtre Diviziuni Catalog (Informatică vs Limbi Străine)
     document.querySelectorAll(".division-pill-btn").forEach(pill => {
       pill.addEventListener("click", () => {
         document.querySelectorAll(".division-pill-btn").forEach(p => p.classList.remove("active"));
         pill.classList.add("active");
         currentDivisionFilter = pill.getAttribute("data-division") || "ALL";
-        domainsExpanded = true;
         renderCatalogView();
         syncRoute();
       });
     });
-
-    // Buton Toggle Afișare / Restrângere Domenii Suplimentare
-    if (els.btnToggleDomains) {
-      els.btnToggleDomains.addEventListener("click", () => {
-        domainsExpanded = !domainsExpanded;
-        renderCatalogView();
-      });
-    }
 
     // Filtre & Căutare în Catalog
     if (els.catalogLevelFilter) {
@@ -2654,46 +2538,9 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
       els.catalogSearchInput.addEventListener("input", renderCatalogChapters);
     }
 
-    // Comutatoare Tab-uri Dual Split (Teorie, Exemple, Practică)
-    if (els.dualTabTheory) {
-      els.dualTabTheory.addEventListener("click", () => {
-        setActiveDualTab(els.dualTabTheory, "theory");
-      });
-    }
-    if (els.dualTabExamples) {
-      els.dualTabExamples.addEventListener("click", () => {
-        setActiveDualTab(els.dualTabExamples, "examples");
-      });
-    }
-    if (els.dualTabPractice) {
-      els.dualTabPractice.addEventListener("click", () => {
-        setActiveDualTab(els.dualTabPractice, "practice");
-      });
-    }
-
-    if (els.dualPrevBtn) {
-      els.dualPrevBtn.addEventListener("click", () => {
-        const trackLessons = allLessons.filter(l => l.track === state.activeTrack).sort(sortLessonsCanonical);
-        const idx = trackLessons.findIndex(l => l.id === state.activeLessonId);
-        if (idx > 0) {
-          state.activeLessonId = trackLessons[idx - 1].id;
-          saveState();
-          renderStudyView();
-        }
-      });
-    }
-
-    if (els.dualNextBtn) {
-      els.dualNextBtn.addEventListener("click", () => {
-        const trackLessons = allLessons.filter(l => l.track === state.activeTrack).sort(sortLessonsCanonical);
-        const idx = trackLessons.findIndex(l => l.id === state.activeLessonId);
-        if (idx >= 0 && idx < trackLessons.length - 1) {
-          state.activeLessonId = trackLessons[idx + 1].id;
-          saveState();
-          renderStudyView();
-        }
-      });
-    }
+    document.querySelectorAll(".dual-nav-tab").forEach(tab => {
+      tab.addEventListener("click", () => setActiveDualTab(tab.dataset.pane));
+    });
 
     // Comutator Moduri de Practică în Studiul Focalizat
     if (els.tabModeWrite) els.tabModeWrite.addEventListener("click", () => switchPracticeMode("write"));
@@ -2746,28 +2593,12 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
       });
     }
 
-    // Capitolul Următor
-    if (els.nextLessonBtn) {
-      els.nextLessonBtn.addEventListener("click", () => {
-        const trackLessons = allLessons
-          .filter(l => l.track === state.activeTrack)
-          .sort(sortLessonsCanonical);
-        const idx = trackLessons.findIndex(l => l.id === state.activeLessonId);
-
-        if (idx !== -1 && idx + 1 < trackLessons.length) {
-          state.activeLessonId = trackLessons[idx + 1].id;
-        } else {
-          const globalIdx = allLessons.findIndex(l => l.id === state.activeLessonId);
-          const nextGlobal = allLessons[(globalIdx + 1) % allLessons.length];
-          state.activeTrack = nextGlobal.track;
-          state.activeLessonId = nextGlobal.id;
-        }
-        lessonSessionAssisted = false;
-        saveState();
-        renderStudyView();
-        renderStats();
-      });
-    }
+    els.nextLessonBtn.addEventListener("click", () => {
+      const lessons = lessonsForTrack(state.activeTrack);
+      const next = lessons[lessons.findIndex(lesson => lesson.id === state.activeLessonId) + 1];
+      if (next) openLesson(next.id);
+      else openTrack(state.activeTrack);
+    });
 
     // Copiere Exemplu
     if (els.copyExampleBtn) {
@@ -2807,13 +2638,13 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
       const route = readRoute(); switchView(route.view, { params: route.params, history: "replace" });
     },
     guestProgress: () => { try { return JSON.parse(localStorage.getItem("polymath_edtech_state_v2") || "null"); } catch { return null; } },
-    selectTrack: name => {
-      const lessons = allLessons.filter(item => item.track === name).sort(sortLessonsCanonical);
-      if (lessons.length) { state.activeLessonId = lessons.find(item => !state.masteryPoints[item.id])?.id || lessons[0].id; state.activeTrack = name; switchView("study"); }
-    }
+    selectTrack: name => openTrack(name)
   };
   window.addEventListener("popstate", () => { const route = readRoute(); switchView(route.view, { params: route.params, history: "none" }); });
-  window.addEventListener("hashchange", () => { const route = readRoute(); if (route.view !== state.activeView) switchView(route.view, { params: route.params, history: "none" }); });
+  window.addEventListener("hashchange", () => { const route = readRoute(); if (route.view !== state.activeView || route.view === "catalog" ||
+      (route.view === "study" && (route.params.lesson !== state.activeLessonId || (route.params.pane || "theory") !== state.activeDualPane))) {
+      switchView(route.view, {params: route.params, history: "none"});
+    } });
 
   document.addEventListener("DOMContentLoaded", () => {
     bindEvents();

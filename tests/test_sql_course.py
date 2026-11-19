@@ -10,6 +10,30 @@ class SqlCourseTests(unittest.TestCase):
     def evaluate(self, exercise, query, variant=0):
         return LAB['evaluate'](json.dumps({'exerciseId': exercise, 'query': query, 'variant': variant}).encode())
 
+    def test_inventory_project_checks_mutations_and_report_on_fresh_data(self):
+        from server.study_sql import REFERENCES
+
+        lesson = "path-sql-it-project"
+        reference = REFERENCES[lesson][1]
+
+        def check(query):
+            return LAB["evaluate"](json.dumps({"studySql": lesson, "query": query}).encode())
+
+        status, result = check(reference)
+        self.assertEqual(status, 200)
+        self.assertTrue(result["correct"])
+        self.assertEqual(result["rows"], [("Proiectare", "HP LaserJet", 3, 6128.5)])
+
+        fixed_result = reference[:reference.index("SELECT")] + "SELECT 'Proiectare', 'HP LaserJet', 3, 6128.5"
+        self.assertFalse(check(fixed_result)[1]["correct"])
+        self.assertFalse(check(reference.replace("stoc - 2", "stoc - 1"))[1]["correct"])
+        self.assertTrue(check(reference)[1]["correct"])
+
+    def test_inventory_read_only_exercise_rejects_modification(self):
+        payload = {"studySql": "path-sql-select", "query": "UPDATE echipamente SET stoc = 0"}
+        status, _ = LAB["evaluate"](json.dumps(payload).encode())
+        self.assertEqual(status, 400)
+
     def test_course_has_six_lessons_twelve_exercises_and_three_project_tasks(self):
         course = LAB['public_course']()
         self.assertEqual(len(course['lessons']), 6)

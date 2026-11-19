@@ -550,3 +550,86 @@ body.library-app[data-view] .nav-link-btn span { font-size: .88rem; white-space:
 .sql-example-table th { background: var(--accent-soft); }
 .sql-example-table tbody tr:nth-child(even) { background: var(--bg-elevated); }
 .sql-example-table .sql-number { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Domains, chapter lists and the lesson workspace share the same navigation. */
+.library-app [hidden] { display: none !important; }
+.library-app .domain-card { text-align: left; color: var(--text-primary); cursor: pointer; }
+#catalog-track-layout, body.library-app[data-view="study"] #study-view.study-layout:not(.hidden) {
+  display: grid; grid-template-columns: minmax(185px, 238px) minmax(0, 1fr);
+  align-items: start; gap: clamp(1rem, 3vw, 2.5rem);
+}
+body.library-app[data-view="study"] #study-view.study-layout { max-width: 1240px; padding: 32px clamp(1rem, 4vw, 2.5rem) 48px; }
+.course-outline {
+  position: sticky; top: 91px; min-width: 0; max-height: calc(100dvh - 115px); overflow: auto;
+  border: 1px solid var(--border-color); border-radius: .8rem; background: var(--bg-secondary);
+}
+.course-outline summary { min-height: 44px; padding: .65rem .85rem; color: var(--text-primary); font-weight: 700; cursor: pointer; }
+.course-outline > summary { border-bottom: 1px solid var(--border-color); }
+.course-outline nav { display: grid; gap: .2rem; padding: .42rem; }
+.course-outline nav :is(a, button), .topic-chapter a {
+  display: flex; align-items: center; gap: .45rem; min-height: 44px;
+  padding: .45rem .65rem; text-align: left; border: 0; border-radius: .45rem;
+  color: var(--text-primary); background: transparent; text-decoration: none; line-height: 1.33; overflow-wrap: anywhere;
+}
+.course-outline nav :is(a, button):is(:hover, [aria-current]), .topic-chapter a:hover {
+  background: var(--accent-soft); color: var(--accent-hover);
+}
+.course-outline nav [aria-current] { font-weight: 700; }
+.course-outline nav details { border-bottom: 1px solid var(--border-color); }
+.course-outline nav details > summary { font-size: .85rem; }
+.course-outline nav details > a { padding-inline-start: 1.15rem; font-size: .875rem; }
+.topic-done::after { content: "✓"; margin-left: auto; color: var(--success-green); }
+#catalog-track-layout .catalog-chapters-section { min-width: 0; margin: 0; background: transparent; border: 0; padding: 0; }
+#catalog-track-layout .catalog-chapters-title { font: 700 clamp(1.9rem, 4vw, 3.2rem)/1.15 Georgia, serif; margin-block: .35rem .8rem; }
+#catalog-track-layout .catalog-chapters-header { flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+#catalog-track-layout .catalog-filters-row { flex-wrap: wrap; }
+#catalog-track-layout .catalog-filters-row :is(select, input), #resume-track { min-height: 44px; }
+#catalog-chapters-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.topic-chapter { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: .75rem; padding: 1rem; }
+.topic-chapter h3 { margin: 0 0 .55rem; font-size: 1.03rem; }
+.topic-chapter ol { list-style-position: inside; padding: 0; margin: 0; }
+.topic-chapter li { display: flex; border-top: 1px solid var(--border-color); }
+.topic-chapter li a { flex: 1; }
+.topic-chapter li + li { margin-top: .12rem; }
+.library-app .study-content-area { min-width: 0; }
+.study-heading { margin-bottom: 1.1rem; }
+.study-heading .study-nav-btn { min-height: 44px; margin-bottom: .65rem; }
+.study-heading .lesson-title { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.1 Georgia, serif; margin-block: .6rem 1rem; overflow-wrap: anywhere; }
+.study-heading .lesson-meta-bar { margin-bottom: 0; }
+body.library-app[data-view="study"] .study-heading .dual-nav-tabs {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem;
+}
+body.library-app[data-view="study"] .study-heading .dual-nav-tab {
+  min-height: 48px; padding: .5rem .25rem; border-radius: .5rem; text-align: center;
+  background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); font: inherit; font-weight: 650; line-height: 1.2;
+}
+body.library-app[data-view="study"] .study-heading .dual-nav-tab.active { background: var(--accent-soft); border-color: var(--accent-primary); color: var(--accent-hover); }
+.library-app #study-view .card { min-width: 0; padding: clamp(.8rem, 2vw, 1.3rem); }
+.library-app #study-view .book-reader { font-size: clamp(1rem, 2vw, 1.12rem); padding: clamp(.7rem, 2vw, 1.3rem); }
+.library-app #lesson-example-note:not(:empty) { margin-bottom: .85rem; }
+.library-app #study-view :is(#verify-btn, .mode-tab, #hint-btn, #copy-example-btn) { min-height: 44px; }
+.library-app [data-loading] .study-content-area { display: none; }
+.lesson-data { overflow-x: auto; margin-block: .8rem; }
+.lesson-data table { width: 100%; border-collapse: collapse; text-align: left; }
+.lesson-data :is(th, td) { border-bottom: 1px solid var(--border-color); padding: .4rem .65rem; }
+.lesson-data th { background: var(--accent-soft); }
+@media (max-width: 740px) {
+  #catalog-track-layout, body.library-app[data-view="study"] #study-view.study-layout:not(.hidden) { grid-template-columns: minmax(0, 1fr); gap: .85rem; }
+  .course-outline { position: static; max-height: min(45dvh, 380px); }
+  body.library-app[data-view="study"] #study-view.study-layout { padding-top: 16px; }
+}
+body.library-app[data-view="study"] #study-view.study-layout {
+  grid-template-areas: "outline lesson";
+  grid-template-rows: auto;
+}
+#study-outline { grid-area: outline; }
+#study-view .study-content-area { grid-area: lesson; gap: 0; }
+.course-outline:not([open]) > nav, .course-outline nav details:not([open]) > a { display: none; }
+@media (max-width: 740px) {
+  body.library-app[data-view="study"] #study-view.study-layout { grid-template-areas: "outline" "lesson"; }
+}
+.library-app #study-view[data-guided] .theory-card .book-reader { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.library-app #study-view[data-guided] .book-reader pre { box-shadow: none; }
+.study-data-box { border: 1px solid var(--border-color); border-radius: .5rem; padding: 0 .7rem; margin-block: .75rem; }
+.study-data-box > summary { min-height: 44px; padding: .65rem 0; cursor: pointer; font-weight: 650; }
+#validation-feedback:empty { display: none; }

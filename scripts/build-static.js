@@ -36,7 +36,7 @@ for (const file of sources) vm.runInContext(fs.readFileSync(path.join(root, file
 const lessons = vm.runInContext(`[
   ...DEFAULT_CURRICULUM, ...EXTENDED_MODULES, ...ADVANCED_CURRICULUM_EXPANSION,
   ...NEW_EXPANDED_CURRICULUM, ...CPP_EXPANDED_CURRICULUM, ...MEGA_EXPANDED_CURRICULUM,
-  ...RUST_RESOURCES_CURRICULUM, ...GO_AI_SECURITY_CURRICULUM
+  ...RUST_RESOURCES_CURRICULUM, ...GO_AI_SECURITY_CURRICULUM, ...FOUNDATION_CURRICULUM
 ]`, context);
 const selected = new Map();
 for (const lesson of lessons) {
@@ -62,6 +62,7 @@ for (const [track, entries] of groups) {
 }
 const listing = [...selected.values()].map(lesson => ({
   id: lesson.id, track: lesson.track, title: lesson.title, level: lesson.level, division: lesson.division,
+  unit: lesson.unit, order: lesson.order,
   glossary: lesson.glossary?.map(({term}) => ({term})),
   contentUrl: paths.get(lesson.track)
 }));

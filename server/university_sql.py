@@ -91,6 +91,14 @@ def tables(key, ex):
                 for name in ex["tables"]]
 
 
+def table_outline(key, ex):
+    with closing(connection(key, {**ex, "empty": False})) as db:
+        names = {row[0] for row in db.execute("SELECT name FROM sqlite_schema WHERE type = 'table'")}
+        return [{"name": name, "columns": table_info(db, name),
+                 "rows": [] if ex.get("empty") else db.execute(f'SELECT * FROM "{name}" LIMIT 3').fetchall()}
+                for name in LAB["fixtures"][key[0]] if name in names]
+
+
 def statement_list(script):
     pending = ""
     *segments, last = script.split(";")
@@ -123,7 +131,7 @@ def authorize(write, names, events):
     return allowed
 
 
-def run(db, script, write, names, reverse=False):
+def run(db, script, write, names, reverse=False, *, authorization=None):
     events, results, executed = [], [], []
     db.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, 64_000)
     db.setlimit(sqlite3.SQLITE_LIMIT_COLUMN, 40)
@@ -134,7 +142,7 @@ def run(db, script, write, names, reverse=False):
     db.set_progress_handler(lambda: next(budget, None) is None, 100)
     trace = []
     db.set_trace_callback(trace.append)
-    db.set_authorizer(authorize(write, names, events))
+    db.set_authorizer(authorization or authorize(write, names, events))
     try:
         for statement in statement_list(script):
             before = len(trace)
@@ -286,7 +294,7 @@ def handle(payload):
     if not ex or action not in ("tables", "run", "check", "solution") or (key == "5-console" and action in ("check", "solution")):
         return 400, {"error": "Alege un exercițiu din catalog."}
     if action == "tables":
-        return 200, {"tables": tables(key, ex), "schema": sorted(LAB["fixtures"]["5"]) if key.startswith("5-") else []}
+        return 200, {"tables": tables(key, ex), "outline": table_outline(key, ex), "schema": sorted(LAB["fixtures"]["5"]) if key.startswith("5-") else []}
     if action == "solution":
         return 200, {"solution": ex["reference"]}
     query = payload.get("query")

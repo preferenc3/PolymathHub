@@ -52,11 +52,20 @@
           <section id="terminal-panel" aria-labelledby="exercise-title">
             <header class="university-task">
               <div><h2 id="exercise-title" tabindex="-1"></h2><p id="exercise-prompt"></p></div>
-              <button type="button" class="secondary" id="show-tables">Vezi tabelele</button>
             </header>
+            <div class="sql-workbench">
+              <details id="terminal-schema" class="terminal-schema">
+                <summary>Tabele și coloane</summary>
+                <div class="terminal-schema-body">
+                  <p id="schema-guidance">Deschide un tabel pentru coloane și date.</p>
+                  <p id="tables-status" role="status"></p>
+                  <div id="schema-table-list"></div>
+                </div>
+              </details>
+              <div class="sql-workbench-editor">
             <form id="terminal-form">
               <div class="editor-frame university-terminal">
-                <div class="editor-caption"><label for="terminal-input">Terminal SQLite</label><small>Ctrl/⌘ + Enter</small></div>
+                <div class="editor-caption"><label for="terminal-input">Terminal SQLite</label><button type="button" id="jump-to-schema">Tabele</button><small>Ctrl/⌘ + Enter</small></div>
                 <div class="terminal-input-line">
                   <textarea id="terminal-input" rows="8" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" maxlength="12000" placeholder="Scrie comanda SQL aici…"></textarea>
                 </div>
@@ -73,24 +82,7 @@
             <p id="university-feedback" role="status" aria-live="polite"></p>
             <pre id="university-solution" hidden></pre>
             <section id="university-results" aria-label="Rezultate"></section>
-          </section>
-          <section id="university-tables" aria-labelledby="tables-title" hidden>
-            <header class="university-task">
-              <div><h2 id="tables-title">Tabele</h2><p id="tables-context"></p></div>
-              <button class="secondary" id="back-to-terminal" type="button">Înapoi la terminal</button>
-            </header>
-            <p id="tables-status" role="status"></p>
-            <div id="table-browser" hidden>
-              <div class="table-browser-toolbar">
-                <label for="table-select">Tabel
-                  <select id="table-select"></select>
-                </label>
-                <details class="schema-index" id="schema-index" hidden>
-                  <summary>Schema Companie</summary>
-                  <ul id="schema-tables"></ul>
-                </details>
               </div>
-              <div id="table-details"></div>
             </div>
           </section>
           <nav class="lab-pagination" aria-label="Navigare între exerciții">

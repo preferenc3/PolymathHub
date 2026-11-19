@@ -117,13 +117,12 @@
     history.replaceState(null, '', url);
     $('exercise-title').textContent = optionLabel(active).replace(/ ✓$/, '');
     $('exercise-prompt').textContent = active.prompt;
-    $('tables-context').textContent = active.id.startsWith('4-')
-      ? 'Consultă structura și datele disponibile pentru acest exercițiu.'
-      : 'Consultă structura și rândurile tabelelor din baza Companie.';
     input.value = drafts.get(mode + ':' + id) || '';
     input.placeholder = active.choice ? 'Scrie DA sau NU…' : 'Scrie comanda SQL aici…';
     $('terminal-panel').hidden = false;
-    $('university-tables').hidden = true;
+    const schema = $('terminal-schema');
+    schema.open = window.matchMedia('(min-width: 1060px)').matches;
+    loadSchema(id);
     $('university-hint').hidden = true;
     $('university-hint').textContent = active.hint;
     $('show-hint').setAttribute('aria-expanded', 'false');
@@ -222,7 +221,7 @@
     return container;
   }
 
-  function drawTableDetails(data) {
+  function tableDetails(data) {
     const structure = pagedTable(['Coloană', 'Tip', 'NOT NULL', 'Implicit', 'Poziție în cheia primară'],
       data.columns.map(([name, type, required, defaultValue, primary]) =>
         [name, type, required ? 'Da' : '—', defaultValue ?? '—', primary || '—']),
@@ -238,7 +237,7 @@
     }
     const records = pagedTable(data.columns.map(column => column[0]), data.rows,
       'Date ' + data.name, 'Date', rowCount(data.rows.length));
-    $('table-details').replaceChildren(...(data.rows.length ? [records, structure] : [structure, records]));
+    return data.rows.length ? [records, structure] : [structure, records];
   }
 
   function rowCount(count) {
@@ -247,40 +246,116 @@
     return count + (needsPreposition ? ' de rânduri' : ' rânduri');
   }
 
-  $('show-tables').onclick = async () => {
-    const id = active.id;
-    $('terminal-panel').hidden = true;
-    $('university-tables').hidden = false;
-    $('table-browser').hidden = true;
-    $('back-to-terminal').focus({preventScroll: true});
-    $('university-tables').scrollIntoView({block: 'start'});
+  function inputContext() {
+    const before = input.value.slice(0, input.selectionStart);
+    const statement = before.slice(before.lastIndexOf(';') + 1);
+    const table = /\b(FROM|JOIN)\s+([a-z_][\w]*)?$/i.exec(statement);
+    if (table) return {kind: 'table', prefix: table[2] || '', keyword: table[1].toUpperCase()};
+    if (/^\s*SELECT\b/i.test(statement) && !/\bFROM\b/i.test(statement)) {
+      return {kind: 'column', prefix: (/\b[a-z_][\w]*$/i.exec(statement)?.[0] || '').replace(/^SELECT$/i, '')};
+    }
+    return {kind: '', prefix: ''};
+  }
+
+  function guideSchema(openOnMatch = false) {
+    const context = inputContext();
+    const schema = $('terminal-schema');
+    schema.dataset.context = context.kind;
+    $('schema-guidance').textContent = context.kind === 'table'
+      ? `După ${context.keyword}, apasă numele unui tabel.`
+      : context.kind === 'column'
+        ? 'Deschide un tabel și apasă coloana pe care vrei s-o afișezi.'
+        : 'Deschide mai multe tabele pentru a vedea coloanele și datele lor lângă editor.';
+    if (openOnMatch && context.kind) schema.open = true;
+  }
+
+  function insertIdentifier(name, kind) {
+    const context = inputContext();
+    const end = input.selectionEnd;
+    const start = input.selectionStart - (context.kind === kind && input.selectionStart === end ? context.prefix.length : 0);
+    const identifier = /^[a-z_]\w*$/i.test(name) ? name : '"' + name.replaceAll('"', '""') + '"';
+    const separator = context.kind === 'column' && /\bSELECT$/i.test(input.value.slice(0, start)) ? ' ' : '';
+    input.setRangeText(separator + identifier, start, end, 'end');
+    input.dispatchEvent(new Event('input', {bubbles: true}));
+    input.focus({preventScroll: true});
+  }
+
+  function drawSchema(data) {
+    const host = $('schema-table-list');
+    host.replaceChildren();
+    const full = new Map(data.tables.map(table => [table.name, table]));
+    for (const table of data.outline || data.tables) {
+      const entry = node('div');
+      entry.className = 'schema-table';
+      const insert = node('button', table.name);
+      insert.type = 'button';
+      insert.className = 'schema-table-name';
+      insert.setAttribute('aria-label', 'Inserează tabelul ' + table.name);
+      insert.onclick = () => insertIdentifier(table.name, 'table');
+      const details = node('details');
+      details.append(node('summary', 'Coloane și date'));
+      const columns = node('div');
+      columns.className = 'schema-columns';
+      for (const [name, type] of table.columns) {
+        const button = node('button', name);
+        button.type = 'button';
+        button.title = type;
+        button.setAttribute('aria-label', 'Inserează coloana ' + name + ' din ' + table.name);
+        button.onclick = () => insertIdentifier(name, 'column');
+        columns.append(button);
+      }
+      details.append(columns);
+      const complete = full.get(table.name);
+      details.addEventListener('toggle', () => {
+        if (!details.open || details.dataset.rendered) return;
+        details.dataset.rendered = 'true';
+        if (table.rows.length) details.append(pagedTable(table.columns.map(column => column[0]), table.rows.slice(0, 3),
+          'Exemplu ' + table.name, 'Primele rânduri', rowCount(table.rows.slice(0, 3).length)));
+        if (complete) {
+          const expanded = node('details');
+          expanded.append(node('summary', 'Structură și toate rândurile'));
+          expanded.addEventListener('toggle', () => {
+            if (expanded.open && expanded.childElementCount === 1) expanded.append(...tableDetails(complete));
+          });
+          details.append(expanded);
+        }
+      });
+      entry.append(insert, details);
+      host.append(entry);
+    }
+    if (!host.childElementCount) host.textContent = 'Nu există tabele de afișat pentru acest exercițiu.';
+    guideSchema();
+  }
+
+  async function loadSchema(id) {
     const status = $('tables-status');
-    status.textContent = 'Se încarcă tabelele…';
+    $('schema-table-list').replaceChildren();
+    guideSchema();
+    status.textContent = 'Se încarcă schema…';
     try {
       const data = tablesByExercise.get(id) || await request('tables', id);
       tablesByExercise.set(id, data);
-      if (active.id !== id || $('university-tables').hidden) return;
+      if (active.id !== id) return;
       status.textContent = '';
-      $('schema-tables').replaceChildren(...data.schema.map(name => node('li', name)));
-      $('schema-index').hidden = data.schema.length === 0;
-      $('schema-index').open = false;
-      const select = $('table-select');
-      select.replaceChildren(...data.tables.map(table => new Option(table.name, table.name)));
-      select.onchange = () => drawTableDetails(data.tables[select.selectedIndex]);
-      select.onchange();
-      $('table-browser').hidden = false;
+      drawSchema(data);
     } catch {
-      if (active.id === id) status.textContent = 'Tabelele nu s-au putut încărca. Revino la terminal și deschide-le din nou.';
+      if (active.id !== id) return;
+      status.textContent = 'Schema nu s-a putut încărca. ';
+      const retry = node('button', 'Reîncearcă');
+      retry.type = 'button';
+      retry.onclick = () => loadSchema(id);
+      status.append(retry);
     }
-  };
+  }
 
-  $('back-to-terminal').onclick = () => {
-    $('university-tables').hidden = true;
-    $('terminal-panel').hidden = false;
-    input.focus();
+  $('jump-to-schema').onclick = () => {
+    const schema = $('terminal-schema');
+    schema.open = true;
+    schema.querySelector('summary').focus();
   };
 
   input.addEventListener('input', () => {
+    guideSchema(true);
     drafts.set(mode + ':' + active.id, input.value);
     revision++;
     $('check-answer').disabled = false;
@@ -289,6 +364,8 @@
     feedback('');
     $('university-results').replaceChildren();
   });
+  input.addEventListener('click', () => guideSchema());
+  input.addEventListener('select', () => guideSchema());
   input.addEventListener('keydown', event => {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();

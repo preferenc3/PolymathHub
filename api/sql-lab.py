@@ -11,7 +11,7 @@ from contextlib import closing
 from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from server import university_sql
+from server import study_sql, university_sql
 
 MAX_BODY = 8192
 MAX_UNIVERSITY_BODY = 80000
@@ -210,6 +210,8 @@ def evaluate(body):
         return university_sql.handle(payload)
     if len(body) > MAX_BODY:
         return 413, {"error": "Cererea este prea mare."}
+    if isinstance(payload, dict) and "studySql" in payload:
+        return study_sql.handle(payload)
     if isinstance(payload, dict) and "exerciseId" in payload:
         return evaluate_course(payload)
     query = payload.get("query") if isinstance(payload, dict) else None
