@@ -3,7 +3,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const output = path.join(root, "dist");
 fs.mkdirSync(output, { recursive: true });
-const files = fs.readdirSync(root).filter(file => /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css)$/.test(file));
+const files = fs.readdirSync(root).filter(file => /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|domain-meter\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css)$/.test(file));
 for (const file of files) fs.copyFileSync(path.join(root, file), path.join(output, file));
 for (const required of ["index.html", "app.js", "studio.js", "vocabulary.js", "studio.css"]) {
   if (!fs.existsSync(path.join(output, required))) throw new Error(`Missing required asset: ${required}`);
@@ -18,7 +18,6 @@ fs.cpSync(path.join(root, "assets/icons"), path.join(output, "assets/icons"), { 
 fs.cpSync(path.join(root, "assets/audio"), path.join(output, "assets/audio"), { recursive: true });
 
 const { execFileSync } = require("node:child_process");
-const vm = require("node:vm");
 const { createHash } = require("node:crypto");
 const embed = (id, value) => `<script type="application/json" id="${id}">${JSON.stringify(value).replace(/</g, "\\u003c")}</script>`;
 
@@ -31,27 +30,9 @@ for (const name of ["index.html", "sql-course.html"]) {
 
 const libraryPath = path.join(output, "biblioteca.html");
 const library = fs.readFileSync(libraryPath, "utf8");
-const sourceTags = /  <script src="(curriculum(?:-[\w-]+)?\.js)"><\/script>\n/g;
-const sources = [...library.matchAll(sourceTags)].map(match => match[1]).filter(file => file !== "curriculum-tests.js");
-const context = vm.createContext({});
-for (const file of sources) vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context, { filename: file });
-const lessons = vm.runInContext(`[
-  ...DEFAULT_CURRICULUM, ...EXTENDED_MODULES, ...ADVANCED_CURRICULUM_EXPANSION,
-  ...NEW_EXPANDED_CURRICULUM, ...CPP_EXPANDED_CURRICULUM, ...MEGA_EXPANDED_CURRICULUM,
-  ...RUST_RESOURCES_CURRICULUM, ...GO_AI_SECURITY_CURRICULUM, ...FOUNDATION_CURRICULUM
-]`, context);
-const selected = new Map();
-for (const lesson of lessons) {
-  const previous = selected.get(lesson.id);
-  if (!previous || ((lesson.glossary || lesson.matchingPairs) && !(previous.glossary || previous.matchingPairs))) {
-    selected.set(lesson.id, lesson);
-  }
-}
-const groups = new Map();
-for (const lesson of selected.values()) {
-  if (!groups.has(lesson.track)) groups.set(lesson.track, []);
-  groups.get(lesson.track).push(lesson);
-}
+const {sourceTags, collect, domainIndex} = require("./lesson-groups.cjs");
+const {selected, groups} = collect(root, library);
+fs.writeFileSync(path.join(output, "domain-index.json"), JSON.stringify(domainIndex(groups)));
 const paths = new Map();
 const contentDirectory = path.join(output, "lessons");
 fs.mkdirSync(contentDirectory, {recursive: true});

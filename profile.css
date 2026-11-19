@@ -122,3 +122,28 @@ html:has(#account-dialog[open]), body:has(#account-dialog[open]) { overflow: hid
   color: var(--text-primary); background: var(--bg-secondary); font-weight: 650;
 }
 #admin-dialog .admin-views button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-primary); }
+
+/* Clip the colored outline at a horizontal waterline, leaving its centre empty. */
+.domain-meter {
+  position: relative; display: inline-grid; place-items: center;
+  flex: 0 0 44px; width: 44px; height: 44px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; color: var(--ink);
+  font: 650 .95rem/1 system-ui, sans-serif; cursor: pointer;
+}
+.domain-meter::before, .domain-meter::after {
+  content: ""; position: absolute; inset: 3px; border: 4px solid var(--muted); border-radius: 50%; pointer-events: none;
+}
+.library-app .domain-meter { order: 3; }
+.domain-meter::before { border-color: #858585; }
+.domain-meter::after { border-color: var(--teal); clip-path: inset(calc(100% - var(--meter-height, 0%)) 0 0); }
+.domain-meter:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+#domain-meter-dialog { width: min(25rem, 92vw); margin: auto; padding: 1.5rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); }
+#domain-meter-dialog::backdrop { background: #10181480; }
+#domain-meter-dialog h2 { margin: 0 2rem 1rem 0; font: 700 1.6rem/1.2 Georgia, serif; }
+#domain-meter-dialog p { margin: .75rem 0; color: var(--muted); }
+#domain-meter-dialog a { display: inline-flex; align-items: center; min-height: 44px; color: var(--teal-dark); }
+#domain-meter-dialog .meter-close { position: absolute; top: .35rem; right: .35rem; width: 44px; height: 44px; border: 0; color: var(--ink); background: transparent; font-size: 1.35rem; cursor: pointer; }
+@media (max-width: 375px) {
+  body.library-app[data-view] .top-bar { gap: 2px; padding-inline: 4px; }
+  body.library-app[data-view] .brand-title { font-size: 1.06rem; }
+}

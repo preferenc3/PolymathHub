@@ -139,6 +139,7 @@
 
   function showResult(host, items, answers, track, start, choose) {
     const score = items.filter((item, index) => item.correctIndex === answers[index]).length;
+    if (items.length > 0 && score === items.length) window.PolymathApp.passDomainTest(track.name);
     const summary = element("header");
     summary.className = "test-summary";
     const title = element("h3", score + " din " + items.length + " răspunsuri corecte");
@@ -265,7 +266,7 @@
     }
 
     function choose(focusTrack) {
-      const intro = element("p", "Alege un domeniu pentru un test de cinci întrebări. La final vezi ce ai răspuns corect și ce merită repetat.");
+      const intro = element("p", "Alege un domeniu pentru un test de cinci întrebări. Pentru a promova, răspunde corect la toate întrebările.");
       intro.className = "test-intro";
       host.replaceChildren(intro);
       for (const [heading, division] of [

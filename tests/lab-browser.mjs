@@ -81,6 +81,7 @@ try {
   await page.goto(base, {waitUntil: 'networkidle0'});
   await ready();
   assert.equal((await snapshot()).xp, 0, 'New browser profile starts as a guest with no XP.');
+  assert.equal(await page.$eval('#domain-meter', el => el.textContent), 'x');
   await audit('desktop-home');
   await screenshot('desktop-home');
   // Reload starts the keyboard sequence at the beginning of the document.
@@ -91,16 +92,16 @@ try {
   await page.keyboard.press('Enter');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'main-content');
   assert.notEqual(await page.evaluate(() => location.hash), '#main-content', 'Skip link must not change the app route.');
-  await page.focus('#help-button');
+  await page.focus('#domain-meter');
   await page.keyboard.press('Enter');
-  await page.waitForSelector('#help-dialog[open]');
-  assert.equal(await page.evaluate(() => !!document.activeElement.closest('#help-dialog')), true);
+  await page.waitForSelector('#domain-meter-dialog[open]');
+  assert.equal(await page.evaluate(() => !!document.activeElement.closest('#domain-meter-dialog')), true);
   for (let i = 0; i < 4; i++) {
     await page.keyboard.press('Tab');
-    assert.equal(await page.evaluate(() => document.querySelector('#help-dialog').matches(':modal') && (!!document.activeElement.closest('#help-dialog') || document.activeElement === document.body)), true, 'The native modal must not expose background controls to Tab.');
+    assert.equal(await page.evaluate(() => document.querySelector('#domain-meter-dialog').matches(':modal') && (!!document.activeElement.closest('#domain-meter-dialog') || document.activeElement === document.body)), true, 'The native modal must not expose background controls to Tab.');
   }
   await page.keyboard.press('Escape');
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'help-button');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'domain-meter');
   checks.push('keyboard-skip-link-dialog-focus-restoration');
 
   await route('#lectie?ex=s1-all&etapa=practica');

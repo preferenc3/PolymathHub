@@ -1,3 +1,4 @@
+import lessonGroups from "./lesson-groups.cjs";
 import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -9,9 +10,17 @@ import adminAccounts from "../api/admin-accounts.mjs";
 import { readJson, send, fail } from "../server/auth.mjs";
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".mp3": "audio/mpeg" };
-const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/icons\/[a-z-]+\.svg)$/;
+const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|domain-meter\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/icons\/[a-z-]+\.svg)$/;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
+  if (url.pathname === "/domain-index.json") {
+    if (process.env.POLYMATH_SERVE_DIST === "1") {
+      const data = await fs.readFile(path.join(root, "dist/domain-index.json"), "utf8");
+      return send(res, 200, JSON.parse(data));
+    }
+    const library = await fs.readFile(path.join(root, "index.html"), "utf8");
+    return send(res, 200, lessonGroups.domainIndex(lessonGroups.collect(root, library).groups));
+  }
   if (url.pathname === "/api/catalog") return catalog(req, res);
   if (url.pathname === "/api/account") return account(req, res);
   if (url.pathname === "/api/progress") return progress(req, res);

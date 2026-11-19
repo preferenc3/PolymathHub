@@ -443,7 +443,6 @@
       $('language-feedback').className='feedback';$('language-feedback').textContent='Câmpurile sunt pregătite pentru repetare. Progresul salvat și XP rămân păstrate.';inputs[0].focus();
     });
   }
-  $('help-button').addEventListener('click',()=>$('help-dialog').showModal());
   $('outline-button').addEventListener('click',()=>$('course-dialog').showModal());
   document.addEventListener('click',event=>{if(event.target.closest('[data-close-dialog]'))event.target.closest('dialog').close();if(event.target.closest('dialog a[href^="#"]'))event.target.closest('dialog').close();});
   document.querySelector('.skip-link').addEventListener('click',event=>{event.preventDefault();$('main-content').focus();$('main-content').scrollIntoView();});

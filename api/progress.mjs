@@ -6,6 +6,9 @@ const cleanObject = value => value && !Array.isArray(value) && typeof value === 
 export function validateProgress(body) {
   const course = cleanObject(body.course); const vocabulary = cleanObject(body.vocabulary);
   const safeCourse = {};
+  safeCourse.passedDomainTests = Array.isArray(course.passedDomainTests)
+    ? [...new Set(course.passedDomainTests.filter(name => typeof name === "string" && name.length <= 100))].slice(0, 100)
+    : [];
   const mistake = course.catalogMistake;
   if (mistake && /^[a-f0-9-]{36}$/i.test(mistake.id) && typeof mistake.at === "string" && Number.isFinite(Date.parse(mistake.at))) {
     safeCourse.catalogMistake = {id:mistake.id, at:new Date(mistake.at).toISOString()};

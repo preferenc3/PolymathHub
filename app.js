@@ -10,6 +10,7 @@
     lastCompletionDate: null,
     xp: 0,
     completedLessons: [],
+    passedDomainTests: [],
     masteryPoints: {},   // { [lessonId]: points }
     dailyHistory: {},    // { [date]: count of autonomous tasks }
     assistedHistory: {}, // { [date]: count of assisted (50/50) tasks }
@@ -410,6 +411,7 @@
       ) {
         parsed.streak = 0;
       }
+      parsed.passedDomainTests = Array.isArray(parsed.passedDomainTests) ? parsed.passedDomainTests : [];
       parsed.masteryPoints = parsed.masteryPoints || {};
       parsed.dailyHistory = parsed.dailyHistory || {};
       parsed.assistedHistory = parsed.assistedHistory || {};
@@ -2638,6 +2640,11 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
   }
 
   window.PolymathApp = {
+    passDomainTest(name) {
+      if (state.passedDomainTests.includes(name)) return;
+      state.passedDomainTests = [...state.passedDomainTests, name];
+      saveState();
+    },
     navigate: (view, params = {}) => switchView(view, { params }),
     snapshot: () => ({ state, lessons: allLessons, tracks: getTracks() }),
     toast: showToast,
@@ -2645,6 +2652,7 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
     replaceProgress: (course, accountId) => {
       STORAGE_KEY = "polymath_edtech_state_v2" + (accountId ? ":" + accountId : "");
       state = { ...structuredClone(defaultState), ...(course || {}), user: structuredClone(defaultState.user) };
+      if (!Array.isArray(state.passedDomainTests)) state.passedDomainTests = [];
       if (!allLessons.some(lesson => lesson.id === state.activeLessonId)) state.activeLessonId = allLessons[0]?.id;
       applyTheme(preferredTheme());
       const route = readRoute(); switchView(route.view, { params: route.params, history: "replace" });
