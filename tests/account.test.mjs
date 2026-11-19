@@ -341,6 +341,9 @@ test("revocation checks the actor, preserves the last administrator and tolerate
   assert.equal((await run(handler, { ...options, headers: { ...headers, origin: "https://other.example" } })).statusCode, 403);
   assert.equal((await run(handler, { ...options, headers: { ...headers, "x-polymath-account": target } })).statusCode, 412);
   assert.equal((await run(handler, options)).statusCode, 403);
+  const self = await run(handler, { ...options, body: { userId: id } });
+  assert.equal(self.statusCode, 403);
+  assert.match(self.body.error, /propriul rol|Îți păstrezi rolul/);
   decision = "last_admin";
   assert.equal((await run(handler, options)).statusCode, 409);
   for (decision of ["revoked", "absent"]) assert.deepEqual((await run(handler, options)).body, { revoked: true });

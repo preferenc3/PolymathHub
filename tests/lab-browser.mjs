@@ -81,7 +81,7 @@ try {
   await page.goto(base, {waitUntil: 'networkidle0'});
   await ready();
   assert.equal((await snapshot()).xp, 0, 'New browser profile starts as a guest with no XP.');
-  assert.equal(await page.$eval('#domain-meter', el => el.textContent), 'x');
+  assert.equal(await page.$eval('#domain-meter', el => el.textContent), '-');
   await audit('desktop-home');
   await screenshot('desktop-home');
   // Reload starts the keyboard sequence at the beginning of the document.

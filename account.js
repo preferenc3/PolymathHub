@@ -302,10 +302,11 @@
         <button type="button" class="studio-primary" data-admin-grant>Confirmă rolul</button>
         <button type="button" class="studio-secondary" data-admin-cancel>Anulează</button>
       </div>
+      <section data-progress-panel class="admin-progress-panel" aria-label="Fișa de progres" hidden></section>
       <div class="admin-table-wrap" hidden>
         <table class="admin-table">
           <thead><tr><th scope="col">Nume și email</th><th scope="col">Creat la</th><th scope="col">Ultima conectare</th>
-            <th scope="col">XP</th><th scope="col">${window.PolymathSqlCourse ? "Exerciții SQL" : "Lecții parcurse"}</th><th scope="col">${window.PolymathSqlCourse ? "De repetat" : "Cuvinte salvate"}</th>${window.PolymathSqlCourse ? '<th scope="col">Proiect final</th>' : ""}<th scope="col">Rol</th></tr></thead>
+            <th scope="col">XP</th><th scope="col">${window.PolymathSqlCourse ? "Exerciții SQL" : "Lecții parcurse"}</th><th scope="col">${window.PolymathSqlCourse ? "De repetat" : "Cuvinte salvate"}</th>${window.PolymathSqlCourse ? '<th scope="col">Proiect final</th>' : ""}<th scope="col">Rol</th><th scope="col">Progres</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -335,6 +336,8 @@
     let requestId = 0;
     let granting = false;
     let selected = null;
+    const progressPanel = select("[data-progress-panel]");
+    let progressSelection = 0;
     const confirmation = select("[data-admin-confirm]");
     const grant = select("[data-admin-grant]");
     function clearSelection() {
@@ -344,6 +347,8 @@
 
     async function loadAccounts(requestedPage, message = "") {
       clearSelection();
+      progressSelection++;
+      progressPanel.hidden = true;
       const currentRequest = ++requestId;
       const isCurrent = () => element.open && requestId === currentRequest && account.user?.id === userId;
       const params = new URLSearchParams({ page: requestedPage, q: query });
@@ -365,8 +370,9 @@
           <th scope="row"><strong>${text(row.name)}</strong><span>${text(row.email || "—")}</span></th>
           <td>${text(formatAdminDate(row.created_at))}</td><td>${text(formatAdminDate(row.last_sign_in_at))}</td>
           <td>${text(row.xp)}</td><td>${text(window.PolymathSqlCourse ? row.sql_completed : row.lessons)}</td><td>${text(window.PolymathSqlCourse ? row.sql_review : row.saved_words)}</td>${window.PolymathSqlCourse ? `<td>${text(row.sql_project)}/3</td>` : ""}
-          <td>${row.is_admin ? `<span class="admin-role">Administrator</span> <button type="button" class="studio-secondary" data-pick-admin="${text(row.id)}" data-role-action="revoke" aria-label="Retrage rolul de administrator pentru ${text(row.email || row.name)}">Retrage rolul</button>`
+          <td>${row.id === userId ? '<span class="admin-role">Administrator · Tu</span>' : row.is_admin ? `<span class="admin-role">Administrator</span> <button type="button" class="studio-secondary" data-pick-admin="${text(row.id)}" data-role-action="revoke" aria-label="Retrage rolul de administrator pentru ${text(row.email || row.name)}">Retrage rolul</button>`
             : row.id ? `<button type="button" class="studio-secondary" data-pick-admin="${text(row.id)}" aria-label="Acordă rol de administrator pentru ${text(row.email || row.name)}">Acordă rol</button>` : "Utilizator"}</td>
+          <td><button type="button" class="studio-secondary" data-inspect="${text(row.id)}">Fișă de progres</button></td>
         </tr>`).join("");
         table.hidden = data.accounts.length === 0;
         pager.hidden = pages === 1;
@@ -381,15 +387,89 @@
       }
     }
 
+    async function inspectProgress(trigger, notice = "") {
+      const target = trigger.dataset.inspect;
+      const label = trigger.closest("tr").querySelector("th span").textContent;
+      const selection = ++progressSelection;
+      const current = () => element.open && selection === progressSelection && account.user?.id === userId;
+      const request = payload => api("/api/admin-accounts?action=progress", {
+        method: "POST", headers: { "X-Polymath-Account": userId }, body: JSON.stringify({ userId: target, ...payload })
+      });
+      progressPanel.hidden = false;
+      progressPanel.textContent = "Se încarcă fișa…";
+      try {
+        const data = await request({action: "inspect"});
+        if (!current()) return;
+        const labels = {bonus: "Bonus XP", restore: "Restabilire serie", goal: "Obiectiv zilnic"};
+        progressPanel.innerHTML = `
+          <header><h3 tabindex="-1">Fișa de progres</h3><button type="button" data-dismiss class="studio-secondary">Închide fișa</button></header>
+          <p>${text(label)}</p>
+          <dl class="admin-summary"><div><dt>XP</dt><dd>${text(data.xp)}</dd></div><div><dt>Serie activă</dt><dd>${text(data.streak)} zile</dd></div><div><dt>Lecții parcurse</dt><dd>${text(data.lessons)}</dd></div><div><dt>Obiectiv zilnic</dt><dd>${text(data.goal)}</dd></div></dl>
+          <form><label>Acțiune<select name="operation"><option value="bonus">Acordă XP bonus</option><option value="restore"${data.restorable ? "" : " disabled"}>Restabilește seria</option><option value="goal">Schimbă obiectivul zilnic</option></select></label>
+          <p>${data.restorable ? `Serie recuperabilă · ${text(data.restorable)} zile` : "Istoricul nu conține o serie pierdută de recuperat."}</p>
+          <label data-amount><span>XP de adăugat</span><input name="amount" type="number" min="1" max="10000" step="1" required></label>
+          <label>Motiv<input name="reason" maxlength="240" required></label>
+          <button class="studio-primary" type="submit">Acordă bonusul</button></form>
+          <details><summary>Istoricul intervențiilor</summary><ol></ol></details>
+          <p role="status" data-result></p><button type="button" data-refresh class="studio-secondary">Actualizează fișa</button>`;
+        const get = selector => progressPanel.querySelector(selector);
+        get("h3").focus();
+        get("[data-result]").textContent = notice;
+        const entries = data.history || [];
+        get("ol").innerHTML = entries.map(row => `<li><strong>${text(labels[row.action])} · ${text(row.before_value)} → ${text(row.after_value)}</strong><br>${text(row.reason)}<br>${text(row.actor)} · ${text(formatAdminDate(row.created_at))}</li>`).join("");
+        if (!entries.length) get("ol").replaceWith(document.createTextNode("Nicio intervenție înregistrată."));
+        get("[data-dismiss]").onclick = () => { progressSelection++; progressPanel.hidden = true; trigger.focus(); };
+        get("[data-refresh]").onclick = () => inspectProgress(trigger);
+        const form = get("form"), {operation, amount, reason} = form.elements;
+        const submit = get("button[type=submit]");
+        operation.onchange = () => {
+          const goal = operation.value === "goal";
+          get("[data-amount]").hidden = amount.disabled = operation.value === "restore";
+          get("[data-amount] span").textContent = goal ? "Exerciții pe zi" : "XP de adăugat";
+          amount.max = goal ? 100 : 10000;
+          amount.value = goal ? data.goal : "";
+          submit.textContent = goal ? "Salvează obiectivul" : amount.disabled ? "Restabilește seria" : "Acordă bonusul";
+        };
+        let lastPayload, requestId;
+        form.onsubmit = async event => {
+          event.preventDefault();
+          if (submit.disabled) return;
+          const change = {action: operation.value, value: amount.disabled ? null : Number(amount.value), reason: reason.value.trim(), revision: data.revision};
+          if (JSON.stringify(change) !== lastPayload) requestId = crypto.randomUUID();
+          lastPayload = JSON.stringify(change);
+          submit.disabled = true;
+          get("[data-result]").textContent = "Se salvează…";
+          try {
+            await request({...change, requestId});
+            if (!current()) return;
+            if (change.action === "bonus") trigger.closest("tr").cells[3].textContent = String(data.xp + change.value);
+            await inspectProgress(trigger, "Modificarea a fost salvată.");
+          } catch (error) {
+            if (current()) { get("[data-result]").textContent = error.message; submit.disabled = false; }
+          }
+        };
+      } catch (error) {
+        if (current()) progressPanel.textContent = error.message;
+      }
+    }
+
     select("form").addEventListener("submit", event => {
       event.preventDefault();
       query = select("#admin-search-input").value.trim();
       loadAccounts(1);
     });
     table.addEventListener("click", event => {
+      const inspect = event.target.closest("[data-inspect]");
+      if (inspect && !granting) {
+        clearSelection();
+        inspectProgress(inspect);
+        return;
+      }
       const button = event.target.closest("[data-pick-admin]");
       if (!button || granting) return;
       selected = { action: button.dataset.roleAction || "grant", id: button.dataset.pickAdmin, label: button.closest("tr").querySelector("th span").textContent, button };
+      progressSelection++;
+      progressPanel.hidden = true;
       const revoke = selected.action === "revoke";
       grant.textContent = revoke ? "Confirmă retragerea" : "Confirmă acordarea";
       select("[data-admin-recipient]").textContent = revoke
@@ -411,12 +491,7 @@
         await api("/api/admin-accounts?action=" + target.action, {
           method: "POST", headers: { "X-Polymath-Account": userId }, body: JSON.stringify({ userId: target.id })
         });
-        if (target.action === "revoke" && target.id === userId) {
-          account.admin = false;
-          renderControl();
-          element.close();
-          window.PolymathApp.toast("Rolul tău de administrator a fost retras.");
-        } else if (element.open) {
+        if (element.open) {
           select("#admin-search-input").focus();
           await loadAccounts(page, target.action === "revoke" ? "Rolul de administrator a fost retras." : "Rolul de administrator a fost acordat.");
         }

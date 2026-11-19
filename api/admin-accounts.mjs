@@ -5,13 +5,14 @@ export function createAdminAccountsHandler({ env = process.env, fetcher = fetch 
     try {
       const params = new URL(req.url, "http://localhost").searchParams;
       const roleAction = params.get("action");
+      const progressAction = params.get("action") === "progress" && req.method === "POST";
       const changeRole = req.method === "POST" && ["grant", "revoke"].includes(roleAction);
-      if (req.method !== "GET" && !changeRole) {
+      if (req.method !== "GET" && !changeRole && !progressAction) {
         res.setHeader("Allow", "GET, POST");
         throw new ApiError(405, "Metodă indisponibilă.");
       }
 
-      if (changeRole && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
+      if ((changeRole || progressAction) && !sameOrigin(req)) throw new ApiError(403, "Cererea nu poate fi acceptată de pe această pagină.");
       const config = configuration(env);
       if (!config) throw new ApiError(503, "Administrarea conturilor nu este disponibilă.");
       const call = provider(config, fetcher);
@@ -19,13 +20,33 @@ export function createAdminAccountsHandler({ env = process.env, fetcher = fetch 
       if (!session) throw new ApiError(401, "Conectează-te pentru a accesa panoul.");
       checkExpectedAccount(req, session.user);
 
-      if (changeRole) {
+      if (changeRole || progressAction) {
         if (!req.headers["x-polymath-account"]) throw new ApiError(412, "Reîncarcă panoul și încearcă din nou.");
-        const { userId } = await readJson(req, 1024);
+        const { userId, action, value, reason, revision, requestId } = await readJson(req, 2048);
         if (typeof userId !== "string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(userId)) {
           throw new ApiError(400, "Contul selectat nu este valid.");
         }
+        if (progressAction) {
+          if (!["inspect", "bonus", "restore", "goal"].includes(action)) throw new ApiError(400, "Acțiune necunoscută.");
+          if (action !== "inspect" && (typeof reason !== "string" || !reason.trim() || reason.trim().length > 240
+            || !Number.isSafeInteger(revision) || revision < 0 || typeof requestId !== "string"
+            || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(requestId)
+            || (action !== "restore" && (!Number.isSafeInteger(value) || value < 1 || value > (action === "bonus" ? 10000 : 100))))) {
+            throw new ApiError(400, "Verifică valoarea și motivul modificării.");
+          }
+          const body = { p_user_id: userId, p_action: action };
+          if (action !== "inspect") Object.assign(body, { p_value: action === "restore" ? null : value, p_reason: reason.trim(), p_revision: revision, p_request: requestId });
+          const result = await call("/rest/v1/rpc/polymath_admin_progress", { method: "POST", token: session.token, body });
+          const errors = {
+            forbidden: [403, "Ai nevoie de rolul de administrator."], missing: [404, "Contul nu mai există."],
+            conflict: [409, "Progresul s-a schimbat. Actualizează fișa înainte de a continua."],
+            no_streak: [409, "Nu există o serie pierdută de recuperat."], invalid: [400, "Valoarea nu poate fi aplicată."]
+          };
+          if (result?.error) throw new ApiError(...(errors[result.error] || [400, "Modificarea a fost respinsă."]));
+          return send(res, 200, result);
+        }
         if (roleAction === "revoke") {
+          if (userId.toLowerCase() === session.user.id.toLowerCase()) throw new ApiError(403, "Îți păstrezi rolul de administrator. Doar un alt administrator îl poate retrage.");
           const result = await call("/rest/v1/rpc/polymath_revoke_administrator", {
             method: "POST", token: session.token, body: { p_user_id: userId }
           });

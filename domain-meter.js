@@ -25,7 +25,7 @@
     }).finally(() => { request = null; });
   }
   function render(count, fraction, detail) {
-    button.firstElementChild.textContent = count ? String(count) : 'x';
+    button.firstElementChild.textContent = count ? String(count) : '-';
     button.style.setProperty('--meter-height', (fraction * 100) + '%');
     const total = 'Domenii finalizate: ' + count;
     button.setAttribute('aria-label', total + '. ' + detail);
