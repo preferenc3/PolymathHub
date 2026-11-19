@@ -989,9 +989,7 @@
 
     const selected = Boolean(catalogTrack);
     document.getElementById("catalog-track-layout").hidden = !selected;
-    for (const selector of [".catalog-hero", "#catalog-division-pills", "#catalog-domains-grid"]) {
-      document.querySelector(selector).hidden = selected;
-    }
+    document.getElementById("catalog-directory").hidden = selected;
     for (const button of document.querySelectorAll("#catalog-division-pills button")) {
       const division = button.dataset.division;
       const count = button.querySelector("[data-track-count]");
@@ -1012,33 +1010,38 @@
       return track.division === currentDivisionFilter;
     });
 
-    if (!visibleTracks.length) els.catalogDomainsGrid.textContent = "Nu ai teme salvate la favorite.";
-    visibleTracks.forEach(track => {
-      const trackLessons = allLessons.filter(l => l.track === track.name);
-      const completedCount = trackLessons.filter(l => (state.masteryPoints[l.id] || 0) > 0).length;
-      const pct = trackLessons.length ? Math.round((completedCount / trackLessons.length) * 100) : 0;
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "domain-card";
-      card.innerHTML = `
-        <div class="domain-card-header">
-          <span class="domain-card-icon" aria-hidden="true">${track.icon}</span>
-          <h3 class="domain-card-title">${track.name}</h3>
-          <span class="domain-open-arrow" aria-hidden="true">→</span>
-        </div>
-        <p class="domain-card-desc">${track.description}</p>
-        <div class="domain-progress-row">
-          <span>Teme exersate</span>
-          <strong>${completedCount} din ${trackLessons.length}</strong>
-        </div>
-        <div class="domain-progress-bar" aria-hidden="true">
-          <div class="domain-progress-fill" style="width: ${pct}%;"></div>
-        </div>
-      `;
-
-      card.onclick = () => openTrack(track.name, currentDivisionFilter === "FAVORITES");
-      els.catalogDomainsGrid.appendChild(card);
-    });
+    if (!visibleTracks.length) {
+      els.catalogDomainsGrid.textContent = "Nu ai teme salvate la favorite.";
+      return;
+    }
+    const divisions = new Map();
+    for (const track of visibleTracks) {
+      if (!divisions.has(track.division)) divisions.set(track.division, []);
+      divisions.get(track.division).push(track);
+    }
+    for (const [division, entries] of divisions) {
+      const section = document.createElement("section");
+      const heading = document.createElement("h3");
+      heading.textContent = division === CATALOG_DIVISIONS.coding ? "Informatică și programare" : "Limbi și comunicare";
+      const list = document.createElement("ul");
+      for (const track of entries.sort((a, b) => a.name.localeCompare(b.name, "ro"))) {
+        const lessons = allLessons.filter(lesson => lesson.track === track.name);
+        const practiced = lessons.filter(lesson => (state.masteryPoints[lesson.id] || 0) > 0).length;
+        const query = new URLSearchParams({track: track.name});
+        if (currentDivisionFilter === "FAVORITES") query.set("division", "favorites");
+        const item = document.createElement("li");
+        item.innerHTML = `
+          <a class="domain-card directory-row" href="#exploreaza?${query}">
+            <span class="directory-subject"><strong>${escapeHtml(track.name)}</strong>
+              <span>${escapeHtml(track.description)}</span></span>
+            <span class="directory-progress">${practiced} / ${lessons.length} teme exersate</span>
+            <span class="directory-arrow" aria-hidden="true">→</span>
+          </a>`;
+        list.append(item);
+      }
+      section.append(heading, list);
+      els.catalogDomainsGrid.append(section);
+    }
   }
 
   function openTrack(track, favorites = false) {

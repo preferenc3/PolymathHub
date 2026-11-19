@@ -146,20 +146,15 @@
        VIEW 1: PAGINA PRINCIPALĂ (CATALOG & DOMENII DE CURS)
        ========================================================================= -->
   <main id="catalog-view" class="catalog-layout hidden">
-    <section class="catalog-hero">
-      <div>
+    <div id="catalog-directory">
+      <header class="directory-heading">
         <h2>Domenii de studiu</h2>
-        <p>Alege un curs pentru a vedea capitolele și a continua de unde ai rămas.</p>
-      </div>
-      <a class="catalog-labs-link" href="/sql-university.html">
-        <span class="catalog-lab-icon" aria-hidden="true">&lt;/&gt;</span>
-        <span><strong>Laboratoare</strong><small>Lucrări practice de SQL</small></span>
-        <span aria-hidden="true">→</span>
-      </a>
-    </section>
-
-    <!-- Filtru Categorii / Diviziuni (Informatică & Programare vs Limbi Străine vs Favorite) -->
-    <div class="catalog-division-pills" id="catalog-division-pills" role="group" aria-label="Filtrare după domeniu principal">
+        <a class="catalog-labs-link" href="/sql-university.html">Laboratoare SQL <span aria-hidden="true">↗</span></a>
+      </header>
+      <div class="directory-layout">
+        <aside class="directory-filters" aria-label="Categorii">
+          <h3>Categorii</h3>
+          <div class="catalog-division-pills" id="catalog-division-pills" role="group" aria-label="Filtrare după domeniu principal">
       <button class="division-pill-btn active" data-division="ALL">
         <svg class="ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         Toate cursurile <span data-track-count></span>
@@ -177,14 +172,11 @@
         Teme favorite <span id="favorite-count-badge">0</span>
       </button>
     </div>
+        </aside>
+        <div id="catalog-domains-grid" class="directory-results"></div>
+      </div>
+    </div>
 
-    <!-- Grila Domeniilor de Curs -->
-    <section class="domain-grid" id="catalog-domains-grid" aria-label="Domenii de studiu">
-      <!-- Generat dinamic din curriculum -->
-    </section>
-
-    <!-- Buton Afișare / Restrângere Domenii Suplimentare (Inițial 4-6) -->
-    <!-- Secțiunea de Capitole a Domeniului Selectat -->
     <div id="catalog-track-layout" hidden>
       <details class="course-outline" id="catalog-track-outline" open>
         <summary>Domenii</summary><nav id="catalog-track-links" aria-label="Schimbă domeniul"></nav>
