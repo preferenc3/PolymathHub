@@ -3,72 +3,136 @@ const RUST_RESOURCES_CURRICULUM = [
   // TRACK 1: RUST & SISTEME MODERNE (12 CAPITOLE PRACTICE)
   // =========================================================================
   {
+    "id": "path-rust-main",
+    "track": "Rust & Sisteme Moderne",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Rust",
+    "order": 1,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Punctul de intrare fn main()",
+    "theory": "<p>Într-un program Rust executabil obișnuit, <code>fn main()</code> este funcția de intrare. <code>fn</code> introduce o funcție. Parantezele goale înseamnă că această funcție nu declară parametri, iar acoladele delimitează corpul.</p><p>Cu Cargo, creezi un proiect executabil cu <code>cargo new salut</code>. În folderul proiectului, fișierul este <code>src/main.rs</code> și <code>cargo run</code> compilează și pornește programul. Cu <code>rustc</code> compilezi un fișier .rs, apoi lansezi executabilul rezultat.</p><pre><code>fn main() {}</code></pre><p><strong>Greșeală frecventă.</strong> Scrierea <code>main()</code> fără <code>fn</code> și fără acolade nu definește o funcție.</p>",
+    "example": "fn main() {\n    // Execuția începe și se oprește aici\n}",
+    "exampleNote": "Programul se termină fără text afișat.",
+    "prompt": "Scrie funcția main cu corp gol.",
+    "officialSolution": "fn main() {}",
+    "acceptedAnswers": [
+      "fn main() {}"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:fn\\s+main\\s*\\(\\s*\\)\\s*\\{\\s*\\})$",
+    "hint": "Scrie în ordine fn, main, parantezele () și acoladele {}.",
+    "explanation": "Scrie în ordine fn, main, parantezele () și acoladele {}."
+  },
+  {
+    "id": "path-rust-print",
+    "track": "Rust & Sisteme Moderne",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Rust",
+    "order": 2,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Afișezi cu println!",
+    "theory": "<p>Pentru a trimite text pe ecran în biblioteca standard Rust, folosești <code>println!</code>. Semnul exclamării <code>!</code> de la final nu este o greșeală de tipar: el arată că <code>println!</code> este un *macro* (o instrucțiune specială extinsă la compilare), nu o funcție obișnuită.</p><p>Textul de afișat se scrie între ghilimele duble <code>&quot; &quot;</code>. Dacă vrei să inserezi valoarea unei variabile sau a unui număr în interiorul textului, pui acolade goale <code>{}</code> pe poziția dorită, iar după virgulă scrii valoarea care va înlocui acele acolade. La final, <code>println!</code> trece automat cursorul pe rândul următor.</p><pre><code>println!(&quot;Scor curent: {}&quot;, scor);</code></pre><p><strong>Greșeală frecventă.</strong> Dacă lași semnul ! deoparte, încerci să apelezi o funcție. Aici numele macro-ului este <code>println!</code>.</p>",
+    "example": "fn main() {\n    let scor = 42;\n    println!(\"Scor curent: {}\", scor);\n}",
+    "exampleNote": "Afișează Scor curent: 42, apoi trece pe rândul următor.",
+    "prompt": "Scrie un program complet care afișează exact Salut, Rust! folosind println!.",
+    "officialSolution": "fn main() {\n    println!(\"Salut, Rust!\");\n}",
+    "acceptedAnswers": [
+      "fn main() {\n    println!(\"Salut, Rust!\");\n}"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:fn\\s+main\\s*\\(\\s*\\)\\s*\\{\\s*println\\s*!\\s*\\(\\s*\"Salut, Rust!\"\\s*,?\\s*\\)\\s*;?\\s*\\})$",
+    "hint": "Pune println!(\"Salut, Rust!\"); în corpul funcției main.",
+    "explanation": "Pune println!(\"Salut, Rust!\"); în corpul funcției main."
+  },
+  {
+    "id": "path-rust-let",
+    "track": "Rust & Sisteme Moderne",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Rust",
+    "order": 3,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Declari o variabilă cu let",
+    "theory": "<p>Cuvântul <code>let</code> leagă un nume de o valoare. După nume scrii <code>=</code> și valoarea inițială. Rust poate deduce tipul din valoare și din felul în care o folosești.</p><p>Un nume declarat doar cu <code>let</code> este imutabil implicit. De exemplu, poți citi valoarea lui <code>an</code>, dar nu o poți reatribui prin <code>an = 2027;</code> fără <code>mut</code>.</p><pre><code>let an = 2026;</code></pre><p><strong>Greșeală frecventă.</strong> După <code>let nivel = 1;</code>, o instrucțiune <code>nivel = 2;</code> va fi respinsă pentru că legătura este imutabilă.</p>",
+    "example": "fn main() {\n    let an = 2026;\n    println!(\"Anul: {}\", an);\n}",
+    "exampleNote": "Afișează Anul: 2026.",
+    "prompt": "Într-o funcție, declară o variabilă imutabilă varsta cu valoarea 18. Folosește let și lasă tipul să fie dedus.",
+    "officialSolution": "let varsta = 18;",
+    "acceptedAnswers": [
+      "let varsta = 18;"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:let\\s+varsta\\s*=\\s*18\\s*;)$",
+    "hint": "Scrie let varsta, apoi = 18;.",
+    "explanation": "Scrie let varsta, apoi = 18;."
+  },
+  {
     "id": "rust-1",
     "track": "Rust & Sisteme Moderne",
     "division": "Informatică și Programare",
-    "icon": "🦀",
+    "unit": "Primul program Rust",
+    "order": 4,
     "level": "1. Începător",
     "xp": 30,
-    "title": "Capitolul 1: Fundamente Rust, Cargo & Imutabilitate (let vs let mut)",
-    "theory": "\n<p><strong>Rust</strong> este un limbaj de programare compilat nativ, de nivel de sistem, conceput la standarde industriale pentru viteză extremă, siguranță la nivel de memorie și concurență fără erori (data race free), <em>fără a utiliza un Garbage Collector (GC)</em>.</p>\n\n<h4>1. Ecosistemul Cargo & Structura Unui Proiect</h4>\n<p>Toate proiectele Rust sunt gestionate prin instrumentul unificat <code>cargo</code>:</p>\n<ul>\n  <li><code>cargo new nume_proiect</code>: generează scheletul proiectului cu manifestul <code>Cargo.toml</code> și codul sursă în <code>src/main.rs</code>.</li>\n  <li><code>cargo check</code>: validează rapid tipurile și împrumutul fără a genera binarul final (mult mai rapid decât compilarea completă).</li>\n  <li><code>cargo run</code>: compilează și execută programul.</li>\n</ul>\n\n<h4>2. Imutabilitate Implicită & let mut</h4>\n<p>În Rust, toate variabilele sunt <strong>imutabile în mod implicit</strong>. Aceasta este o decizie de design menită să prevină modificările accidentale de stare. Pentru a permite modificarea unei valori, trebuie să declarăm explicit variabila cu <code>let mut</code>:</p>\n\n<pre><code>fn main() {\n    let versiune = \"1.0.0\"; // Imutabil: nu poate fi reatribuit\n    let mut contor: i32 = 0; // Mutabil cu tip explicit (întreg pe 32 biți cu semn)\n\n    contor += 1;\n    println!(\"Versiune: {}, Contor: {}\", versiune, contor);\n}</code></pre>\n",
-    "glossary": [
-      {
-        "term": "Cargo",
-        "def": "Sistemul oficial de build, package manager și test runner al limbajului Rust."
-      },
-      {
-        "term": "Imutabilitate (let)",
-        "def": "Proprietatea variabilelor din Rust de a nu permite reatribuirea dacă nu au fost declarate cu 'mut'."
-      },
-      {
-        "term": "let mut",
-        "def": "Cuvânt cheie ce marchează o variabilă ca fiind modificabilă pe durata execuției."
-      },
-      {
-        "term": "println!",
-        "def": "Macro nativ din Rust pentru formatare și afișare pe stdout, verificat la compilare."
-      }
-    ],
-    "matchingPairs": [
-      {
-        "left": "let x = 10;",
-        "right": "Variabilă imutabilă (nu se poate modifica)"
-      },
-      {
-        "left": "let mut y = 20;",
-        "right": "Variabilă mutabilă (permite modificări)"
-      },
-      {
-        "left": "cargo check",
-        "right": "Verifică compilarea fără a genera binarul"
-      },
-      {
-        "left": "println!(\"{}\", v)",
-        "right": "Macro de afișare formatată"
-      }
-    ],
-    "quiz": {
-      "question": "Ce se va întâmpla dacă încerci să compilezi următorul cod Rust?\n\nfn main() {\n    let scor = 100;\n    scor = 150;\n}",
-      "options": [
-        "Eroare de compilare: cannot assign twice to immutable variable `scor`",
-        "Programul rulează și afișează 150",
-        "Avertisment (warning), dar programul rulează",
-        "Valoarea devine None"
-      ],
-      "correctIndex": 0,
-      "explanation": "În Rust, variabilele sunt imutabile implicit. Fără cuvântul cheie 'mut' (let mut scor = 100;), compilatorul refuză categoric compilarea."
-    },
-    "task": "Declară o variabilă mutabilă numită 'contor' de tip i32 cu valoarea inițială 0 și incrementează-o cu 1 (contor += 1;).",
-    "starterCode": "fn main() {\n    // Declară contor mutabil și adaugă 1:\n}\n",
-    "acceptedAnswers": [
-      "let mut contor: i32 = 0;\ncontor += 1;",
-      "let mut contor = 0;\ncontor += 1;",
-      "let mut contor = 0;\ncontor = contor + 1;",
-      "let mut contor: i32 = 0;\ncontor = contor + 1;"
-    ],
+    "title": "Actualizezi o variabilă cu let mut",
+    "theory": "<p>Atunci când o valoare trebuie actualizată pe parcursul execuției — cum ar fi un scor sau un numărător — adaugi cuvântul cheie <code>mut</code> (de la *mutable*) imediat după <code>let</code>. Astfel îi comunici explicit compilatorului și oricui citește codul că acea variabilă își va schimba valoarea.</p><p>După declararea cu <code>let mut</code>, poți actualiza variabila folosind operatorul <code>=</code> sau operatori compuși precum <code>+=</code>, care adună o valoare la conținutul existent și salvează rezultatul în aceeași variabilă (de exemplu, <code>x += 1</code> este echivalent cu <code>x = x + 1</code>).</p><pre><code>let mut nivel = 1;\nnivel += 2;</code></pre><p><strong>Greșeală frecventă.</strong> O nouă declarație <code>let mut nivel = 3;</code> în același bloc poate compila, dar introduce o nouă legătură cu același nume. Ca să actualizezi valoarea existentă, folosește <code>nivel = 3;</code> sau <code>nivel += 2;</code>.</p>",
+    "example": "fn main() {\n    let mut nivel = 1;\n    nivel += 2;\n    println!(\"Nivel nou: {}\", nivel);\n}",
+    "exampleNote": "Variabila nivel pornește de la 1, apoi primește valoarea 3. Programul afișează Nivel nou: 3.",
+    "prompt": "Scrie două instrucțiuni pentru interiorul unei funcții. Declară contor mutabil de tip i32, cu valoarea inițială 0, apoi mărește-l prin contor += 1.",
     "officialSolution": "let mut contor: i32 = 0;\ncontor += 1;",
-    "explanation": "Declarăm 'let mut contor = 0;' pentru a permite modificarea, apoi incrementăm cu 'contor += 1;'.",
-    "hint": "Scrie 'let mut contor: i32 = 0;' urmat pe linia următoare de 'contor += 1;'."
+    "acceptedAnswers": [
+      "let mut contor: i32 = 0;\ncontor += 1;"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:let\\s+mut\\s+contor\\s*:\\s*i32\\s*=\\s*0\\s*;\\s*contor\\s*\\+=\\s*1\\s*;)$",
+    "hint": "Adaugă mut după let, apoi folosește += în a doua instrucțiune.",
+    "explanation": "Adaugă mut după let, apoi folosește += în a doua instrucțiune."
+  },
+  {
+    "id": "path-rust-i32",
+    "track": "Rust & Sisteme Moderne",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Rust",
+    "order": 5,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Adnotezi tipul i32",
+    "theory": "<p>Tipul <code>i32</code> reprezintă un întreg cu semn pe 32 de biți. Intervalul lui este de la −2 147 483 648 până la 2 147 483 647, inclusiv. Dacă tipul unui literal întreg rămâne neconstrâns, Rust folosește în mod implicit <code>i32</code>.</p><p>Scrie două puncte și tipul după numele variabilei. În <code>let temperatura: i32 = -5;</code>, tipul stabilește ce fel de valori poate reprezenta variabila.</p><pre><code>let temperatura: i32 = -5;</code></pre><p><strong>Greșeală frecventă.</strong> <code>let nota: i32 = 4.5;</code> este respins. Literalul are parte fracționară, iar tipul cerut este un întreg.</p>",
+    "example": "fn main() {\n    let temperatura: i32 = -5;\n    println!(\"Temperatura: {} grade\", temperatura);\n}",
+    "exampleNote": "Afișează Temperatura: -5 grade.",
+    "prompt": "Scrie o singură declarație pentru puncte, variabilă imutabilă de tip i32 cu valoarea 10.",
+    "officialSolution": "let puncte: i32 = 10;",
+    "acceptedAnswers": [
+      "let puncte: i32 = 10;"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:let\\s+puncte\\s*:\\s*i32\\s*=\\s*10\\s*;)$",
+    "hint": "Pune : i32 după nume și înainte de =.",
+    "explanation": "Pune : i32 după nume și înainte de =."
+  },
+  {
+    "id": "path-rust-function",
+    "track": "Rust & Sisteme Moderne",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Rust",
+    "order": 6,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Întorci o valoare prin expresia finală",
+    "theory": "<p><code>fn triplu(x: i32) -&gt; i32</code> declară un parametru întreg și un rezultat întreg. În corp, <code>x * 3</code> calculează o valoare.</p><p>Când lași expresia la sfârșitul blocului fără punct și virgulă, valoarea ei devine rezultatul acelui bloc. <code>main</code> poate folosi direct rezultatul apelului <code>triplu(4)</code>.</p><pre><code>fn triplu(x: i32) -&gt; i32 { x * 3 }</code></pre><p><strong>Greșeală frecventă.</strong> Dacă adaugi <code>;</code> după <code>x * 3</code>, calculezi și arunci valoarea. Blocul întoarce <code>()</code>, iar compilatorul raportează că funcția trebuia să întoarcă <code>i32</code>.</p>",
+    "example": "fn triplu(x: i32) -> i32 {\n    x * 3\n}\n\nfn main() {\n    println!(\"Rezultat: {}\", triplu(4));\n}",
+    "exampleNote": "Apelul triplu(4) dă 12. Programul afișează Rezultat: 12.",
+    "prompt": "Scrie definiția funcției dublu cu n de tip i32 și rezultat i32. Folosește n * 2 ca expresie finală.",
+    "officialSolution": "fn dublu(n: i32) -> i32 {\n    n * 2\n}",
+    "acceptedAnswers": [
+      "fn dublu(n: i32) -> i32 {\n    n * 2\n}"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:fn\\s+dublu\\s*\\(\\s*n\\s*:\\s*i32\\s*,?\\s*\\)\\s*->\\s*i32\\s*\\{\\s*n\\s*\\*\\s*2\\s*\\})$",
+    "hint": "Corpul se termină cu n * 2 fără punct și virgulă.",
+    "explanation": "Corpul se termină cu n * 2 fără punct și virgulă."
   },
   {
     "id": "rust-2",

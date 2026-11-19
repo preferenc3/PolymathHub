@@ -773,6 +773,7 @@
   };
 
   const trackDescriptions = {
+    "HTML": "Structura unei pagini de la zero. Titluri, paragrafe, linkuri, imagini și liste.",
     "SQL": "Baze de date relaționale, clauze SELECT, filtrări WHERE, JOIN-uri și agregări analitice.",
     "Java": "POO, clase, polimorfism, colecții avansate și Spring Boot REST API.",
     "JavaScript": "Dezvoltare web modernă, funcții ES6+, asincronism async/await și manipulare DOM Tree.",
@@ -823,7 +824,7 @@
 
   function getTracks() {
     const tracksOrder = [
-      "SQL", "Java", "JavaScript", "TypeScript & React", "C & C++", "Rust & Sisteme Moderne", "Go & Sisteme Distribuite", "C#", "Python",
+      "SQL", "Java", "HTML", "JavaScript", "TypeScript & React", "C & C++", "Rust & Sisteme Moderne", "Go & Sisteme Distribuite", "C#", "Python",
       "DevOps & Sisteme Linux", "Algoritmi & Structuri de Date", "Securitate Cibernetică & Web", "Inteligență Artificială & ML", "Resurse & Proiecte Open-Source",
       "Engleză (A1–A2)", "Engleză (B1–B2)", "Engleză (C1–C2)", "Engleză: Familie & Hobby",
       "Limba Franceză", "Limba Spaniolă"
@@ -1590,7 +1591,7 @@
     if (!rawInput.trim()) return false;
     const normalizedUser = normalizeInput(rawInput, lesson.caseSensitive);
 
-    let isCorrect = Array.isArray(lesson.acceptedAnswers) && lesson.acceptedAnswers.some(
+    let isCorrect = lesson.answerMode !== "pattern" && Array.isArray(lesson.acceptedAnswers) && lesson.acceptedAnswers.some(
       ans => normalizeInput(ans, lesson.caseSensitive) === normalizedUser
     );
 

@@ -3,48 +3,119 @@ const GO_AI_SECURITY_CURRICULUM = [
   // TRACK: GO & SISTEME DISTRIBUITE (10 CAPITOLE COMPLETE)
   // =========================================================================
   {
+    "id": "path-go-main",
+    "track": "Go & Sisteme Distribuite",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Go",
+    "order": 1,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Pachetul main și funcția main",
+    "theory": "<p>Fiecare fișier Go declară pachetul din care face parte. Într-un program executabil obișnuit, pachetul de intrare este <code>main</code>.</p><p>După inițializarea pachetelor, programul ajunge la <code>func main()</code>. Scrii instrucțiunile între acolade. Îi poți lăsa corpul gol ca să verifici structura de bază.</p><pre><code>package main\n\nfunc main() {}</code></pre><p><strong>Greșeală frecventă.</strong> Acolada de deschidere stă pe rândul cu <code>func main()</code>. Altfel, regula Go de inserare a punctului și virgulei poate încheia antetul prea devreme.</p>",
+    "example": "package main\n\nfunc main() {\n}",
+    "exampleNote": "Programul se termină fără să afișeze text.",
+    "prompt": "Scrie un fișier complet cu package main și funcția main cu corp gol.",
+    "officialSolution": "package main\n\nfunc main() {}",
+    "acceptedAnswers": [
+      "package main\n\nfunc main() {}"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:package[ \\t]+main[ \\t]*(?:;|\\r?\\n)\\s*func[ \\t]+main[ \\t]*\\([ \\t]*\\)[ \\t]*\\{\\s*\\}[ \\t]*;?)$",
+    "hint": "Scrie pachetul pe primul rând. Pune { pe rândul cu func main().",
+    "explanation": "Scrie pachetul pe primul rând. Pune { pe rândul cu func main().",
+    "answerMode": "pattern"
+  },
+  {
+    "id": "path-go-print",
+    "track": "Go & Sisteme Distribuite",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Go",
+    "order": 2,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Import și afișare cu fmt.Println",
+    "theory": "<p>Limbajul Go include o bibliotecă standard plină de unelte gata construite, grupate în pachete. Pentru a afișa mesaje pe ecran, ai nevoie de pachetul <code>fmt</code> (prescurtare de la *format*), pe care îl aduci în fișierul tău scriind cuvântul cheie <code>import</code> urmat de numele pachetului între ghilimele duble.</p><p>După ce ai importat pachetul, îi poți folosi funcțiile scriind numele pachetului, un punct și numele funcției. Instrucțiunea <code>fmt.Println(...)</code> afișează în consolă textul sau valoarea dintre paranteze și mută automat cursorul pe rândul următor.</p><pre><code>fmt.Println(&quot;Bine ai venit!&quot;)</code></pre><p><strong>Greșeală frecventă.</strong> Numele este <code>Println</code>, cu P mare și l mic în interior. Dacă imporți <code>fmt</code>, folosește-l în fișier.</p>",
+    "example": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Bine ai venit!\")\n}",
+    "exampleNote": "Afișează Bine ai venit! și trece pe rândul următor.",
+    "prompt": "Scrie un program complet care importă fmt și afișează exact Salut, Go! cu fmt.Println.",
+    "officialSolution": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Salut, Go!\")\n}",
+    "acceptedAnswers": [
+      "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Salut, Go!\")\n}"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:package[ \\t]+main[ \\t]*(?:;|\\r?\\n)\\s*import[ \\t]*(?:\"fmt\"|\\(\\s*\"fmt\"(?:\\s*;|[ \\t]*\\r?\\n)\\s*\\))[ \\t]*(?:;|\\r?\\n)\\s*func[ \\t]+main[ \\t]*\\([ \\t]*\\)[ \\t]*\\{\\s*fmt\\.Println[ \\t]*\\(\\s*\"Salut, Go!\"(?:\\s*,\\s*)?\\s*\\)\\s*;?\\s*\\}[ \\t]*;?)$",
+    "hint": "După package main importă \"fmt\". Pune apelul între acoladele funcției main.",
+    "explanation": "După package main importă \"fmt\". Pune apelul între acoladele funcției main.",
+    "answerMode": "pattern"
+  },
+  {
     "id": "go-1",
     "track": "Go & Sisteme Distribuite",
     "division": "Informatică și Programare",
-    "icon": "🐹",
+    "unit": "Primul program Go",
+    "order": 3,
     "level": "1. Începător",
     "xp": 30,
-    "title": "Capitolul 1: Fundamente Go, Structura Pachetelor & Declararea Variabilelor",
-    "theory": "\n<p><strong>Go (Golang)</strong> este un limbaj compilat nativ dezvoltat de Google (Robert Griesemer, Rob Pike și Ken Thompson), conceput special pentru simplitate extremă, viteză de compilare și scalabilitate în servicii de rețea și cloud native.</p>\n\n<h4>1. Structura Unui Program & Pachetul 'main'</h4>\n<p>Orice aplicație executabilă în Go începe în pachetul <code>main</code> și funcția de intrare <code>func main()</code>:</p>\n<pre><code>package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Bun venit în universul Go!\")\n}</code></pre>\n\n<h4>2. Declararea Scurtă cu Operatorul ':='</h4>\n<p>În interiorul funcțiilor, Go oferă operatorul de declarare și inferență rapidă <code>:=</code> (fără necesitatea specificării tipului). La nivel de pachet (global) se folosește cuvântul cheie <code>var</code>:</p>\n<pre><code>var domeniu string = \"polymathhub.vercel.app\" // Global\n\nfunc main() {\n    port := 8080        // Inferat automat ca int\n    activ := true       // Inferat ca bool\n    fmt.Printf(\"Server pe portul %d (activ: %t)\\n\", port, activ)\n}</code></pre>\n",
-    "glossary": [
-      { "term": "package main", "def": "Pachetul special de intrare necesar pentru a genera un fișier executabil binar în Go." },
-      { "term": "Operatorul :=", "def": "Sintaxă compactă pentru declararea și inițializarea unei variabile locale cu inferență de tip." },
-      { "term": "fmt", "def": "Pachetul standard Go pentru formatarea intrărilor și ieșirilor (Println, Printf, Sprintf)." },
-      { "term": "go mod init", "def": "Comanda CLI pentru inițializarea unui modul Go cu urmărirea dependențelor în go.mod." }
-    ],
-    "matchingPairs": [
-      { "left": "package main", "right": "Punctul de intrare pentru un binar executabil" },
-      { "left": "x := 42", "right": "Declarare scurtă cu inferență de tip" },
-      { "left": "fmt.Println()", "right": "Afișare pe consolă cu linie nouă" },
-      { "left": "var s string", "right": "Declarare explicită cu zero-value (string gol)" }
-    ],
-    "quiz": {
-      "question": "Ce valoare inițială (zero-value) primește o variabilă de tip 'int' declarată ca 'var contor int' fără inițializare în Go?",
-      "options": [
-        "0",
-        "nil",
-        "undefined",
-        "Valoare aleatoare din memorie"
-      ],
-      "correctIndex": 0,
-      "explanation": "În Go, variabilele neinițializate primesc întotdeauna zero-value-ul tipului lor (0 pentru numere, \"\" pentru string, false pentru bool, nil pentru pointeri/felii)."
-    },
-    "task": "Declară o variabilă 'port' cu valoarea 8080 folosind operatorul de declarare scurtă ':='.",
-    "starterCode": "func main() {\n    // Declară port cu 8080:\n}\n",
-    "acceptedAnswers": [
-      "port := 8080",
-      "port := 8080;",
-      "var port = 8080",
-      "var port int = 8080"
-    ],
+    "title": "Declari o variabilă cu :=",
+    "theory": "<p>În interiorul unei funcții, scrii numele, <code>:=</code> și valoarea inițială. Go deduce tipul. Pentru un număr întreg simplu ca <code>150</code>, tipul dedus aici este <code>int</code>.</p><p>În exemplul complet, declarăm <code>scor</code> și apoi îl folosim în apelul <code>fmt.Println(scor)</code>. Astfel vezi valoarea și poți rula programul.</p><pre><code>scor := 150</code></pre><p><strong>Greșeală frecventă.</strong> <code>:=</code> este pentru declarații scurte în funcții. La nivel de pachet, o variabilă se declară cu <code>var</code>. Folosește variabilele locale din exemplele pe care le rulezi.</p>",
+    "example": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tscor := 150\n\tfmt.Println(scor)\n}",
+    "exampleNote": "Variabila scor păstrează valoarea întreagă 150. Programul afișează 150.",
+    "prompt": "Scrie o singură linie pentru interiorul unei funcții. Declară port cu valoarea 8080 folosind :=.",
     "officialSolution": "port := 8080",
-    "explanation": "Operatorul ':=' deduce automat tipul 'int' și inițializează variabila 'port' cu 8080.",
-    "hint": "Scrie 'port := 8080'."
+    "acceptedAnswers": [
+      "port := 8080"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:port[ \\t]*:=[ \\t]*8080[ \\t]*;?)$",
+    "hint": "Scrie port, operatorul := și valoarea 8080.",
+    "explanation": "Scrie port, operatorul := și valoarea 8080.",
+    "answerMode": "pattern"
+  },
+  {
+    "id": "path-go-assignment",
+    "track": "Go & Sisteme Distribuite",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Go",
+    "order": 4,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Actualizezi o variabilă cu =",
+    "theory": "<p><code>=</code> actualizează valoarea unei variabile care există deja. Exemplul declară <code>nivel</code> cu <code>:=</code> și apoi îi schimbă valoarea prin <code>nivel = 2</code>.</p><p>În același bloc, <code>:=</code> cere cel puțin un nume nou. Poți declara un nume și reatribui altul într-o singură instrucțiune, de exemplu <code>nivel, bonus := 3, 1</code> când numai <code>bonus</code> este nou.</p><pre><code>nivel = 2</code></pre><p><strong>Greșeală frecventă.</strong> Două declarații consecutive <code>x := 10</code> și <code>x := 20</code> în același bloc dau eroarea «no new variables on left side of :=». Pentru actualizare scrie <code>x = 20</code>.</p>",
+    "example": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tnivel := 1\n\tnivel = 2\n\tfmt.Println(nivel)\n}",
+    "exampleNote": "Programul afișează 2, valoarea de după actualizare.",
+    "prompt": "Variabila port există deja în funcție. Scrie o singură instrucțiune care îi schimbă valoarea la 9090.",
+    "officialSolution": "port = 9090",
+    "acceptedAnswers": [
+      "port = 9090"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:port[ \\t]*=[ \\t]*9090[ \\t]*;?)$",
+    "hint": "La o atribuire folosești =. Declarația scurtă ar folosi :=.",
+    "explanation": "La o atribuire folosești =. Declarația scurtă ar folosi :=.",
+    "answerMode": "pattern"
+  },
+  {
+    "id": "path-go-function",
+    "track": "Go & Sisteme Distribuite",
+    "division": "Informatică și Programare",
+    "unit": "Primul program Go",
+    "order": 5,
+    "level": "1. Începător",
+    "xp": 15,
+    "title": "Scrii o funcție cu rezultat",
+    "theory": "<p>Funcțiile îți permit să grupezi un calcul sau o acțiune într-un bloc reutilizabil care primește date de intrare, le prelucrează și întoarce un rezultat. În Go, tipul de date se scrie întotdeauna <strong>după</strong> numele variabilei, exact așa cum citești în limbajul natural („<code>n</code> este un <code>int</code>”).</p><p>În antetul <code>func dublu(n int) int</code>, parantezele <code>(n int)</code> arată că funcția primește un parametru întreg numit <code>n</code>, iar al doilea <code>int</code> (scris după paranteze) anunță că funcția va returna tot un număr întreg. În interiorul acoladelor, instrucțiunea <code>return</code> oprește funcția și trimite rezultatul înapoi.</p><pre><code>func triplu(x int) int { return x * 3 }</code></pre><p><strong>Greșeală frecventă.</strong> În Go scrii <code>n int</code> pentru parametru. Dacă funcția trebuie să întoarcă un întreg, adaugă <code>int</code> după paranteză.</p>",
+    "example": "package main\n\nimport \"fmt\"\n\nfunc triplu(x int) int {\n\treturn x * 3\n}\n\nfunc main() {\n\tfmt.Println(triplu(5))\n}",
+    "exampleNote": "Apelul triplu(5) calculează 15. Funcția main afișează 15.",
+    "prompt": "Definește doar funcția dublu. Parametrul n și rezultatul au tipul int. Întoarce n * 2.",
+    "officialSolution": "func dublu(n int) int {\n\treturn n * 2\n}",
+    "acceptedAnswers": [
+      "func dublu(n int) int {\n\treturn n * 2\n}"
+    ],
+    "caseSensitive": true,
+    "regexPattern": "^(?:func[ \\t]+dublu[ \\t]*\\(\\s*n[ \\t]+int\\s*\\)[ \\t]*int[ \\t]*\\{\\s*return[ \\t]+n[ \\t]*\\*[ \\t]*2\\s*;?\\s*\\}[ \\t]*;?)$",
+    "hint": "Scrie tipul rezultatului după parametri și folosește return în corp.",
+    "explanation": "Scrie tipul rezultatului după parametri și folosește return în corp.",
+    "answerMode": "pattern"
   },
   {
     "id": "go-2",

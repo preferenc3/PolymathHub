@@ -1,6 +1,11 @@
 (() => {
   // Each entry has a question, its answer, two alternatives and an explanation.
   const questions = {
+    "HTML": [
+      "Unde scrii titlul care apare în fila browserului?",
+      "În elementul <title> din <head>.", "În elementul <h1> din <body>.", "În atributul alt al unei imagini.",
+      "Elementul <title> denumește fila. <h1> este titlul principal vizibil în conținut."
+    ],
     "SQL": [
       "Un magazin vrea să vadă inclusiv clienții cu zero comenzi. Cum legi clienții de comenzi?",
       "Pornești de la clienți și folosești LEFT JOIN.", "Folosești INNER JOIN.", "Grupezi doar tabelul comenzilor.",

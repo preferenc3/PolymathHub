@@ -107,33 +107,43 @@ const FOUNDATION_CURRICULUM = (() => {
   const program = "#include <iostream>\nusing namespace std;\nint main() {\n    return 0;\n}";
   const cppStart = [
     syntax(cpp, cppUnit, 1, "path-cpp-include", "Incluzi o bibliotecă",
-      "<code>#include</code> îi spune preprocesorului să includă un fișier antet. <code>&lt;iostream&gt;</code> oferă fluxurile de intrare și ieșire. Pentru antete de sistem sau biblioteci configurate folosește de obicei <code>&lt; &gt;</code>. Pentru un antet local, <code>\"util.h\"</code> caută întâi lângă fișierul sursă, în configurările obișnuite.",
+      "<code>#include</code> se citește înainte de compilare. Directiva cere preprocesorului să includă un antet. <code>&lt;iostream&gt;</code> pune la dispoziție declarațiile pentru fluxuri ca <code>std::cin</code> și <code>std::cout</code>.</p><p>Folosești <code>&lt;…&gt;</code> de obicei pentru antetele standard, iar <code>\"util.h\"</code> pentru un antet din proiect. În configurările uzuale, cu ghilimele se caută întâi în folderul fișierului sursă.</p><p><strong>Greșeală frecventă.</strong> Punctul și virgula după directivă. Aici rândul se termină imediat după <code>&gt;</code>.",
       "#include <iostream>", "#include <iostream>  // cin, cout\n#include <iomanip>   // setprecision, setw\n#include <cmath>     // sqrt, round\n#include <cstdio>    // printf în C++\n// <stdio.h> este antetul C corespondent\n// #include \"util.h\"  // antet propriu",
       "Scrie o singură directivă care include antetul iostream.", "#include <iostream>", "#\\s*include\\s*<iostream>", "Începe cu #include și încadrează iostream între < și >."),
     syntax(cpp, cppUnit, 2, "path-cpp-main", "Structura minimă: main",
-      "<code>main</code> este funcția de la care începe programul. Acoladele îi delimitează corpul. <code>using namespace std;</code> îți permite să scrii <code>cout</code> în loc de <code>std::cout</code> în exemplele scurte.",
+      "Funcția <code>main</code> este punctul de pornire. <code>int</code> indică tipul codului de ieșire. Parantezele goale arată că acest program nu folosește parametri, iar între acolade vei scrie instrucțiunile.</p><p>Directiva <code>using namespace std;</code> îți permite să folosești în exemple <code>cout</code> în loc de <code>std::cout</code>. Un <code>main</code> gol poate fi compilat și se termină fără să afișeze text.</p><p><strong>Greșeală frecventă.</strong> Limbajul distinge majusculele. Scrie <code>main</code>, cu literă mică, și păstrează ambele acolade.",
       "int main() {}", "#include <iostream>\nusing namespace std;\nint main() {\n}\n\n// Doar funcția de pornire, într-un program fără intrare și ieșire\n// int main() {}",
       "Scrie în ordine directiva iostream, using namespace std; și int main cu corp gol.", "#include <iostream>\nusing namespace std;\nint main() {}",
       "#\\s*include\\s*<iostream>\\s*using\\s+namespace\\s+std\\s*;\\s*int\\s+main\\s*\\(\\s*\\)\\s*\\{\\s*\\}", "După using namespace std pune punct și virgulă. Corpul lui main este { }."),
     syntax(cpp, cppUnit, 3, "path-cpp-return", "Închei programul cu return 0",
-      "<code>return 0;</code> în <code>main</code> semnalează că programul s-a terminat cu succes. În C++ poți ajunge și la sfârșitul funcției <code>main</code>, cu același efect.",
+      "<code>return</code> încheie execuția funcției. În <code>main</code>, <code>return 0;</code> îi transmite mediului care a pornit programul un cod de succes. Numărul 0 este un cod de ieșire, deci poate fi citit de terminal fără să apară pe ecran.</p><p>Dacă ajungi la ultima acoladă din <code>main</code> fără <code>return</code>, C++ tratează acest caz special ca pe <code>return 0;</code>.</p><p><strong>Greșeală frecventă.</strong> Dacă lași <code>return 0</code> fără <code>;</code>, instrucțiunea e incompletă.",
       "return 0;", program, "Scrie instrucțiunea care anunță încheierea cu succes.", "return 0;",
       "return\\s+0\\s*;", "Returnează numărul întreg 0 și termină instrucțiunea cu ;."),
     syntax(cpp, cppUnit, 4, "path-cpp-variable", "Declari o variabilă întreagă",
-      "<code>int</code> este un tip pentru numere întregi. Declarația conține tipul, numele și, dacă o cunoști, valoarea inițială.",
+      "Pornește cu tipul <code>int</code>, care păstrează numere întregi, apoi alege numele. În <code>int elevi = 24;</code> semnul <code>=</code> dă valoarea inițială. Mai târziu poți folosi direct numele <code>elevi</code> în calcule.</p><p>Inițializarea cu acolade este o altă formă. <code>int elevi{24};</code> păstrează aceeași valoare și respinge o inițializare precum <code>int elevi{3.5};</code>.</p><p><strong>Greșeală frecventă.</strong> <code>24 = elevi;</code> pune numărul în locul în care trebuie să fie numele variabilei.",
       "int varsta = 18;", "int elevi = 24;\nint randuri{6};\ndouble pret = 49.90;", "Declară o variabilă int numită puncte și inițializeaz-o cu 10.", "int puncte = 10;",
       "int\\s+puncte\\s*(?:=\\s*10|\\{\\s*10\\s*\\})\\s*;", "După tip și nume, scrie = 10; sau {10};."),
     syntax(cpp, cppUnit, 5, "path-cpp-hello", "Afișezi Hello, world!",
-      "<code>cout</code> trimite text la ieșirea standard. Operatorul <code>&lt;&lt;</code> trimite valoarea din dreapta către flux.",
-      'cout << "Salut";', '#include <iostream>\nint main() {\n    std::cout << "Bună" << "\\n";\n    return 0;\n}',
+      "<code>std::cout</code> este fluxul standard de ieșire. După el scrii <code>&lt;&lt;</code>, apoi valoarea trimisă spre ieșire. Scrie textul între ghilimele duble. Poți înlănțui încă un <code>&lt;&lt;</code> pentru a trece la rândul următor cu <code>\"\\n\"</code>.</p><p>Dacă ai pus deja <code>using namespace std;</code>, poți folosi forma scurtă <code>cout</code>.</p><p><strong>Greșeală frecventă.</strong> La afișare folosești <code>&lt;&lt;</code>. Dacă omiți ghilimelele, numele din mesaj sunt tratate ca identificatori.",
+      'cout << "Salut";', '#include <iostream>\nint main() {\n    std::cout << "Salut!" << "\\n";\n    return 0;\n}',
       'Presupune că main conține deja using namespace std. Scrie o singură instrucțiune cout care afișează Hello, world! Încadrarea pe rând nou este opțională.',
       'cout << "Hello, world!";', String.raw`(?:std::)?cout\s*<<\s*"Hello, world!"(?:\s*<<\s*(?:'\\n'|"\\n"|(?:std::)?endl))?\s*;`, "Textul apare între ghilimele după <<."),
     syntax(cpp, cppUnit, 6, "path-cpp-functions", "Scrii și apelezi o funcție",
-      "O funcție are un tip de rezultat, un nume și parametri. În <code>int dublu(int n)</code>, <code>n</code> este valoarea primită, iar <code>return</code> trimite rezultatul apelantului.",
+      "În <code>int dublu(int n)</code>, primul <code>int</code> este tipul rezultatului. <code>dublu</code> este numele funcției, iar <code>int n</code> este parametrul prin care primește un număr. La apelul <code>dublu(5)</code>, parametrul <code>n</code> primește 5.</p><p>Corpul calculează <code>n * 2</code>. Instrucțiunea <code>return</code> înapoiază rezultatul și apelul poate fi folosit într-o atribuire.</p><p><strong>Greșeală frecventă.</strong> În C++, <code>n ^ 2</code> înseamnă XOR pe biți. Pentru pătrat scrie <code>n * n</code>.",
       "int dublu(int n) { return n * 2; }", "int dublu(int n) { return n * 2; }\nint main() {\n    int rezultat = dublu(5); // 10\n    return 0;\n}",
       "Scrie funcția int patrat(int n), care returnează pătratul lui n.", "int patrat(int n) { return n * n; }",
       "int\\s+patrat\\s*\\(\\s*int\\s+n\\s*\\)\\s*\\{\\s*return\\s+n\\s*\\*\\s*n\\s*;\\s*\\}", "Returnează n * n din corpul funcției.")
   ];
+
+  const cppResults = [
+    "Directivele doar includ antete. Dacă le pui deasupra unui main gol, nu se afișează nimic.",
+    "Programul se termină imediat, fără text afișat.",
+    "Programul se termină cu codul 0. Nu afișează text.",
+    "Cele trei variabile păstrează, în ordine, 24, 6 și 49.90. Declarațiile singure nu afișează valori.",
+    "Pe ecran apare Salut!, urmat de un rând nou.",
+    "După apel, rezultat are valoarea 10. Exemplul nu trimite text la ieșire."
+  ];
+  cppStart.forEach((item, index) => { item.exampleNote = cppResults[index]; });
 
   const cppMemory = "Referințe și pointeri";
   const cppAdvanced = [
@@ -183,6 +193,49 @@ const FOUNDATION_CURRICULUM = (() => {
     entry.level = entry.order > 1010 ? "5. Proiect" : "3. Intermediar";
     entry.xp = 30;
   }
+
+  const html = "HTML", htmlUnit = "Prima pagină HTML";
+  const htmlStart = [
+    syntax(html, htmlUnit, 1, "path-html-document", "Structura unui document HTML",
+      'Pune <code>&lt;!DOCTYPE html&gt;</code> la începutul fișierului. Declarația spune browserului să interpreteze pagina în modul standard. Elementul <code>&lt;html lang="ro"&gt;</code> încadrează documentul și indică limba conținutului.</p><p>În <code>&lt;head&gt;</code> pui informații despre document. <code>&lt;title&gt;</code> denumește fila browserului. În <code>&lt;body&gt;</code> scrii conținutul vizibil al paginii.</p><p><strong>Greșeală frecventă.</strong> Textul pe care vrei să-l citească vizitatorul merge în <code>body</code>. Scrie explicit etichetele de închidere în primele tale documente, ca să vezi unde se termină fiecare secțiune.',
+      "<!DOCTYPE html>", '<!DOCTYPE html>\n<html lang="ro">\n<head>\n  <meta charset="utf-8">\n  <title>Acasă</title>\n</head>\n<body>\n  Salut!\n</body>\n</html>',
+      "Scrie numai declarația care se pune la început ca documentul să fie interpretat în modul standard.",
+      "<!DOCTYPE html>", String.raw`<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]\s+[Hh][Tt][Mm][Ll]\s*>`,
+      "Începe cu <! și scrie DOCTYPE html înainte de >."),
+    syntax(html, htmlUnit, 2, "path-html-heading", "Titlu principal și paragraf",
+      'În <code>body</code>, folosește <code>&lt;h1&gt;</code> pentru titlul principal. Acesta descrie subiectul paginii și ajută cititoarele de ecran să navigheze după titluri. <code>&lt;title&gt;</code> rămâne numele filei.</p><p>Scrie textul obișnuit în <code>&lt;p&gt;</code>. Afișarea implicită a browserului separă vizual paragrafele.</p><p><strong>Greșeală frecventă.</strong> Alegerea titlurilor după dimensiunea textului. Folosește nivelul care corespunde structurii conținutului.',
+      "<h1>Jurnal de călătorie</h1>", "<h1>Jurnal de călătorie</h1>\n<p>Astăzi am vizitat muzeul.</p>",
+      "Scrie numai titlul de nivel 1 cu textul exact Biblioteca mea.", "<h1>Biblioteca mea</h1>",
+      String.raw`<[Hh]1\s*>\s*Biblioteca mea\s*</[Hh]1\s*>`, "Scrie textul între <h1> și </h1>."),
+    syntax(html, htmlUnit, 3, "path-html-link", "Legături cu a și href",
+      'Elementul <code>&lt;a&gt;</code> creează o legătură. În eticheta de deschidere pui atributul <code>href</code> cu destinația. Textul dintre etichete este partea pe care o citește și o activează vizitatorul.</p><p>O cale relativă precum <code>contact.html</code> indică un fișier aflat în același folder cu pagina. Ea trebuie să corespundă numelui fișierului.</p><p><strong>Greșeală frecventă.</strong> Un link fără text are o destinație, dar nu arată utilizatorului unde duce.',
+      '<a href="contact.html">Contactează-ne</a>', '<a href="contact.html">Contactează-ne</a>',
+      "Scrie un singur link către catalog.html, cu textul afișat exact Catalog.", '<a href="catalog.html">Catalog</a>',
+      String.raw`<[Aa]\s+[Hh][Rr][Ee][Ff]\s*=\s*(?:"catalog\.html"|'catalog\.html'|catalog\.html)\s*>\s*Catalog\s*</[Aa]\s*>`,
+      "Pune adresa în href și textul Catalog între etichete."),
+    syntax(html, htmlUnit, 4, "path-html-image", "Imagini cu src și alt",
+      '<code>&lt;img&gt;</code> inserează o imagine. Este un element gol, fără etichetă de închidere. Atributul <code>src</code> indică fișierul. Pentru <code>pisica.jpg</code>, pune fotografia în același folder cu documentul.</p><p><code>alt</code> transmite conținutul unei imagini informative. Cititoarele de ecran îl pot citi, iar browserul îl poate afișa atunci când fișierul nu se încarcă. Pentru o imagine pur decorativă folosești <code>alt=""</code>.</p><p><strong>Greșeală frecventă.</strong> Într-o imagine informativă, numele fișierului nu descrie conținutul.',
+      '<img src="pisica.jpg" alt="O pisică albă dormind">', '<img src="pisica.jpg" alt="O pisică albă dormind">',
+      "Scrie un singur element img cu src carte.png și textul alternativ exact O carte deschisă.",
+      '<img src="carte.png" alt="O carte deschisă">',
+      String.raw`<[Ii][Mm][Gg]\s+(?:[Ss][Rr][Cc]\s*=\s*(?:"carte\.png"|'carte\.png'|carte\.png)\s+[Aa][Ll][Tt]\s*=\s*(?:"O carte deschisă"|'O carte deschisă')|[Aa][Ll][Tt]\s*=\s*(?:"O carte deschisă"|'O carte deschisă')\s+[Ss][Rr][Cc]\s*=\s*(?:"carte\.png"|'carte\.png'|carte\.png))\s*/?>`,
+      "În elementul img, scrie calea în src și descrierea între ghilimele în alt."),
+    syntax(html, htmlUnit, 5, "path-html-list", "Liste cu ul și li",
+      'Folosește <code>&lt;ul&gt;</code> când ordinea elementelor nu schimbă sensul listei. Fiecare element se scrie în propriul <code>&lt;li&gt;</code>, în interiorul listei.</p><p>Browserul adaugă de obicei câte o bulină. Pentru pași care trebuie urmați în ordine, există <code>&lt;ol&gt;</code>, care îi numerotează implicit.</p><p><strong>Greșeală frecventă.</strong> Punerea textului direct în <code>ul</code>. Închide fiecare <code>li</code> înainte să scrii următorul.',
+      "<ul>\n  <li>Apă</li>\n  <li>Pâine</li>\n</ul>", "<ul>\n  <li>Apă</li>\n  <li>Pâine</li>\n</ul>",
+      "Scrie o listă neordonată cu două elemente, Mere și Pere, în această ordine. Închide explicit fiecare element.",
+      "<ul>\n  <li>Mere</li>\n  <li>Pere</li>\n</ul>",
+      String.raw`<[Uu][Ll]\s*>\s*<[Ll][Ii]\s*>\s*Mere\s*</[Ll][Ii]\s*>\s*<[Ll][Ii]\s*>\s*Pere\s*</[Ll][Ii]\s*>\s*</[Uu][Ll]\s*>`,
+      "Pune Mere și Pere în două elemente li separate, ambele în interiorul listei ul.")
+  ];
+  const htmlResults = [
+    "Fila se numește Acasă. În pagină apare Salut!.",
+    "Se vede un titlu principal, apoi paragraful despre muzeu.",
+    "Contactează-ne deschide contact.html dacă fișierul există în același folder.",
+    "Browserul încarcă fotografia dacă pisica.jpg există. Textul alternativ descrie pisica pentru cine nu vede imaginea.",
+    "Apar două elemente cu buline, Apă și Pâine, pe rânduri separate."
+  ];
+  htmlStart.forEach((item, index) => { item.exampleNote = htmlResults[index]; });
 
   const java = "Java", javaUnit = "Primul program Java";
   const javaStart = [
@@ -312,5 +365,5 @@ const FOUNDATION_CURRICULUM = (() => {
   });
 
   return [...firstQueries, ...writes, ...reports, assetProject, ...cppStart, ...cppAdvanced, ...cppGraphics,
-    ...javaStart, ...pythonStart, ...languageLessons];
+    ...htmlStart, ...javaStart, ...pythonStart, ...languageLessons];
 })();
