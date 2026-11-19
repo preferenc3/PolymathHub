@@ -18,7 +18,15 @@
   }
   let owner = null, state = cleanWorkspace(stored(key(null)) || {sqlPractice:stored('pm_sql_practice_v1')}), course = null;
   let generation = 0, filter = 'pending', drafts = new Map(), toastTimer;
-  let languageDraft = null;
+  let languageDraft = null, disposeGuide, marketAudio;
+  function stopLanguageMedia() {
+    disposeGuide?.();
+    disposeGuide = null;
+    marketAudio?.pause();
+    marketAudio = null;
+  }
+  window.addEventListener('pagehide', stopLanguageMedia);
+  window.addEventListener('pageshow', event => { if (event.persisted) render(); });
   const dialogue = [
     {fr:"Bonjour ! Je voudrais acheter des pommes, s’il vous plaît.",ro:'Bună ziua! Aș dori să cumpăr niște mere, vă rog.'},
     {fr:'Bien sûr ! Combien en voulez-vous ?',ro:'Desigur! Câte doriți?'},
@@ -149,35 +157,60 @@
     return `<section class="home-recall"><p class="section-label">Ultima greșeală · ${esc(recent.area)}</p><h2>${esc(recent.title)}</h2><pre class="mistake-query">${esc(recent.answer)}</pre><p>${esc(recent.feedback)}</p><a class="text-button" href="${esc(recent.href)}">Reia exercițiul ${icon('arrow-right','icon-small')}</a></section>`;
   }
 
-  function home() {
+  const featuredLessons = [
+    {domain: 'HTML', title: 'Construiește prima pagină web', lesson: 'path-html-document', detail: 'Descoperă ce apare pe fila browserului și ce se vede pe pagină.', icon: 'code'},
+    {domain: 'Franceză', title: 'Présente-toi · Spune cum te numești', lesson: 'path-fr-introduce', detail: 'Citește un dialog scurt și încearcă să te prezinți în franceză.', icon: 'translate'},
+    {domain: 'Python', title: 'Afișează un mesaj cu print', lesson: 'path-python-print', detail: 'Scrie o instrucțiune care afișează text pe ecran.', icon: 'code'},
+    {domain: 'SQL', title: 'Prima interogare cu SELECT', lesson: 'path-sql-select', detail: 'Alege ce date vrei să citești și din ce tabel provin.', icon: 'code'},
+    {domain: 'Spaniolă', title: 'Numără până la zece', lesson: 'path-es-numbers', detail: 'Asociază fiecare cifră cu un cuvânt și scrie un număr în spaniolă.', icon: 'translate'},
+    {domain: 'C++', title: 'Ce face linia #include?', lesson: 'path-cpp-include', detail: 'Vezi de unde vine std::cout și scrie prima directivă.', icon: 'code'},
+    {domain: 'Go', title: 'De unde pornește un program Go?', lesson: 'path-go-main', detail: 'Leagă pachetul main de funcția care pornește programul.', icon: 'code'},
+    {domain: 'Engleză', title: 'Cum le spui animalelor în engleză?', lesson: 'path-en-animals', detail: 'Pornește de la patru animale și folosește un cuvânt într-o propoziție.', icon: 'translate'},
+    {domain: 'Java', title: 'Găsește începutul programului', lesson: 'path-java-main', detail: 'Descoperă legătura dintre o clasă și metoda main.', icon: 'code'},
+    {domain: 'Rust', title: 'Prima funcție main', lesson: 'path-rust-main', detail: 'Scrie punctul de intrare al unui program Rust.', icon: 'code'},
+  ];
+
+  function dailyFeature(today = new Date()) {
+    // Use the learner's calendar date; UTC arithmetic avoids daylight-saving gaps.
+    const day = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000;
+    const pick = featuredLessons[day % featuredLessons.length];
+    return `<section aria-labelledby="daily-title" class="daily-feature">
+      <p class="section-label">Domeniul zilei · ${pick.domain}</p>
+      <div class="resume-entry"><span class="resume-icon">${icon(pick.icon)}</span>
+        <div class="resume-copy"><h1 id="daily-title">${esc(pick.title)}</h1><p>${esc(pick.detail)}</p></div>
+        <a class="primary" href="/biblioteca.html#invata?lesson=${pick.lesson}">Deschide lecția ${icon('arrow-right','icon-small')}</a>
+      </div></section>`;
+  }
+
+  function resumeCourse() {
     const sql = P.summary(state.sql), fr = L.summary(state.french);
     const current = exercise(P.resume(state.sql));
     const lesson = lessonFor(current), french = state.area === 'fr';
     const progress = french ? fr.correct / 3 : sql.completed / 15;
     const started = Object.keys(state.sql.records).length > 0 || state.french.attempts > 0;
+    if (!started) return '';
     const finished = french ? state.french.passed : sql.completed === sql.total;
     const nextLesson = current.id !== state.sql.activeExerciseId;
     let destination = french ? frLink(state.stage) : sqlLink(current.id, nextLesson ? 'teorie' : state.stage, state.sql.records[current.id]?.variant || 0);
-    let action = started ? (nextLesson && !french ? 'Următorul pas' : 'Continuă') : 'Începe cu teoria';
+    let action = nextLesson && !french ? 'Următorul pas' : 'Continuă';
     let note = french ? 'Înțelege dialogul, apoi completează cele trei replici.' : 'O explicație, un exemplu și două exerciții pentru fiecare idee.';
-    const firstLab = !french && !started;
-    if (firstLab) {
-      destination = '/sql-university.html';
-      action = 'Deschide terminalul';
-      note = 'Alege un exercițiu și consultă tabelele înainte de a scrie răspunsul.';
-    }
     if (finished) {
       if (totals().toReview) { destination = '#greseli'; action = 'Repetă greșelile'; note = 'Ai încheiat activitatea. Revino la răspunsurile care mai au nevoie de atenție.'; }
       else if (french && sql.completed < sql.total) { destination = sqlLink(current.id, 'teorie'); action = 'Continuă cu SQL'; note = 'Lecția de franceză este încheiată. Următorul pas: traseul SQL.'; }
       else if (!french && !state.french.completed) { destination = frLink('teorie'); action = 'Încearcă franceza'; note = 'Ai rezolvat toate cele 15 cerințe SQL. Descoperă acum o altă formă de practică.'; }
       else { destination = french ? frLink('exemple') : sqlLink('p1','practica',1); action = french ? 'Repetă conversația' : 'Reia pe alte date'; note = 'Ai încheiat traseul. Repetarea consolidează ce ai învățat, fără XP suplimentar.'; }
     }
-    return `<div class="home">${latestMistake()}
-      <section aria-labelledby="resume-title"><h2 id="resume-title" class="section-label">${started?'Următorul tău pas':'Începe aici'}</h2>
-      <div class="resume-entry"><span class="resume-icon">${icon(french?'translate':'code')}</span><div class="resume-copy"><div class="meta">${firstLab?'SQL · SQLite':french?'Franceză · Conversație':'SQL · Lecția '+(course.lessons.indexOf(lesson)+1 || 'finală')}</div><h1>${esc(firstLab?'Laboratoarele 4 și 5':french?'Au marché — La piață':lesson.title)}</h1>${firstLab?'':`<div class="progress-track" role="progressbar" aria-label="Progresul cursului" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress*100)}"><span style="width:${Math.round(progress*100)}%"></span></div><small>${french?fr.correct+'/3 răspunsuri corecte':sql.completed+'/15 exerciții rezolvate'}</small>`}</div><a class="primary" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></div><p class="resume-note">${note}</p></section>
+    return `<section class="home-continuation" aria-label="Reia cursul">
+      <div><span class="meta">${french?'Franceză':'Bazele SQL'} · ${Math.round(progress * 100)}% parcurs</span>
+      <h2>${esc(french?'Au marché — La piață':lesson.title)}</h2><p>${esc(note)}</p></div>
+      <a class="text-button" href="${destination}">${action} ${icon('arrow-right','icon-small')}</a></section>`;
+  }
+
+  function home() {
+    return `<div class="home">${latestMistake()}${dailyFeature()}${resumeCourse()}
       <section class="home-explore" aria-labelledby="home-explore-title">
         <h2 id="home-explore-title">Ce vrei să exersezi?</h2>
-        <div class="home-destinations">${window.PolymathExplore.links(destination)}</div>
+        <div class="home-destinations">${window.PolymathExplore.links()}</div>
       </section>
       ${homePractice()}
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
@@ -191,7 +224,8 @@
   function catalog(domain) {
     const showSQL = domain !== 'limbi', showFR = !['programare', 'sql'].includes(domain);
     return `<div class="catalog"><p class="section-label">Alege următorul pas</p><h1>Cursurile tale</h1><a class="secondary" href="/biblioteca.html#exploreaza">Deschide catalogul complet</a><p class="page-intro">Începe cu o idee, înțelege-o și pune-o în practică. Poți reveni oricând.</p>
-      ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>SQL</h2></div><a class="course-row" href="/sql-university.html"><span class="row-copy"><h3>Laboratoarele 4 și 5</h3><p>Deschide tabelele și rezolvă exercițiile în terminalul SQLite.</p></span>${icon('arrow-right')}</a><h3>Bazele SQL</h3>${course.lessons.map(courseRow).join('')}<div class="project-intro"><h2>Un magazin. Trei rapoarte.</h2><p class="page-intro">Proiectul final leagă filtrarea, relațiile dintre tabele și totalurile.</p><a class="secondary" href="#proiect">Deschide proiectul · ${P.summary(state.sql).projectDone}/3 ${icon('arrow-right','icon-small')}</a></div></section>`:''}
+      ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>SQL</h2></div><h3>Bazele SQL</h3>${course.lessons.map(courseRow).join('')}<div class="project-intro"><h2>Un magazin. Trei rapoarte.</h2><p class="page-intro">Proiectul final leagă filtrarea, relațiile dintre tabele și totalurile.</p><a class="secondary" href="#proiect">Deschide proiectul · ${P.summary(state.sql).projectDone}/3 ${icon('arrow-right','icon-small')}</a></div></section>`:''}
+      ${showSQL?`<section><div class="catalog-heading">${icon('code')}<h2>Laboratoare</h2></div><a class="course-row" href="/sql-university.html"><span class="row-copy"><h3>Laboratoarele 4 și 5</h3><p>Deschide tabelele și rezolvă exercițiile în terminalul SQLite.</p></span>${icon('arrow-right')}</a></section>`:''}
       ${showFR?`<section><div class="catalog-heading">${icon('translate')}<h2>Franceză, în context</h2></div><a class="course-row" href="${frLink('teorie')}"><span class="row-number">01</span><span class="row-copy"><h3>Au marché — La piață</h3><p>O conversație, pronunție și trei propoziții de completat.</p></span><span class="row-status">${L.summary(state.french).correct}/3 corecte</span>${icon('arrow-right')}</a></section>`:''}<div data-catalog-view="list" data-domain="${esc(domain)}"></div>${saveNote()}</div>`;
   }
   function project() {
@@ -290,14 +324,14 @@
     if(learning){$('learning-rail').innerHTML=rail(view==='limba'?'fr':'sql',ex,stage);$('mobile-outline').innerHTML=$('learning-rail').innerHTML;}
   }
   function render() {
-    generation++; if(!course)return;
+    generation++; stopLanguageMedia(); if(!course)return;
     let [view,search='']=location.hash.slice(1).split('?');const params=new URLSearchParams(search);
     if (['exploreaza', 'invata', 'laborator', 'vocabular', 'realizari', 'teste'].includes(view)) {
       location.replace('/biblioteca.html' + location.hash);
       return;
     }
     if(view==='traseu'){view='cursuri';params.set('domeniu','programare');}
-    if(!['acasa','cursuri','lectie','limba','proiect','greseli','progres','material'].includes(view))view='acasa';
+    if(!['acasa','cursuri','lectie','limba','limbi','proiect','greseli','progres','material'].includes(view))view='acasa';
     const ex=exercise(params.get('ex'))||exercise(P.resume(state.sql));
     let stage=['teorie','exemple','practica'].includes(params.get('etapa'))?params.get('etapa'):'practica';
     if(view==='lectie'&&(stage==='exemple'||!lessonFor(ex).theory))stage='practica';
@@ -308,6 +342,27 @@
       state.sql.activeExerciseId=ex.id;state.area='sql';state.stage=stage;
       host.innerHTML=stage==='teorie'?sqlTheory(ex,variant):sqlPractice(ex,variant);
       if(stage==='practica')wireSQL(ex,variant);persist();
+    } else if(view==='limbi') {
+      const visit = generation;
+      if (!document.querySelector('link[href="language-guide.css"]')) {
+        const sheet = document.createElement('link');
+        sheet.rel = 'stylesheet'; sheet.href = 'language-guide.css'; document.head.append(sheet);
+      }
+      host.innerHTML = '<p class="catalog" role="status">Se deschid conversațiile…</p>';
+      import('./language-guide.js').then(({mount}) => {
+        if (visit !== generation) return;
+        const saved = state.previous.conversations || {};
+        disposeGuide = mount(host, params, saved, (id, stage) => {
+          if (visit !== generation || window.PolymathAccount?.authenticating || window.PolymathAccount?.loading) {
+            toast('Așteaptă verificarea contului și încearcă din nou.'); return false;
+          }
+          saved[id] = stage; state.previous.conversations = saved; persist(); return true;
+        });
+      }).catch(() => {
+        if (visit !== generation) return;
+        host.innerHTML = '<div class="catalog"><p>Conversațiile nu s-au încărcat.</p><button type="button" class="secondary">Reîncearcă</button></div>';
+        host.querySelector('button').onclick = render;
+      });
     } else if(view==='limba') {
       state.area='fr';state.stage=stage;host.innerHTML=languageView(stage);wireLanguage(stage);persist();
     } else {
@@ -315,7 +370,7 @@
     }
     host.querySelectorAll('[data-catalog-view]').forEach(window.PolymathCatalog.renderView);
     host.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{filter=button.dataset.filter;render();host.querySelector(`[data-filter="${filter}"]`)?.focus();}));
-    updateStatus();document.title=(view==='lectie'?lessonFor(ex).title:view==='limba'?'Au marché · Franceză':view==='greseli'?'Greșelile mele':view==='cursuri'?'Cursuri':'Jurnalul tău de studiu')+' · PolymathHub';
+    updateStatus();document.title=(view==='limbi'?'Conversații ghidate':view==='lectie'?lessonFor(ex).title:view==='limba'?'Au marché · Franceză':view==='greseli'?'Greșelile mele':view==='cursuri'?'Cursuri':'Jurnalul tău de studiu')+' · PolymathHub';
   }
   function wireSQL(ex,variant) {
     const editor=$('sql-editor'),button=$('run-sql'),feedback=$('sql-feedback');let hints=0,hasExecuted=false;
@@ -349,21 +404,20 @@
     button.addEventListener('click',run);
   }
   function speak(index) {
-    if(!dialogue[index])return;
-    const status=$('pronunciation-status');
-    if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){if(status)status.textContent='Pronunția nu este disponibilă în acest browser. Poți folosi textul și traducerea.';return;}
-    const utterance=new SpeechSynthesisUtterance(dialogue[index].fr);utterance.lang='fr-FR';utterance.rate=.9;
-    const voice=window.speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('fr'));if(voice)utterance.voice=voice;
-    utterance.onstart=()=>{if(status?.isConnected)status.textContent='Se redă replica '+(index+1)+' în franceză.';};
-    utterance.onend=()=>{if(status?.isConnected)status.textContent='Replică redată. O poți asculta din nou.';};
-    utterance.onerror=event=>{if(status?.isConnected&&!['canceled','interrupted'].includes(event.error))status.textContent='Pronunția nu a pornit. Verifică vocile și sunetul dispozitivului; textul și traducerea rămân disponibile.';};
-    if(status)status.textContent='Se pregătește pronunția…';
-    window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
+    if (!dialogue[index]) return;
+    marketAudio?.pause();
+    const player = new Audio('/assets/audio/fr-' + (index + 4) + '.mp3');
+    marketAudio = player;
+    const status = $('pronunciation-status');
+    player.onended = () => { if (status?.isConnected) status.textContent = 'Replică redată. O poți asculta din nou.'; };
+    player.play().then(() => {
+      if (player === marketAudio && status?.isConnected) status.textContent = 'Se redă replica ' + (index + 1) + '.';
+    }).catch(() => {
+      if (player === marketAudio && status?.isConnected) status.textContent = 'Fișierul audio este indisponibil. Poți folosi replica scrisă și traducerea.';
+    });
   }
   function wireLanguage(stage) {
-    const canSpeak='speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
-    document.querySelectorAll('[data-speak]').forEach(button=>{button.disabled=!canSpeak;button.addEventListener('click',()=>speak(Number(button.dataset.speak)));});
-    if(!canSpeak&&$('pronunciation-status'))$('pronunciation-status').textContent='Pronunția nu este disponibilă în acest browser. Folosește textul și traducerea de mai jos.';
+    document.querySelectorAll('[data-speak]').forEach(button => button.addEventListener('click', () => speak(Number(button.dataset.speak))));
     const translate=$('translate-dialogue');
     if(translate)translate.addEventListener('click',()=>{const expanded=translate.getAttribute('aria-expanded')!=='true';translate.setAttribute('aria-expanded',String(expanded));translate.textContent=expanded?'Ascunde traducerea':'Arată traducerea în română';for(const line of document.querySelectorAll('.dialogue-ro'))line.hidden=!expanded;});
     if(stage!=='practica')return;

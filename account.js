@@ -3,6 +3,9 @@
   const $ = id => document.getElementById(id);
   const account = { user: null, admin: false, configured: false, ready: false, revision: null, sync: "", loading: false, dirty: false, saving: null, timer: null, authenticating: false };
   window.PolymathAccount = account;
+  let sessionState = "checking";
+  let sessionError = "";
+  let accessRequest = 0;
   const text = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const accountIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
   async function api(path, options = {}) {
@@ -53,19 +56,21 @@
   ];
   const themeKey = "polymath_appearance";
   function avatarMark(user) {
-    const [, , symbol, style] = avatarChoices.get(user.avatar) || [];
-    return `<span class="avatar-mark${style ? " avatar-" + style : ""}" aria-hidden="true">${text(symbol || initials(user))}</span>`;
+    const [id, , symbol, style] = avatarChoices.get(user.avatar) || [];
+    const content = id?.startsWith("solid-") ? "" : (symbol || initials(user));
+    return `<span class="avatar-mark${style ? " avatar-" + style : ""}" aria-hidden="true">${text(content)}</span>`;
   }
   function avatarPicker(user) {
-    const selected = user.avatar || "initials";
+    const selected = avatarChoices.has(user.avatar) ? user.avatar : "initials";
     const currentGroup = Object.keys(avatarGroups).find(group => avatarGroups[group].some(([id]) => id === selected));
     return `<fieldset class="avatar-picker"><legend>Alege avatarul</legend>
-      <label class="avatar-category">Colecție<select data-avatar-category>
-        ${Object.keys(avatarGroups).map(group => `<option ${group === currentGroup ? "selected" : ""}>${text(group)}</option>`).join("")}
-      </select></label>
+      <div class="avatar-collections" role="group" aria-label="Colecții de avatare">
+        ${Object.keys(avatarGroups).map(group => `<button type="button" data-avatar-category="${text(group)}" aria-pressed="${group === currentGroup}">${text(group)}</button>`).join("")}
+      </div>
       ${Object.entries(avatarGroups).map(([group, entries]) => `<div class="avatar-grid" data-avatar-group="${text(group)}" ${group === currentGroup ? "" : "hidden"}>
-        ${entries.map(([id, label, symbol, style]) => `<label title="${text(label)}"><input type="radio" name="avatar" value="${id}" aria-label="${text(label)}" ${id === selected ? "checked" : ""}><span class="avatar-mark${style ? " avatar-" + style : ""}" aria-hidden="true">${text(symbol || initials(user))}</span></label>`).join("")}
+        ${entries.map(([id, label]) => `<label title="${text(label)}"><input type="radio" name="avatar" value="${id}" aria-label="${text(label)}" ${id === selected ? "checked" : ""}>${avatarMark({...user, avatar:id})}</label>`).join("")}
       </div>`).join("")}
+      <p class="avatar-caption" aria-live="polite">Avatar ales · <strong data-avatar-label>${text(avatarChoices.get(selected)?.[1])}</strong></p>
     </fieldset>`;
   }
   function applyAppearance(value) {
@@ -80,11 +85,21 @@
       </fieldset></details>`;
   }
   function renderControl() {
-    const control = $("account-control"); control.hidden = !account.configured;
-    if (!account.configured) return;
-    const label = account.user ? "Setări cont" : "Intră în cont";
-    control.innerHTML = `<button type="button" class="account-button account-avatar" data-open-account aria-haspopup="dialog" aria-label="${label}" title="${label}">${account.user ? avatarMark(account.user) : accountIcon}</button>`;
+    const button = $("account-control").querySelector("button");
+    const label = account.user ? "Setări cont" : (sessionState === "available" ? "Intră în cont" : "Deschide profilul");
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    button.innerHTML = account.user ? avatarMark(account.user) : accountIcon;
+    const panel = $("account-dialog");
+    if (panel?.open && panel.querySelector("[data-session-status]")) open();
     if ($("account-sync")) $("account-sync").textContent = account.sync;
+    if (panel?.open && account.user) {
+      const adminButton = panel.querySelector("[data-open-admin]");
+      if (adminButton) adminButton.hidden = !account.admin;
+      for (const action of panel.querySelectorAll("[data-waits-for-progress]")) action.disabled = account.loading;
+      const retry = panel.querySelector("[data-retry-account]");
+      if (retry) retry.hidden = account.loading || (account.ready && !account.dirty);
+    }
     window.dispatchEvent(new Event("polymath:account"));
   }
   async function applyUser(user, { discardPending = false } = {}) {
@@ -96,12 +111,17 @@
     account.user = user;
     account.admin = false;
     account.dirty = false;
+    account.sync = "Se încarcă progresul…";
+    renderControl();
     let pending = discardPending ? null : pendingProgress(user.id);
     const headers = { "X-Polymath-Account": user.id };
-    const access = api("/api/admin-accounts?action=access", { headers }).then(
-      result => result.allowed === true,
-      () => false
-    );
+    const request = ++accessRequest;
+    api("/api/admin-accounts?action=access", { headers }).then(result => {
+      if (request === accessRequest && account.user?.id === user.id) {
+        account.admin = result.allowed === true;
+        renderControl();
+      }
+    }).catch(() => { /* The profile and personal progress remain available. */ });
     try {
       const result = await api("/api/progress", { headers });
       if (account.recovering) pending = pendingProgress(user.id);
@@ -124,7 +144,6 @@
       restoreProgress(pending?.course || window.PolymathApp.accountProgress?.(user.id) || stored("polymath_edtech_state_v2:" + user.id, null), pending?.vocabulary || stored("polymath_vocabulary_v1:" + user.id, emptyVocabulary()), user.id);
       account.sync = "Sincronizarea nu este disponibilă. Încearcă să reîncarci progresul contului.";
     } finally {
-      account.admin = await access;
       account.loading = false;
       account.recovering = false;
       renderControl();
@@ -174,19 +193,32 @@
     if (!$("account-dialog")) {
       const element = document.createElement("dialog"); element.id = "account-dialog"; element.className = "auth-dialog";
       element.setAttribute("aria-labelledby", "auth-title");
+      let pressedBackdrop = false;
+      const outside = event => {
+        const box = element.getBoundingClientRect();
+        return event.target === element && (event.clientX < box.left || event.clientX >= box.right || event.clientY < box.top || event.clientY >= box.bottom);
+      };
+      element.addEventListener("pointerdown", event => { pressedBackdrop = outside(event); });
+      element.addEventListener("click", event => { if (pressedBackdrop && outside(event)) element.close(); });
       element.addEventListener("close", () => $("account-control")?.querySelector("button")?.focus());
       document.body.appendChild(element);
     }
     return $("account-dialog");
   }
   function open(mode = "login") {
-    if (account.loading || account.authenticating) return;
+    if (account.authenticating) return;
     const element = dialog();
-    if (account.user) {
+    if (sessionState !== "available") {
+      const checking = sessionState === "checking";
+      element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide profilul">×</button>
+        <h2 id="auth-title" tabindex="-1">Profilul tău</h2>
+        <p class="profile-status" data-session-status role="status">${checking ? "Se verifică sesiunea…" : text(sessionError)}</p>
+        ${checking ? "" : '<button type="button" class="studio-secondary" data-check-session>Reîncearcă</button>'}`;
+    } else if (account.user) {
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide setările">×</button>
         <h2 id="auth-title" class="dialog-heading" tabindex="-1">Setările contului</h2>
         <div class="settings-identity"><span class="settings-avatar" aria-hidden="true">${avatarMark(account.user)}</span><div><strong id="settings-account-name">${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div></div>
-        ${account.admin ? '<button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog"><img src="/assets/icons/caret-right.svg" alt="">Panou administrator</button>' : ""}
+        <button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog" ${account.admin ? "" : "hidden"}><img src="/assets/icons/caret-right.svg" alt="">Panou administrator</button>
         <details class="settings-group" name="account-section" open><summary>Profil și avatar</summary>
         <form class="auth-form settings-form" data-account-action="profile">
           ${avatarPicker(account.user)}
@@ -207,7 +239,7 @@
             <p>Șterge exercițiile, greșelile și punctele salvate în cont. Rezultatele atelierului SQL sunt stocate separat în browser.</p>
             <label>Scrie RESETEAZĂ<input name="confirmation" autocomplete="off" maxlength="10" required></label>
             ${window.PolymathSqlCourse ? '<label class="settings-check"><input type="checkbox" name="includeWorkshop"><span>Include progresul atelierului SQL din acest browser</span></label>' : ""}
-            <button class="settings-danger" type="submit">Resetează progresul</button>
+            <button class="settings-danger" data-waits-for-progress ${account.loading ? "disabled" : ""} type="submit">Resetează progresul</button>
           </form>
         </details>
         <details class="settings-group" name="account-section"><summary>Șterge contul</summary>
@@ -215,28 +247,23 @@
             <p>Contul și progresul salvat în el vor fi șterse definitiv.</p>
             <label>Parola actuală<input type="password" name="currentPassword" autocomplete="current-password" maxlength="128" required></label>
             <label>Scrie ȘTERGE<input name="confirmation" autocomplete="off" maxlength="6" required></label>
-            <button class="settings-danger" type="submit">Șterge definitiv contul</button>
+            <button class="settings-danger" data-waits-for-progress ${account.loading ? "disabled" : ""} type="submit">Șterge definitiv contul</button>
           </form>
         </details>
         <p id="auth-feedback" class="settings-feedback" role="status"></p>
         <div class="settings-footer">
           <p id="account-sync" class="account-sync" role="status">${text(account.sync)}</p>
-          <button class="studio-secondary" type="button" data-reload-account>Reîncarcă progresul</button>
-          <button type="button" class="studio-secondary" data-logout-account>Deconectează-te</button>
+          <button type="button" class="studio-primary" data-retry-account ${account.loading || (account.ready && !account.dirty) ? "hidden" : ""}>Reîncearcă sincronizarea</button>
+          <button class="studio-secondary" type="button" data-waits-for-progress ${account.loading ? "disabled" : ""} data-reload-account>Reîncarcă progresul</button>
+          <button type="button" class="studio-secondary" data-waits-for-progress ${account.loading ? "disabled" : ""} data-logout-account>Deconectează-te</button>
         </div>`;
-      if (account.dirty || !account.ready) {
-        const retry = document.createElement("button");
-        retry.type = "button"; retry.className = "studio-primary"; retry.dataset.retryAccount = "";
-        retry.textContent = "Reîncearcă sincronizarea";
-        element.querySelector("[data-reload-account]").before(retry);
-      }
     } else {
       const register = mode === "register";
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide autentificarea">×</button><span class="eyebrow">POLYMATHHUB</span><h2 id="auth-title">${register ? "Creează un cont" : "Conectează-te"}</h2><p class="auth-intro">Salvează progresul și revino la el de pe alt dispozitiv.</p><form id="auth-form" class="auth-form" data-mode="${mode}"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Parolă<input type="password" name="password" autocomplete="${register ? "new-password" : "current-password"}" minlength="10" maxlength="128" required></label><button class="studio-primary" type="submit">${register ? "Creează contul" : "Conectează-te"}</button></form><div id="auth-feedback" role="status" aria-live="polite"></div><p class="auth-switch">${register ? 'Ai deja cont? <button type="button" data-auth-mode="login">Conectează-te</button>' : 'Nu ai cont? <button type="button" data-auth-mode="register">Creează unul</button>'}</p>${register ? '<p class="auth-note">Folosește un email în format valid ca identificator și o parolă de minimum 10 caractere. Nu trebuie să ai acces la căsuța poștală.</p>' : ""}`;
     }
-    if (!account.user) element.insertAdjacentHTML("beforeend", appearancePicker());
+    if (sessionState === "available" && !account.user) element.insertAdjacentHTML("beforeend", appearancePicker());
     if (!element.open) element.showModal();
-    (account.user ? element.querySelector("#auth-title") : element.querySelector("input"))?.focus();
+    (element.querySelector("#auth-title[tabindex]") || element.querySelector("input"))?.focus({preventScroll:true});
   }
 
   const adminDateFormat = new Intl.DateTimeFormat("ro-RO", { dateStyle: "short", timeStyle: "short" });
@@ -430,8 +457,8 @@
   }
 
   async function saveSetting(form) {
-    if (!account.user || account.loading || account.authenticating) return;
     const action = form.dataset.accountAction;
+    if (!account.user || account.authenticating || (account.loading && action !== "profile" && action !== "password")) return;
     const values = new FormData(form);
     const body = Object.fromEntries(values);
     const feedback = $("auth-feedback");
@@ -523,10 +550,8 @@
   });
   document.addEventListener("change", event => {
     const input = event.target;
-    if (input.matches("[data-avatar-category]")) {
-      input.closest(".avatar-picker").querySelectorAll("[data-avatar-group]").forEach(group => {
-        group.hidden = group.dataset.avatarGroup !== input.value;
-      });
+    if (input.matches('input[name="avatar"]')) {
+      input.closest(".avatar-picker").querySelector("[data-avatar-label]").textContent = avatarChoices.get(input.value)[1];
     } else if (input.matches('input[name="appearance"]')) {
       applyAppearance(input.value);
       try { localStorage.setItem(themeKey, input.value); } catch {}
@@ -535,7 +560,13 @@
   });
   document.addEventListener("click", async event => {
     const button = event.target.closest("button"); if (!button) return;
-    if (button.hasAttribute("data-open-account")) open();
+    if (button.hasAttribute("data-avatar-category")) {
+      const picker = button.closest(".avatar-picker");
+      for (const category of picker.querySelectorAll("[data-avatar-category]")) category.setAttribute("aria-pressed", String(category === button));
+      for (const group of picker.querySelectorAll("[data-avatar-group]")) group.hidden = group.dataset.avatarGroup !== button.dataset.avatarCategory;
+    }
+    else if (button.hasAttribute("data-check-session")) await loadSession();
+    else if (button.hasAttribute("data-open-account")) open();
     else if (button.hasAttribute("data-open-admin")) openAdmin();
     else if (button.hasAttribute("data-close-account")) $("account-dialog").close();
     else if (button.dataset.authMode) open(button.dataset.authMode);
@@ -570,21 +601,28 @@
     if (account.user && account.dirty && !account.loading && !account.authenticating) return applyUser(account.user);
   });
   document.addEventListener("visibilitychange", () => { if (document.hidden && account.ready && account.dirty) flush(); });
+  async function loadSession() {
+    sessionState = "checking";
+    try {
+      renderControl();
+      const result = await api("/api/account?action=session");
+      account.configured = true;
+      sessionState = "available";
+      if (result.user) await applyUser(result.user);
+    } catch (error) {
+      account.configured = false;
+      sessionState = "unavailable";
+      sessionError = error.status ? error.message : "Legătura cu serviciul de conturi s-a întrerupt. Poți continua lecțiile pe acest dispozitiv.";
+    } finally { renderControl(); }
+  }
   document.addEventListener("DOMContentLoaded", async () => {
     try { applyAppearance(localStorage.getItem(themeKey)); } catch {}
-    try {
-      const config = await api("/api/account?action=config"); account.configured = config.configured;
-      if (!account.configured) return;
-      const result = await api("/api/account?action=session"); if (result.user) await applyUser(result.user);
-    } catch { /* The public learning experience remains usable without accounts. */ }
-    finally {
-      renderControl();
-      if (window.PolymathSqlCourse && account.configured && window.location?.search && new URLSearchParams(window.location.search).get("profil") === "1") {
-        const url = new URL(window.location.href);
-        url.searchParams.delete("profil");
-        history.replaceState(history.state, "", url);
-        open();
-      }
+    if (window.PolymathSqlCourse && window.location?.search && new URLSearchParams(window.location.search).get("profil") === "1") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("profil");
+      history.replaceState(history.state, "", url);
+      open();
     }
+    await loadSession();
   });
 })();

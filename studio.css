@@ -633,3 +633,42 @@ body.library-app[data-view="study"] #study-view.study-layout {
 .study-data-box { border: 1px solid var(--border-color); border-radius: .5rem; padding: 0 .7rem; margin-block: .75rem; }
 .study-data-box > summary { min-height: 44px; padding: .65rem 0; cursor: pointer; font-weight: 650; }
 #validation-feedback:empty { display: none; }
+
+.library-app .catalog-layout { max-width: 1180px; padding-inline: clamp(1rem, 3vw, 2.75rem); }
+.library-app .catalog-hero {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 1.25rem 2rem; padding-block: .5rem 1.5rem; border-bottom: 1px solid var(--line);
+}
+.library-app .catalog-hero p { max-width: 50ch; }
+.catalog-labs-link {
+  display: flex; align-items: center; gap: .8rem; padding: .85rem 1rem; border: 1px solid var(--line);
+  border-radius: 14px; color: var(--ink); background: var(--teal-soft); text-decoration: none; min-height: 64px;
+}
+.catalog-labs-link:hover { border-color: var(--teal); }
+.catalog-labs-link strong, .catalog-labs-link small { display: block; line-height: 1.5; }
+.catalog-labs-link small { color: var(--teal-dark); font-size: .82rem; }
+.catalog-lab-icon { color: var(--teal-dark); font: 700 1.3rem/1 monospace; }
+.library-app .division-pill-btn { border-radius: 100px; padding-inline: .9rem; color: var(--ink); }
+.library-app .division-pill-btn.active { background: var(--teal); color: var(--on-accent); }
+.library-app .division-pill-btn > span { font-size: .8rem; font-variant-numeric: tabular-nums; }
+.library-app .domain-grid { grid-template-columns: repeat(auto-fill,minmax(min(100%,18rem),1fr)); gap: 1rem; }
+.library-app .domain-card { padding: 1.15rem 1.25rem; border-radius: 16px; }
+.library-app .domain-card-header { flex-wrap: nowrap; justify-content: flex-start; gap: .7rem; margin-bottom: .9rem; }
+.library-app .domain-card-icon { width: 41px; height: 41px; border-radius: 12px; }
+.library-app .domain-card-title { margin: 0; font: 700 clamp(1.16rem,1.8vw,1.4rem)/1.17 Georgia,serif; letter-spacing: -.02em; }
+.domain-open-arrow { color: var(--teal); margin-left: auto; align-self: flex-start; }
+.library-app .domain-card-desc { min-height: 0; margin-bottom: 1.1rem; }
+.library-app .domain-progress-row { font-size: .78rem; margin: auto 0 .4rem; }
+.library-app .domain-progress-bar { height: .25rem; }
+.library-app .course-outline nav :is(a, button):is(:hover, [aria-current]) { color: var(--teal-dark); }
+body.library-app[data-view] .brand-title span { color: var(--teal-dark); }
+@media (max-width: 640px) {
+  .catalog-labs-link { width: 100%; }
+  .catalog-labs-link > :last-child { margin-inline-start: auto; }
+  .library-app .catalog-division-pills { gap: .42rem; }
+  .library-app .division-pill-btn { padding-inline: .7rem; }
+}
+.library-app :is(.studio-primary, .chapter-start-btn, #verify-btn, .btn-primary, .mode-tab.active) {
+  background: var(--teal); color: var(--on-accent);
+}
+.library-app .domain-card-icon { font: 650 1.05rem/1 ui-monospace, monospace; }

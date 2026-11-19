@@ -1,7 +1,7 @@
 (() => {
   const destinations = [
-    {title: 'Laboratoare SQL', detail: 'Terminal, tabele și exerciții', href: '/sql-university.html', icon: 'code'},
-    {title: 'Limbi străine', detail: 'Engleză, franceză și spaniolă', href: '/biblioteca.html#exploreaza?division=languages', icon: 'translate'},
+    {title: 'Laboratoare', detail: 'Lucrări practice SQL · Lab 4 și 5', href: '/sql-university.html', icon: 'code'},
+    {title: 'Limbi străine', detail: 'Engleză, franceză și spaniolă', href: '/#limbi', icon: 'translate'},
     {title: 'Toate domeniile', detail: 'Catalogul de lecții', href: '/biblioteca.html#exploreaza', icon: 'book-open'},
     {title: 'Teste pe domenii', detail: '5 întrebări cu rezultat și explicații', href: '/biblioteca.html#teste', icon: 'file-text'},
     {title: 'Vocabular', detail: 'Dicționar și practică', href: '/biblioteca.html#vocabular', icon: 'translate'},

@@ -750,6 +750,7 @@
   }
 
   const TRACK_ICONS = {
+    "HTML": "&lt;/&gt;",
     "SQL": `<svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>`,
     "Java": `<svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`,
     "JavaScript": `<svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
@@ -991,6 +992,12 @@
     for (const selector of [".catalog-hero", "#catalog-division-pills", "#catalog-domains-grid"]) {
       document.querySelector(selector).hidden = selected;
     }
+    for (const button of document.querySelectorAll("#catalog-division-pills button")) {
+      const division = button.dataset.division;
+      const count = button.querySelector("[data-track-count]");
+      if (count) count.textContent = division === "ALL" ? tracks.length : tracks.filter(track => track.division === division).length;
+      button.setAttribute("aria-pressed", String(division === currentDivisionFilter));
+    }
     if (selected) {
       renderTrackCatalog(tracks);
       return;
@@ -1016,16 +1023,13 @@
       card.innerHTML = `
         <div class="domain-card-header">
           <span class="domain-card-icon" aria-hidden="true">${track.icon}</span>
-          <div style="display:flex; gap:0.4rem; align-items:center;">
-            <span class="domain-division-badge">${track.division === "Informatică și Programare" ? "Informatică" : "Limbi Străine"}</span>
-            <span class="domain-card-badge">${trackLessons.length} teme</span>
-          </div>
+          <h3 class="domain-card-title">${track.name}</h3>
+          <span class="domain-open-arrow" aria-hidden="true">→</span>
         </div>
-        <h3 class="domain-card-title">${track.name}</h3>
         <p class="domain-card-desc">${track.description}</p>
         <div class="domain-progress-row">
           <span>Teme exersate</span>
-          <strong>${completedCount}/${trackLessons.length} (${pct}%)</strong>
+          <strong>${completedCount} din ${trackLessons.length}</strong>
         </div>
         <div class="domain-progress-bar" aria-hidden="true">
           <div class="domain-progress-fill" style="width: ${pct}%;"></div>
@@ -1042,6 +1046,10 @@
   }
 
   function renderTrackCatalog(tracks) {
+    const conversations = document.getElementById("guided-conversations");
+    const language = {"Engleză (A1–A2)":"en", "Limba Franceză":"fr", "Limba Spaniolă":"es"}[catalogTrack];
+    conversations.hidden = !language;
+    if (language) conversations.href = "/#limbi?limba=" + language;
     const rail = document.getElementById("catalog-track-links");
     const back = document.createElement("button");
     back.type = "button";

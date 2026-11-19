@@ -153,7 +153,7 @@ test("admin queries use the verified user token, bind to the active account, and
 function accountBrowser({ storage = new Map(), remote = { course: { xp: 0 }, vocabulary: {}, revision: 0 }, failSave = false, beforeRead = () => {} } = {}) {
   const documentEvents = {}, windowEvents = {}, writes = [];
   let state = { xp: 0 }, words = {}, currentRemote = remote;
-  const control = { hidden: false, innerHTML: "" };
+  const control = { querySelector: () => ({ setAttribute() {}, innerHTML: "" }) };
   const document = { hidden: true, getElementById: name => name === "account-control" ? control : null,
     addEventListener: (name, fn) => { documentEvents[name] = fn; } };
   const window = { addEventListener: (name, fn) => { windowEvents[name] = fn; }, dispatchEvent() {},

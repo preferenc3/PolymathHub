@@ -1,0 +1,27 @@
+.guide {max-width:46rem;margin:auto;padding:clamp(1.4rem,5vw,3.8rem) clamp(1rem,4vw,2.4rem);color:var(--ink)}
+.guide h1 {font:600 clamp(2rem,4.5vw,3.2rem)/1.08 var(--serif);letter-spacing:-.025em;margin:1rem 0}
+.guide-back,.guide-library {color:var(--teal-dark);display:inline-flex;align-items:center;min-height:44px;text-underline-offset:.24em}
+.guide-intro,.guide-note,.guide-menu-item span {color:var(--muted)}
+.guide-menu,.guide-choices {display:grid;gap:.65rem;margin:1.25rem 0}
+.guide-menu-item,.guide-choice {border:1px solid var(--line);border-radius:.9rem;background:var(--paper);color:var(--ink);padding:1rem 1.2rem;text-align:left;text-decoration:none;font:inherit;min-height:3rem}
+.guide-menu-item {display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap}
+.guide-menu-item strong {font:600 1.5rem var(--serif)}
+.guide-menu-item:hover,.guide-choice:hover,.guide-choice[data-result=ok] {border-color:var(--teal);background:var(--teal-soft)}
+.guide-choice[data-result=retry] {border-color:var(--error)}
+.guide-tracker {display:grid;gap:.45rem;font-size:.85rem;font-weight:650;color:var(--muted);margin:.75rem 0 1.2rem}
+.guide-tracker progress {width:100%;height:.5rem;accent-color:var(--teal);border:0;border-radius:1rem;overflow:hidden;background:var(--line)}
+.guide-tracker progress::-webkit-progress-bar {background:var(--line)}
+.guide-tracker progress::-webkit-progress-value {background:var(--teal)}
+.guide-tracker progress::-moz-progress-bar {background:var(--teal)}
+.guide-sheet {border:1px solid var(--line);background:var(--paper);padding:clamp(1rem,4vw,2rem);border-radius:1.3rem;margin-bottom:1rem}
+.guide-sheet h1 {font-size:clamp(1.65rem,4vw,2.35rem);margin:0 0 1.2rem}
+.guide-sheet form {display:grid;justify-items:start;gap:.75rem}
+.guide-sheet input {min-height:46px;padding:.65rem .8rem;max-width:100%;border:1px solid var(--muted);border-radius:.6rem;color:var(--ink);background:var(--white);font:inherit}
+.guide .guide-phrase {font:500 clamp(1.45rem,4vw,2rem)/1.4 var(--serif);margin:.75rem 0}
+.guide-audio-actions {display:flex;flex-wrap:wrap;gap:.6rem}
+.guide-sheet summary {color:var(--teal-dark);cursor:pointer;padding:.65rem 0}
+.guide audio[controls] {width:100%;display:block;margin:.7rem 0}
+.guide [hidden] {display:none!important}
+.guide-feedback {font-weight:600}.guide-feedback[data-result=ok] {color:var(--teal-dark)}
+.guide-status,.guide-note {font-size:.9rem}
+.guide-sheet p:empty {display:none}

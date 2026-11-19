@@ -21,6 +21,11 @@
       ["sprout", "Vlăstar", "🌱"], ["sunflower", "Floarea-soarelui", "🌻"], ["volcano", "Vulcan", "🌋"],
       ["rocket", "Rachetă", "🚀"], ["planet", "Planetă", "🪐"], ["rainbow", "Curcubeu", "🌈"], ["comet", "Cometă", "☄️"]
     ],
+    "Culori uni": [
+      ["solid-white", "Alb", "", "solid-white"], ["solid-black", "Negru", "", "solid-black"],
+      ["solid-gray", "Gri", "", "solid-gray"], ["solid-yellow", "Galben", "", "solid-yellow"],
+      ["solid-violet", "Violet", "", "solid-violet"]
+    ],
     "Monocrom": [
       ["mono-cat", "Pisică monocrom", "🐱", "mono"], ["mono-owl", "Bufniță monocrom", "🦉", "mono"],
       ["mono-bear", "Ursuleț monocrom", "🧸", "mono"], ["mono-robot", "Robot monocrom", "🤖", "mono"],

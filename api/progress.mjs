@@ -12,6 +12,11 @@ export function validateProgress(body) {
     if (/^[a-f0-9-]{36}$/i.test(mistake.questionId)) safeCourse.catalogMistake.questionId = mistake.questionId;
     for (const key of ["title","answer","feedback"]) safeCourse.catalogMistake[key] = String(mistake[key] || "").slice(0,800);
   }
+  if (course.conversations && typeof course.conversations === "object") {
+    safeCourse.conversations = Object.fromEntries(Object.entries(course.conversations).filter(
+      ([id, step]) => /^(en|fr|es)-[1-3]$/.test(id) && Number.isInteger(step) && step >= 0 && step <= 4
+    ));
+  }
   if (course.languagePractice && typeof course.languagePractice === "object") safeCourse.languagePractice = LanguagePractice.clean(course.languagePractice);
   if (course.sqlPractice && typeof course.sqlPractice === "object") safeCourse.sqlPractice = SqlProgress.clean(course.sqlPractice);
   for (const field of ["streak", "longestStreak", "xp"]) if (Number.isSafeInteger(course[field]) && course[field] >= 0 && course[field] <= 10_000_000) safeCourse[field] = course[field];
