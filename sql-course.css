@@ -188,7 +188,7 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
   .feature-kicker { margin-bottom: .8rem; }
   .feature-story h1 { font-size: clamp(2rem, 8vw, 2.85rem); }
   .feature-description { margin: .7rem 0 1rem; font-size: .94rem; }
-  .feature-art { height: clamp(150px, 45vw, 220px); min-height: 0; }
+  .feature-art { height: auto; min-height: 0; aspect-ratio: 3 / 2; }
   .home-destinations, .home-destinations [data-catalog-links] { grid-template-columns: 1fr; }
   .home-destinations .explore-destination { min-height: 66px; }
 }
@@ -321,7 +321,3 @@ html[data-theme="cyber-dark"] .learning-app .primary img { filter: none; }
 @media (max-width: 600px) {
   .progress-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 }
-
-.photo-credits { font-size:.82rem; color:var(--muted); }
-.photo-credits summary { width:fit-content; padding-block:.65rem; min-height:44px; cursor:pointer; }
-.photo-credits ul { padding-left:1.2rem; }

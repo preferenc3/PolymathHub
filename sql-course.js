@@ -232,15 +232,8 @@
       </div>
       ${latestMistake()}
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
-       ${homeActivity()}${saveNote()}
-      <details class="photo-credits"><summary>Credite foto</summary>
-        <p>Fotografii de pe Wikimedia Commons, decupate, redimensionate și convertite în WebP. Versiunile adaptate păstrează licența fiecărei fotografii.</p>
-        <ul>
-          <li><a href="https://commons.wikimedia.org/wiki/File:Cat_and_Dog_Cuddling.jpg">Cat and Dog Cuddling</a> · SeanT313 · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></li>
-          <li><a href="https://commons.wikimedia.org/wiki/File:Copyright_Card_Catalog_Drawer.jpg">Copyright Card Catalog Drawer</a> · Michael Holley · Domeniu public</li>
-          <li><a href="https://commons.wikimedia.org/wiki/File:Abacus_6.jpg">Abacus 6</a> · David R. Tribble (Loadmaster) · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></li>
-          <li><a href="https://commons.wikimedia.org/wiki/File:Tower_of_Hanoi.jpeg">Tower of Hanoi</a> · Evanherk · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></li>
-        </ul></details></div>`;
+      ${homeActivity()}${saveNote()}
+    </div>`;
   }
   function courseRow(lesson, index) {
     const done = lesson.exercises.filter(id=>state.sql.records[id]?.passed).length;
