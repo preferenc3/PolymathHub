@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Laboratoare SQL · PolymathHub</title>
   <link rel="stylesheet" href="sql-course.css">
+  <link rel="stylesheet" href="profile.css">
   <link rel="stylesheet" href="sql-university.css">
 </head>
 <body class="learning-app university">
@@ -28,21 +29,24 @@
     </section>
     <div class="lab-layout">
       <aside class="lab-picker" aria-label="Alegerea laboratorului și a exercițiului">
-        <nav class="lab-modes" aria-label="Mod de lucru">
-          <button id="mode-exercises" type="button" aria-pressed="true"><img src="assets/icons/list.svg" alt="">Exerciții</button>
-          <button id="mode-console" type="button" aria-pressed="false"><img src="assets/icons/code.svg" alt="">Consolă liberă</button>
-        </nav>
-        <div class="lab-controls">
-          <label for="lab-select">Laborator
-            <select id="lab-select" disabled>
-              <option value="4">Lab 4 · Structură și modificări</option>
-              <option value="5">Lab 5 · Interogări</option>
-            </select>
-          </label>
-          <label class="lab-compact-choice" for="exercise-select">Exercițiu
-            <select id="exercise-select" disabled></select>
-          </label>
-          <nav id="lab-task-list" aria-label="Sarcinile laboratorului"></nav>
+        <button type="button" class="picker-toggle secondary" id="picker-toggle" aria-expanded="false" aria-controls="picker-content">Schimbă exercițiul <span aria-hidden="true">⌄</span></button>
+        <div id="picker-content">
+          <nav class="lab-modes" aria-label="Mod de lucru">
+            <button id="mode-exercises" type="button" aria-pressed="true"><img src="assets/icons/list.svg" alt="">Exerciții</button>
+            <button id="mode-console" type="button" aria-pressed="false"><img src="assets/icons/code.svg" alt="">Consolă liberă</button>
+          </nav>
+          <div class="lab-controls">
+            <label for="lab-select">Laborator
+              <select id="lab-select" disabled>
+                <option value="4">Lab 4 · Structură și modificări</option>
+                <option value="5">Lab 5 · Interogări</option>
+              </select>
+            </label>
+            <label class="lab-compact-choice" for="exercise-select">Exercițiu
+              <select id="exercise-select" disabled></select>
+            </label>
+            <nav id="lab-task-list" aria-label="Sarcinile laboratorului"></nav>
+          </div>
         </div>
       </aside>
       <div class="lab-workspace">
@@ -94,6 +98,7 @@
     </div>
   </main>
   <script src="sql-catalog.js"></script><script src="sql-explore.js"></script>
+  <script src="study-overview.js"></script>
   <script src="sql-university.js"></script>
 </body>
 </html>

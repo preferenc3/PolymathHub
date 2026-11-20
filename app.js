@@ -848,6 +848,10 @@
   }
 
   // Actualizare Cluster Statistici (Streak, Rang, Obiectiv Zilnic cu Tooltip)
+  function totalXp() {
+    return STORAGE_KEY === "polymath_edtech_state_v2"
+      ? StudyOverview.guestXp(state, StudyOverview.guestWorkspace()) : state.xp;
+  }
   function renderStats() {
     const today = getTodayKey();
     const todayAutonomous = state.dailyHistory[today] || 0;
@@ -859,8 +863,8 @@
     const dailyTarget = getDailyTarget();
 
     if (els.streakCount) els.streakCount.textContent = state.streak;
-    if (els.xpCount) els.xpCount.textContent = `${state.xp} XP`;
-    if (els.userRank) els.userRank.textContent = getRankTitle(state.xp);
+    if (els.xpCount) els.xpCount.textContent = `${totalXp()} XP`;
+    if (els.userRank) els.userRank.textContent = getRankTitle(totalXp());
 
     // Stare Obiectiv Zilnic
     if (els.goalPill) {
@@ -937,6 +941,7 @@
     }
     if (params.track && allLessons.some(item => item.track === params.track)) state.activeTrack = params.track;
     state.activeView = target;
+    if (target !== "study") StudyOverview.leave();
     document.body.dataset.view = target;
     document.querySelector(".top-bar").classList.remove("menu-open");
     document.getElementById("shell-menu-toggle")?.setAttribute("aria-expanded", "false");
@@ -1240,6 +1245,11 @@
   }
 
   function applyStudyPane(pane) {
+    const lesson = uniqueLessonsMap.get(state.activeLessonId);
+    if (state.activeView === "study" && lesson) {
+      const params = new URLSearchParams({lesson: lesson.id, pane});
+      StudyOverview.record(lesson.title, "/biblioteca.html#invata?" + params);
+    }
     els.studyView.dataset.dualPane = pane;
     document.querySelectorAll(".dual-nav-tab").forEach(tab => {
       const active = tab.dataset.pane === pane;
@@ -1804,7 +1814,7 @@
   ];
 
   function renderLeaguesView() {
-    const userXp = state.xp;
+    const userXp = totalXp();
     const currentLeague = LEAGUES.slice().reverse().find(l => userXp >= l.minXp) || LEAGUES[0];
     const nextLeague = LEAGUES.find(l => l.minXp > userXp);
 
@@ -2660,6 +2670,13 @@ console.log("Decodare payload token:", atob(token.split('.')[1]));`
     guestProgress: () => { try { return JSON.parse(localStorage.getItem("polymath_edtech_state_v2") || "null"); } catch { return null; } },
     selectTrack: name => openTrack(name)
   };
+  window.addEventListener("storage", event => {
+    if (event.key === "pm_learning_workspace_v1" && STORAGE_KEY === "polymath_edtech_state_v2") {
+      renderStats();
+      if (state.activeView === "leagues") renderLeaguesView();
+    }
+  });
+  window.addEventListener("pageshow", event => { if (event.persisted) renderStats(); });
   window.addEventListener("popstate", () => { const route = readRoute(); switchView(route.view, { params: route.params, history: "none" }); });
   window.addEventListener("hashchange", () => { const route = readRoute(); if (route.view !== state.activeView || route.view === "catalog" ||
       (route.view === "study" && (route.params.lesson !== state.activeLessonId || (route.params.pane || "theory") !== state.activeDualPane))) {

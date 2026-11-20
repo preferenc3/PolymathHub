@@ -271,11 +271,44 @@ try {
   await noOverflow('mobile-reduced-motion');
   checks.push('desktop-and-375px-reflow-essential-pages-mobile-outline-keyboard-reduced-motion');
 
+  await page.goto(base + '/biblioteca.html#invata?lesson=path-en-animals&pane=practice');
+  await page.waitForSelector('#user-answer-input', {visible:true});
+  await fill('#user-answer-input', 'dog');
+  await page.click('#verify-btn');
+  await page.waitForFunction(() => window.PolymathApp.snapshot().state.xp === 15);
+  await page.goto(base + '/#progres');
+  await page.waitForFunction(() => document.querySelector('.progress-summary strong')?.textContent === '335');
+  await page.waitForFunction(() => document.querySelector('[data-domain-summary]')?.textContent.includes('1 / 26'));
+  await route('#acasa');
+  assert.match(await page.$eval('.home-continuation a', a => a.href), /lesson=path-en-animals&pane=practice$/);
+  await page.click('.home-continuation a');
+  await page.waitForSelector('#user-answer-input', {visible:true});
+  assert.equal(await page.evaluate(() => window.PolymathApp.snapshot().state.xp), 15);
+  checks.push('combined-guest-xp-domain-progress-resume-without-duplicate-awards');
+
+  await page.goto(base + '/#acasa');
+  await ready();
+  await page.click('#account-control button');
+  await page.waitForSelector('.appearance-picker');
+  await page.click('.settings-group:has(.appearance-picker) summary');
+  await page.click('input[name="appearance"][value="cyber-dark"]');
+  await page.keyboard.press('Escape');
+  await page.goto(base + '/sql-university.html?ex=5-14');
+  await page.waitForSelector('#terminal-input', {visible:true});
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'cyber-dark');
+  assert.ok(await page.$eval('#terminal-input', e => e.getBoundingClientRect().top < innerHeight * .65));
+  await audit('mobile-university-night');
+  await page.click('#picker-toggle');
+  await page.select('#exercise-select', '5-18');
+  assert.equal(await page.$eval('#picker-toggle', e => e.getAttribute('aria-expanded')), 'false');
+  assert.match(page.url(), /ex=5-18/);
+  checks.push('university-mobile-night-editor-and-exercise-picker');
+
   assert.deepEqual(errors, [], 'Browser must not emit uncaught JavaScript errors.');
   const violations = accessibility.filter(result => result.violations.length);
   console.log(JSON.stringify({checks, accessibility, uncaughtErrors: errors}, null, 2));
   assert.deepEqual(violations, [], 'Fix accessibility violations listed in the browser report.');
-  console.log(`PASS: ${checks.length} browser journeys; ${accessibility.length} axe audits; final guest XP 320.`);
+  console.log(`PASS: ${checks.length} browser journeys; ${accessibility.length} axe audits; combined guest XP 335.`);
 } catch (error) {
   console.error(JSON.stringify({completedChecks: checks, currentURL: page.url(), accessibility, uncaughtErrors: errors}, null, 2));
   await screenshot('failure');

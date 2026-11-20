@@ -149,7 +149,7 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 }
 .home-practice-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   list-style: none;
   padding: 0;
@@ -360,3 +360,10 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 .learning-app :focus-visible { outline-color: var(--teal); }
 html[data-theme="cyber-dark"] .learning-app img[src*="assets/icons/"] { filter: invert(1); }
 html[data-theme="cyber-dark"] .learning-app .primary img { filter: none; }
+
+.home-continuation:first-child { margin: 0 0 1.5rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: 1rem; background: var(--paper); }
+.home-continuation:first-child .section-label { margin: 0 0 .3rem; color: var(--teal-dark); }
+.domain-summary { display: grid; gap: .4rem; padding-inline-start: 1.25rem; }
+@media (max-width: 600px) {
+  .progress-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+}

@@ -19,7 +19,7 @@ FUNCTIONS = set("""
     strftime substr substring sum time total trim typeof unicode unixepoch unlikely upper
 """.split())
 SCHEMA_FUNCTIONS = {"sqlite_rename_table", "sqlite_rename_test", "sqlite_rename_quotefix",
-                    "sqlite_rename_column", "sqlite_drop_column"}
+                    "sqlite_rename_column", "sqlite_drop_column", "current_date"}
 READ_ACTIONS = {sqlite3.SQLITE_READ, sqlite3.SQLITE_SELECT, sqlite3.SQLITE_RECURSIVE}
 WRITE_ACTIONS = {sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_CREATE_TABLE, sqlite3.SQLITE_DROP_TABLE,
                  sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE,
@@ -118,8 +118,10 @@ def authorize(write, names, events):
             return sqlite3.SQLITE_DENY
         if action in READ_ACTIONS:
             return sqlite3.SQLITE_OK
-        if action == sqlite3.SQLITE_FUNCTION and (arg in FUNCTIONS or (write and arg in SCHEMA_FUNCTIONS)):
-            return sqlite3.SQLITE_OK
+        if action == sqlite3.SQLITE_FUNCTION:
+            function = (arg or "").lower()
+            if function in FUNCTIONS or (write and function in SCHEMA_FUNCTIONS):
+                return sqlite3.SQLITE_OK
         if action == sqlite3.SQLITE_PRAGMA and not write and name == "table_info" and (arg or "").lower() in names:
             return sqlite3.SQLITE_OK
         if write and (action in WRITE_ACTIONS or

@@ -17,10 +17,7 @@
   let index, request;
   function loadIndex() {
     if (request) return;
-    request = fetch('/domain-index.json').then(response => {
-      if (!response.ok) throw new Error();
-      return response.json();
-    }).then(result => { index = result; refresh(); }).catch(() => {
+    request = window.StudyOverview.domainIndex().then(result => { index = result; refresh(); }).catch(() => {
       dialog.querySelector('[data-level]').textContent = 'Progresul nu s-a putut încărca. Redeschide indicatorul pentru a reîncerca.';
     }).finally(() => { request = null; });
   }

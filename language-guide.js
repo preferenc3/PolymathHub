@@ -88,6 +88,7 @@ export function mount(host, params, saved, save) {
     if (focus) host.querySelector('h1').focus({preventScroll:true});
   }
   if (lesson) {
+    window.StudyOverview.record(lang.name + ' · ' + lesson.phrase, '/' + link(code, number));
     stage = saved[id] || 0;
     draw();
   } else overview();

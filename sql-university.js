@@ -1,5 +1,15 @@
 (() => {
   const $ = id => document.getElementById(id);
+  function applyDeviceTheme() {
+    try {
+      const theme = localStorage.getItem('polymath_appearance');
+      if (theme) document.documentElement.dataset.theme = theme;
+      else delete document.documentElement.dataset.theme;
+    } catch {}
+  }
+  applyDeviceTheme();
+  window.addEventListener('pageshow', applyDeviceTheme);
+  window.addEventListener('storage', event => { if (!event.key || event.key === 'polymath_appearance') applyDeviceTheme(); });
   const drafts = new Map();
   const attempts = new Set();
   const tablesByExercise = new Map();
@@ -29,6 +39,24 @@
   const lab = $('lab-select');
   const exercise = $('exercise-select');
 
+  const picker = $('picker-toggle');
+  picker.onclick = () => picker.setAttribute('aria-expanded', String(picker.getAttribute('aria-expanded') !== 'true'));
+  let visitOwner;
+  function rememberExercise() {
+    if (active && visitOwner !== undefined)
+      StudyOverview.record(optionLabel(active).replace(/ ✓$/, ''), location.pathname + location.search, visitOwner);
+  }
+  mistakeStorage.then(key => {
+    if (!key) return;
+    const id = key.slice('polymath-workshop-mistake:'.length);
+    visitOwner = id === 'guest' ? null : id;
+    rememberExercise();
+  });
+  function finishChoice() {
+    if (!window.matchMedia('(max-width: 820px)').matches) return;
+    picker.setAttribute('aria-expanded', 'false');
+    $('exercise-title').focus({preventScroll:true});
+  }
   function node(tag, text = '') {
     const element = document.createElement(tag);
     element.textContent = text;
@@ -115,6 +143,7 @@
     if (mode === 'exercises') url.searchParams.delete('mod');
     else url.searchParams.set('mod', mode);
     history.replaceState(null, '', url);
+    rememberExercise();
     $('exercise-title').textContent = optionLabel(active).replace(/ ✓$/, '');
     $('exercise-prompt').textContent = active.prompt;
     input.value = drafts.get(mode + ':' + id) || '';
@@ -483,7 +512,7 @@
   }
 
   for (const name of ['exercises', 'console']) {
-    $('mode-' + name).onclick = () => { if (catalog.length) changeMode(name); };
+    $('mode-' + name).onclick = () => { if (catalog.length) { changeMode(name); if (name === 'console') finishChoice(); } };
   }
 
   $('reset-terminal').onclick = () => {
@@ -495,7 +524,7 @@
   };
 
   lab.onchange = () => { drawOptions(); showExercise(exercise.value); };
-  exercise.onchange = () => showExercise(exercise.value);
+  exercise.onchange = () => { showExercise(exercise.value); finishChoice(); };
   function move(direction) {
     const list = exercisesInLab();
     const target = list[list.indexOf(active) + direction];

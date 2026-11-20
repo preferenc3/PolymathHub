@@ -90,6 +90,10 @@
 
   }
   window.addEventListener('polymath:account', updateStatus);
+  window.addEventListener('storage', event => {
+    if (['', '#acasa', '#progres'].includes(location.hash) &&
+        ['polymath_edtech_state_v2', 'polymath_last_study:' + (owner || 'guest'), 'polymath-university-sql-completed'].includes(event.key)) render();
+  });
   const sqlLink = (id, stage = 'practica', variant = 0) => '#lectie?' + new URLSearchParams({ex:id, etapa:stage, ...(variant===1?{date:'1'}:{})});
   const frLink = (stage = 'practica') => '#limba?etapa=' + stage;
   const exercise = id => course.exercises.find(item=>item.id === id);
@@ -98,10 +102,17 @@
     return `<div class="table-scroll"><table class="data-table">${caption?`<caption>${esc(caption)}</caption>`:''}<thead><tr>${columns.map((c,i)=>`<th scope="col"${emphasized.includes(i)?' class="emphasis"':''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map(row=>`<tr>${row.map((value,i)=>`<td${emphasized.includes(i)?' class="emphasis"':''}>${value===null?'<span class="null">NULL</span>':esc(value)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${columns.length}">Niciun rând.</td></tr>`}</tbody></table></div>`;
   }
   const saveNote = () => `<p class="save-note" data-save-status>${esc(accountNote())}</p>`;
+  function overviewXp() {
+    return owner ? totals().xp : StudyOverview.guestXp(StudyOverview.guestLibrary(), snapshot());
+  }
+  function workshopCount() {
+    const completed = stored('polymath-university-sql-completed');
+    return Array.isArray(completed) ? new Set(completed.filter(id => typeof id === 'string')).size : 0;
+  }
   function homeActivity() {
-    const {toReview, xp} = totals();
-    const lab = stored('polymath-university-sql-completed');
-    const labCount = Array.isArray(lab) ? new Set(lab.filter(id => typeof id === 'string')).size : 0;
+    const {toReview} = totals();
+    const labCount = workshopCount();
+    const xp = overviewXp();
     return `<aside class="home-activity" aria-label="Activitatea ta">
       <details>
         <summary>Activitatea ta</summary>
@@ -115,12 +126,9 @@
   }
   function homePractice() {
     const activities = [
-      ['SQL · Lab 4', 'Redenumește un tabel', 'Schimbă numele tabelei agenti în personal.', '/sql-university.html?ex=4-4.1'],
-      ['SQL · Lab 5', 'Filtrează după salariu', 'Afișează numele și salariul angajaților care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14'],
-      ['SQL · Lab 5', 'Leagă două tabele', 'Afișează angajații împreună cu denumirea departamentului.', '/sql-university.html?ex=5-33'],
-      ['Franceză · Ascultare', 'Ascultă un dialog la piață', 'Urmărește întrebarea despre preț și răspunsul vânzătorului.', frLink('exemple')],
-      ['Franceză · Practică', 'Completează replicile', 'Completează trei replici din conversația dintre client și vânzător.', frLink('practica')],
-      ['SQL · Lab 4', 'Modifică salariile', 'Mărește cu 100 salariile mai mici de 3 000.', '/sql-university.html?ex=4-8.1'],
+      ['SQL · Laborator', 'Filtrează după salariu', 'Afișează angajații care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14'],
+      ['Engleză · Vocabular', 'Numește patru animale', 'Citește cuvintele și verifică ce îți amintești.', '/biblioteca.html#invata?lesson=path-en-animals&pane=practice'],
+      ['Algoritmi · Complexitate', 'Estimează complexitatea unui algoritm', 'Explorează notația Big-O și tehnica celor doi pointeri.', '/biblioteca.html#invata?lesson=dsa-1-ex1'],
     ];
     return `<section class="home-practice" aria-labelledby="home-practice-title">
       <h2 id="home-practice-title">Exersează acum</h2>
@@ -207,7 +215,10 @@
   }
 
   function home() {
-    return `<div class="home">${latestMistake()}${dailyFeature()}${resumeCourse()}
+    const last = StudyOverview.last(owner);
+    const resume = last ? `<section class="home-continuation"><div><p class="section-label">Ultima lecție</p><h2>${esc(last.title)}</h2></div>
+      <a class="primary" href="${esc(last.href)}">Continuă lecția ${icon('arrow-right','icon-small')}</a></section>` : resumeCourse();
+    return `<div class="home">${resume}${latestMistake()}${dailyFeature()}
       <section class="home-explore" aria-labelledby="home-explore-title">
         <h2 id="home-explore-title">Ce vrei să exersezi?</h2>
         <div class="home-destinations">${window.PolymathExplore.links()}</div>
@@ -246,7 +257,35 @@
   }
   function progressView() {
     const t=totals();
-    return `<div class="progress-page"><p class="section-label">Un pas mic, în fiecare zi</p><h1>Progresul meu</h1><p class="page-intro">Ce ai parcurs și unde merită să mai exersezi.</p><div class="progress-summary"><div><strong>${t.completed}/15</strong><span>Exerciții SQL</span></div><div><strong>${t.french.correct}/3</strong><span>Răspunsuri în franceză</span></div><div><strong>${t.toReview}</strong><span>De repetat</span></div><div><strong>${t.xp}</strong><span>XP câștigat</span></div></div><p class="page-intro">Primești 20 XP la prima rezolvare corectă a unui exercițiu SQL sau a conversației complete. Repetarea este pentru înțelegere și nu adaugă alte puncte.</p><a class="secondary" href="#greseli">Deschide greșelile mele ${icon('arrow-right','icon-small')}</a><div class="catalog-heading"><h2>Traseul SQL</h2></div>${course.lessons.map(courseRow).join('')}${saveNote()}</div>`;
+    const points = (owner ? state.previous : StudyOverview.guestLibrary()).masteryPoints || {};
+    const mastered = Object.values(points).filter(value => value > 0).length;
+    return `<div class="progress-page"><h1>Progresul meu</h1>
+      <div class="progress-summary">
+        <div><strong>${overviewXp()}</strong><span>XP în total</span></div>
+        <div><strong>${mastered}</strong><span>Lecții rezolvate în bibliotecă</span></div>
+        <div><strong>${t.completed}/${t.total}</strong><span>Exerciții la Bazele SQL</span></div>
+        <div><strong>${t.french.correct}/3</strong><span>Replici la piață · Franceză</span></div>
+      </div>
+      ${mastered ? '<section aria-labelledby="domain-summary-title"><h2 id="domain-summary-title">Lecții rezolvate pe domenii</h2><ul class="domain-summary" data-domain-summary></ul></section>' : ''}
+      <p><a href="/sql-university.html">Laboratoare SQL</a> · ${workshopCount()} exerciții rezolvate pe acest dispozitiv</p>
+      <a class="secondary" href="#greseli">Greșelile mele · ${t.toReview} de repetat ${icon('arrow-right','icon-small')}</a>
+      <div class="catalog-heading"><h2>Traseul SQL</h2></div>${course.lessons.map(courseRow).join('')}${saveNote()}</div>`;
+  }
+  async function showDomainSummary(list) {
+    const points = (owner ? state.previous : StudyOverview.guestLibrary()).masteryPoints || {};
+    try {
+      const index = await StudyOverview.domainIndex();
+      for (const [name, ids] of Object.entries(index)) {
+        const solved = ids.filter(id => points[id] > 0).length;
+        if (!solved) continue;
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = '/biblioteca.html#exploreaza?' + new URLSearchParams({track:name});
+        link.textContent = name;
+        item.append(link, ' · ' + solved + ' / ' + ids.length);
+        list.append(item);
+      }
+    } catch { list.innerHTML = '<li>Detaliile pe domenii sunt temporar indisponibile.</li>'; }
   }
   function rail(area, ex, stage) {
     if(area==='fr') {
@@ -336,6 +375,9 @@
     let stage=['teorie','exemple','practica'].includes(params.get('etapa'))?params.get('etapa'):'practica';
     if(view==='lectie'&&(stage==='exemple'||!lessonFor(ex).theory))stage='practica';
     const variant=params.get('date')==='1'?1:0;
+    StudyOverview.leave();
+    if (view === 'lectie') StudyOverview.record(lessonFor(ex).title, '/' + sqlLink(ex.id,stage,variant));
+    if (view === 'limba') StudyOverview.record('Au marché · La piață', '/' + frLink(stage));
     configureShell(view,ex,stage);
     const host=$('main-content');
     if(view==='lectie') {
@@ -368,6 +410,8 @@
     } else {
       host.innerHTML=view==='material'?`<div class="catalog" data-catalog-view="entry" data-id="${esc(params.get('id'))}" data-focus-question="${esc(params.get('intrebare'))}"></div>`:view==='cursuri'?catalog(params.get('domeniu')):view==='proiect'?project():view==='greseli'?review():view==='progres'?progressView():home();
     }
+    const summary = host.querySelector('[data-domain-summary]');
+    if (summary) showDomainSummary(summary);
     host.querySelectorAll('[data-catalog-view]').forEach(window.PolymathCatalog.renderView);
     host.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{filter=button.dataset.filter;render();host.querySelector(`[data-filter="${filter}"]`)?.focus();}));
     updateStatus();document.title=(view==='limbi'?'Conversații ghidate':view==='lectie'?lessonFor(ex).title:view==='limba'?'Au marché · Franceză':view==='greseli'?'Greșelile mele':view==='cursuri'?'Cursuri':'Jurnalul tău de studiu')+' · PolymathHub';

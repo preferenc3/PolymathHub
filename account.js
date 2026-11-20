@@ -262,7 +262,7 @@
       const register = mode === "register";
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide autentificarea">×</button><span class="eyebrow">POLYMATHHUB</span><h2 id="auth-title">${register ? "Creează un cont" : "Conectează-te"}</h2><p class="auth-intro">Salvează progresul și revino la el de pe alt dispozitiv.</p><form id="auth-form" class="auth-form" data-mode="${mode}"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Parolă<input type="password" name="password" autocomplete="${register ? "new-password" : "current-password"}" minlength="10" maxlength="128" required></label><button class="studio-primary" type="submit">${register ? "Creează contul" : "Conectează-te"}</button></form><div id="auth-feedback" role="status" aria-live="polite"></div><p class="auth-switch">${register ? 'Ai deja cont? <button type="button" data-auth-mode="login">Conectează-te</button>' : 'Nu ai cont? <button type="button" data-auth-mode="register">Creează unul</button>'}</p>${register ? '<p class="auth-note">Folosește un email în format valid ca identificator și o parolă de minimum 10 caractere. Nu trebuie să ai acces la căsuța poștală.</p>' : ""}`;
     }
-    if (sessionState === "available" && !account.user) element.insertAdjacentHTML("beforeend", appearancePicker());
+    if (!account.user && sessionState !== "checking") element.insertAdjacentHTML("beforeend", appearancePicker());
     window.PolymathInbox?.sync(api, account);
     if (!element.open) element.showModal();
     (element.querySelector("#auth-title[tabindex]") || element.querySelector("input"))?.focus({preventScroll:true});
@@ -549,7 +549,7 @@
     loadAccounts(1);
   }
   function clearAccountCache(userId) {
-    for (const prefix of ["pm_learning_workspace_v1:", "pm_sql_practice_v1:", "polymath_edtech_state_v2:", "polymath_vocabulary_v1:", "polymath_pending_progress_v1:"]) {
+    for (const prefix of ["polymath_last_study:", "pm_learning_workspace_v1:", "pm_sql_practice_v1:", "polymath_edtech_state_v2:", "polymath_vocabulary_v1:", "polymath_pending_progress_v1:"]) {
       try { localStorage.removeItem(prefix + userId); } catch { /* Storage may be unavailable. */ }
     }
   }
@@ -734,7 +734,7 @@
       account.configured = false;
       sessionState = "unavailable";
       sessionError = error.status ? error.message : "Legătura cu serviciul de conturi s-a întrerupt. Poți continua lecțiile pe acest dispozitiv.";
-    } finally { renderControl(); }
+    } finally { account.checked = true; renderControl(); }
   }
   document.addEventListener("DOMContentLoaded", async () => {
     try { applyAppearance(localStorage.getItem(themeKey)); } catch {}
