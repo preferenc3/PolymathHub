@@ -119,8 +119,9 @@
         previousDay = day;
         const replyFromViewer = m.seq > 1 && m.mine && m.from_team === (box === "project");
         const title = m.seq === 1 ? '<h3>'+escape(subject)+'</h3>' : '';
+        const lines = m.body.split(/\r\n|[\r\n]/).map(line => '<span>'+(line ? escape(line) : '<br>')+'</span>').join("");
         return separator+'<li class="notice-message" data-mine="'+Boolean(replyFromViewer)+'">'+
-          '<b class="notice-meta">'+(m.mine?'Tu':escape(m.sender))+'</b>'+title+'<p>'+escape(m.body)+'</p>'+
+          '<b class="notice-meta">'+(m.mine?'Tu':escape(m.sender))+'</b>'+title+'<p class="notice-message-text">'+lines+'</p>'+
           '<time datetime="'+escape(m.created_at)+'">'+escape(messageTime.format(timestamp))+'</time></li>';
       }).join("");
     }

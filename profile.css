@@ -251,6 +251,8 @@ body > :is(.app-header, .top-bar).nav-away { transform: translateY(calc(-100% - 
 .notice-message time { align-self: flex-end; margin-top: .15rem; color: var(--muted); font-size: .78rem; text-align: right; font-variant-numeric: tabular-nums; }
 .notice-messages .notice-message { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; width: fit-content; max-width: 90%; border-radius: .8rem; padding: .75rem 1rem; background: var(--sand); margin: .5rem 0; }
 .notice-message > * { max-width: 100%; }
+.notice-message-text { display: flex; flex-direction: column; align-items: flex-start; }
+.notice-message-text > span { max-width: 100%; min-height: 1lh; }
 .notice-messages .notice-message p { margin: 0; font-size: .9rem; line-height: 1.45; }
 .notice-messages .notice-message[data-mine=true] { margin-left: auto; background: var(--teal-soft); }
 .notice-status:empty { margin: 0; }
