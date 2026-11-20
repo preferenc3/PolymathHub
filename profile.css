@@ -244,8 +244,11 @@ body > :is(.app-header, .top-bar).nav-away { transform: translateY(calc(-100% - 
 .notice-meta b { color: var(--teal-dark); }
 .notice-feed p,.notice-messages p { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .notice-body h3, .notice-feed button { overflow-wrap: anywhere; }
-.notice-messages li { width: fit-content; max-width: 90%; border-radius: .8rem; padding: .75rem 1rem; background: var(--sand); margin: .5rem 0; }
-.notice-messages li[data-mine=true] { margin-left: auto; background: var(--teal-soft); }
+.notice-day { display: flex; align-items: center; gap: .75rem; margin: 1rem 0 .65rem; color: var(--muted); font-size: .85rem; }
+.notice-day::before, .notice-day::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.notice-message time { display: block; margin-top: .3rem; color: var(--muted); font-size: .78rem; text-align: right; font-variant-numeric: tabular-nums; }
+.notice-messages .notice-message { width: fit-content; max-width: 90%; border-radius: .8rem; padding: .75rem 1rem; background: var(--sand); margin: .5rem 0; }
+.notice-messages .notice-message[data-mine=true] { margin-left: auto; background: var(--teal-soft); }
 .notice-status:empty { margin: 0; }
 
 .inbox-trigger, .feedback-trigger {

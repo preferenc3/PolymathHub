@@ -2,6 +2,8 @@
   "use strict";
   const escape = value => String(value ?? "").replace(/[<>&"']/g, ch => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;"}[ch]));
   const date = new Intl.DateTimeFormat("ro-RO", {dateStyle:"medium", timeStyle:"short"});
+  const messageDay = new Intl.DateTimeFormat("ro-RO", {dateStyle:"long"});
+  const messageTime = new Intl.DateTimeFormat("ro-RO", {timeStyle:"short"});
   const when = value => date.format(new Date(value));
   let currentApi, currentAccount;
   let owner, lastCheck = 0, counts = {}, ticket = 0;
@@ -108,10 +110,19 @@
         '<label>'+(isNew?'Mesajul tău':'Răspunsul tău')+'<textarea name="body" maxlength="3000" rows="'+(isNew?3:1)+'" required></textarea></label>'+
         '<button type="submit">'+(isNew?(mode==='direct'?'Trimite mesajul':'Trimite feedback'):'Trimite răspunsul')+'</button></form>';
     }
-    function message(m, subject) {
-      const replyFromViewer = m.seq > 1 && m.mine && m.from_team === (box === "project");
-      const title = m.seq === 1 ? '<h3>'+escape(subject)+'</h3>' : '';
-      return '<li data-mine="'+Boolean(replyFromViewer)+'"><div class="notice-meta"><b>'+(m.mine?'Tu':escape(m.sender))+'</b> · '+escape(when(m.created_at))+'</div>'+title+'<p>'+escape(m.body)+'</p></li>';
+    function messageList(subject) {
+      let previousDay;
+      return messages.map(m => {
+        const timestamp = new Date(m.created_at);
+        const day = messageDay.format(timestamp);
+        const separator = day !== previousDay ? '<li class="notice-day">'+escape(day)+'</li>' : '';
+        previousDay = day;
+        const replyFromViewer = m.seq > 1 && m.mine && m.from_team === (box === "project");
+        const title = m.seq === 1 ? '<h3>'+escape(subject)+'</h3>' : '';
+        return separator+'<li class="notice-message" data-mine="'+Boolean(replyFromViewer)+'">'+
+          '<b class="notice-meta">'+(m.mine?'Tu':escape(m.sender))+'</b>'+title+'<p>'+escape(m.body)+'</p>'+
+          '<time datetime="'+escape(m.created_at)+'">'+escape(messageTime.format(timestamp))+'</time></li>';
+      }).join("");
     }
     async function read(id, older = false) {
       const v = busy(); thread = id;
@@ -124,12 +135,12 @@
         if (!fresh(v)) return;
         if (older) {
           messages = [...result.messages,...messages];
-          content.querySelector(".notice-messages").insertAdjacentHTML("afterbegin",result.messages.map(m => message(m,result.subject)).join(""));
+          content.querySelector(".notice-messages").innerHTML = messageList(result.subject);
           if (messages[0]?.seq <= 1) content.querySelector("[data-older]")?.remove();
         } else {
           messages = result.messages; formKey = crypto.randomUUID();
           content.innerHTML = (messages[0]?.seq>1?'<button type="button" data-older>Mesaje anterioare</button>':'')+
-            '<ol class="notice-messages">'+messages.map(m => message(m,result.subject)).join("")+'</ol>'+form(false);
+            '<ol class="notice-messages">'+messageList(result.subject)+'</ol>'+form(false);
           heading.focus();
           sync(api, account, true).then(tabs);
         }
