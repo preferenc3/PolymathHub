@@ -40,7 +40,7 @@
     const dialog = document.createElement("dialog");
     dialog.id = "notice-dialog";
     dialog.setAttribute("aria-labelledby", "notice-title");
-    dialog.innerHTML = '<header><button type="button" data-list aria-label="Înapoi la lista de notificări" title="Înapoi la listă" hidden><span aria-hidden="true">←</span></button><h2 id="notice-title" tabindex="-1">Notificări</h2><button type="button" aria-label="Închide notificările" data-close>×</button></header><nav aria-label="Tipul notificărilor" hidden></nav><section class="notice-body"></section><p class="notice-status" role="status"></p>';
+    dialog.innerHTML = '<header><button type="button" data-list aria-label="Înapoi la lista de notificări" title="Înapoi la listă" hidden><span aria-hidden="true">←</span></button><h2 id="notice-title" tabindex="-1" autofocus>Notificări</h2><button type="button" aria-label="Închide notificările" data-close>×</button></header><nav aria-label="Tipul notificărilor" hidden></nav><section class="notice-body"></section><p class="notice-status" role="status"></p>';
     const nav = dialog.querySelector("nav"), content = dialog.querySelector("section"), status = dialog.querySelector("[role=status]");
     const heading = dialog.querySelector("#notice-title"), back = dialog.querySelector("[data-list]");
     let entries = [], lastItem;
@@ -189,7 +189,10 @@
     window.addEventListener("polymath:account",tabs);
     dialog.addEventListener("close",()=>{window.removeEventListener("polymath:account",tabs); version++; dialog.remove(); trigger?.focus({preventScroll:true});});
     document.body.append(dialog); dialog.showModal();
-    if (mode === "inbox") list(true);
+    if (mode === "inbox") {
+      list(true);
+      heading.focus({preventScroll:true});
+    }
     else {
       dialog.querySelector("h2").textContent = mode === "direct" ? "Mesaj direct" : "Feedback pentru echipă";
       formKey = crypto.randomUUID();

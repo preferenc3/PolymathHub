@@ -136,6 +136,8 @@ html:has(#account-dialog[open]), body:has(#account-dialog[open]) { overflow: hid
 .library-app .domain-meter { order: 3; }
 .domain-meter::before { border-color: #858585; }
 .domain-meter::after { border-color: var(--teal); clip-path: inset(calc(100% - var(--meter-height, 0%)) 0 0); }
+#domain-meter-title:focus, #notice-title:focus { outline: none; }
+:is(#domain-meter, .inbox-trigger):focus:not(:focus-visible) { outline: none; }
 .domain-meter:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
 #domain-meter-dialog { width: min(25rem, 92vw); margin: auto; padding: 1.5rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); }
 #domain-meter-dialog::backdrop { background: #10181480; }
