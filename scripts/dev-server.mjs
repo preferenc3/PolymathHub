@@ -1,3 +1,4 @@
+import inbox from "../api/inbox.mjs";
 import lessonGroups from "./lesson-groups.cjs";
 import http from "node:http";
 import fs from "node:fs/promises";
@@ -10,7 +11,7 @@ import adminAccounts from "../api/admin-accounts.mjs";
 import { readJson, send, fail } from "../server/auth.mjs";
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".mp3": "audio/mpeg" };
-const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|domain-meter\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/icons\/[a-z-]+\.svg)$/;
+const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|domain-meter\.js|inbox\.js|scroll-nav\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/icons\/[a-z-]+\.svg)$/;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/domain-index.json") {
@@ -24,6 +25,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === "/api/catalog") return catalog(req, res);
   if (url.pathname === "/api/account") return account(req, res);
   if (url.pathname === "/api/progress") return progress(req, res);
+  if (url.pathname === "/api/inbox") return inbox(req,res);
   if (url.pathname === "/api/admin-accounts") return adminAccounts(req, res);
   if (url.pathname === "/api/sql-lab") {
     if (!["GET", "POST"].includes(req.method)) {

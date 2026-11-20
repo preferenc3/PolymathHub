@@ -100,6 +100,7 @@
       const retry = panel.querySelector("[data-retry-account]");
       if (retry) retry.hidden = account.loading || (account.ready && !account.dirty);
     }
+    window.PolymathInbox?.sync(api, account);
     window.dispatchEvent(new Event("polymath:account"));
   }
   async function applyUser(user, { discardPending = false } = {}) {
@@ -218,6 +219,7 @@
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide setările">×</button>
         <h2 id="auth-title" class="dialog-heading" tabindex="-1">Setările contului</h2>
         <div class="settings-identity"><span class="settings-avatar" aria-hidden="true">${avatarMark(account.user)}</span><div><strong id="settings-account-name">${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div></div>
+        <button type="button" class="settings-admin-entry" data-open-inbox aria-haspopup="dialog">Notificări <span data-inbox-count></span></button>
         <button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog" ${account.admin ? "" : "hidden"}><img src="/assets/icons/caret-right.svg" alt="">Panou administrator</button>
         <details class="settings-group" name="account-section" open><summary>Profil și avatar</summary>
         <form class="auth-form settings-form" data-account-action="profile">
@@ -262,6 +264,7 @@
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide autentificarea">×</button><span class="eyebrow">POLYMATHHUB</span><h2 id="auth-title">${register ? "Creează un cont" : "Conectează-te"}</h2><p class="auth-intro">Salvează progresul și revino la el de pe alt dispozitiv.</p><form id="auth-form" class="auth-form" data-mode="${mode}"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Parolă<input type="password" name="password" autocomplete="${register ? "new-password" : "current-password"}" minlength="10" maxlength="128" required></label><button class="studio-primary" type="submit">${register ? "Creează contul" : "Conectează-te"}</button></form><div id="auth-feedback" role="status" aria-live="polite"></div><p class="auth-switch">${register ? 'Ai deja cont? <button type="button" data-auth-mode="login">Conectează-te</button>' : 'Nu ai cont? <button type="button" data-auth-mode="register">Creează unul</button>'}</p>${register ? '<p class="auth-note">Folosește un email în format valid ca identificator și o parolă de minimum 10 caractere. Nu trebuie să ai acces la căsuța poștală.</p>' : ""}`;
     }
     if (sessionState === "available" && !account.user) element.insertAdjacentHTML("beforeend", appearancePicker());
+    window.PolymathInbox?.sync(api, account);
     if (!element.open) element.showModal();
     (element.querySelector("#auth-title[tabindex]") || element.querySelector("input"))?.focus({preventScroll:true});
   }
@@ -672,6 +675,7 @@
     }
     else if (button.hasAttribute("data-check-session")) await loadSession();
     else if (button.hasAttribute("data-open-account")) open();
+    else if (button.hasAttribute("data-open-inbox")) window.PolymathInbox.open(api, account, button);
     else if (button.hasAttribute("data-open-admin")) openAdmin();
     else if (button.hasAttribute("data-close-account")) $("account-dialog").close();
     else if (button.dataset.authMode) open(button.dataset.authMode);
