@@ -219,7 +219,6 @@
       element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide setările">×</button>
         <h2 id="auth-title" class="dialog-heading" tabindex="-1">Setările contului</h2>
         <div class="settings-identity"><span class="settings-avatar" aria-hidden="true">${avatarMark(account.user)}</span><div><strong id="settings-account-name">${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div></div>
-        <button type="button" class="settings-admin-entry" data-open-inbox aria-haspopup="dialog">Notificări <span data-inbox-count></span></button>
         <button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog" ${account.admin ? "" : "hidden"}><img src="/assets/icons/caret-right.svg" alt="">Panou administrator</button>
         <details class="settings-group" name="account-section" open><summary>Profil și avatar</summary>
         <form class="auth-form settings-form" data-account-action="profile">
@@ -404,7 +403,8 @@
       progressPanel.hidden = false;
       progressPanel.innerHTML = `
         <div class="dossier-nav"><button type="button" data-dismiss><span aria-hidden="true">←</span> Utilizatori</button>
-          <button type="button" data-refresh>Actualizează</button></div>
+          <div>${target !== userId ? `<button type="button" data-direct-recipient="${text(target)}" data-recipient-name="${text(name)}">Trimite mesaj</button>` : ""}
+          <button type="button" data-refresh>Actualizează</button></div></div>
         <div class="dossier-cover"><span>Fișă de progres</span><h2 id="dossier-title" tabindex="-1">${text(name)}</h2>
           ${label !== name ? `<p>${text(label)}</p>` : ""}</div>
         <div class="dossier-body" data-dossier-body><p role="status">Se încarcă progresul…</p></div>`;
@@ -676,6 +676,18 @@
     else if (button.hasAttribute("data-check-session")) await loadSession();
     else if (button.hasAttribute("data-open-account")) open();
     else if (button.hasAttribute("data-open-inbox")) window.PolymathInbox.open(api, account, button);
+    else if (button.hasAttribute("data-open-feedback")) {
+      if (account.user) window.PolymathInbox.open(api, account, button, "feedback");
+      else {
+        open();
+        $("account-dialog")?.addEventListener("close", () => {
+          if (account.user) window.PolymathInbox.open(api, account, button, "feedback");
+        }, {once:true});
+      }
+    }
+    else if (button.dataset.directRecipient && account.admin) {
+      window.PolymathInbox.open(api, account, button, "direct");
+    }
     else if (button.hasAttribute("data-open-admin")) openAdmin();
     else if (button.hasAttribute("data-close-account")) $("account-dialog").close();
     else if (button.dataset.authMode) open(button.dataset.authMode);
