@@ -223,10 +223,13 @@ body > :is(.app-header, .top-bar).nav-away { transform: translateY(calc(-100% - 
 #notice-dialog { width: min(42rem, calc(100% - 20px)); max-height: 90dvh; overflow: auto; overscroll-behavior: contain; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1rem, 4vw, 2rem); }
 #notice-dialog::backdrop { background: #121c1bb3; }
 #notice-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-#notice-title { font: bold clamp(1.8rem,4vw,2.5rem)/1.1 Georgia, serif; margin: .25em 0; }
+#notice-title { flex: 1; min-width: 0; overflow-wrap: anywhere; font: bold clamp(1.8rem,4vw,2.5rem)/1.1 Georgia, serif; margin: .25em 0; }
 #notice-dialog button { font: inherit; min-height: 44px; border-radius: .55rem; background: var(--teal-soft); color: var(--teal-dark); padding: .45rem .85rem; border: 1px solid var(--line); cursor: pointer; }
 #notice-dialog [data-close] { background: transparent; border: 0; font-size: 1.55rem; }
-#notice-dialog nav { display: flex; gap: .5rem; margin-block: 1rem; }
+#notice-dialog [data-list] { flex: 0 0 44px; padding: 0; border: 0; background: transparent; font-size: 1.5rem; }
+#notice-dialog nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-block: 1rem; }
+#notice-dialog nav button { min-height: 50px; padding-inline: .5rem; font-weight: 650; }
+#notice-dialog nav[hidden] { display: none; }
 #notice-dialog button[aria-pressed=true], #notice-dialog button[type=submit] { color: var(--on-accent); background: var(--teal); }
 .notice-form, .notice-form label { display: grid; grid-template-columns: minmax(0, 1fr); gap: .45rem; }
 .notice-form { gap: 1rem; }

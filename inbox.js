@@ -38,9 +38,15 @@
     const dialog = document.createElement("dialog");
     dialog.id = "notice-dialog";
     dialog.setAttribute("aria-labelledby", "notice-title");
-    dialog.innerHTML = '<header><h2 id="notice-title">Notificări</h2><button type="button" aria-label="Închide notificările" data-close>×</button></header><nav aria-label="Tipul notificărilor"></nav><section class="notice-body"></section><p class="notice-status" role="status"></p>';
+    dialog.innerHTML = '<header><button type="button" data-list aria-label="Înapoi la lista de notificări" title="Înapoi la listă" hidden><span aria-hidden="true">←</span></button><h2 id="notice-title" tabindex="-1">Notificări</h2><button type="button" aria-label="Închide notificările" data-close>×</button></header><nav aria-label="Tipul notificărilor" hidden></nav><section class="notice-body"></section><p class="notice-status" role="status"></p>';
     const nav = dialog.querySelector("nav"), content = dialog.querySelector("section"), status = dialog.querySelector("[role=status]");
-    let entries = [];
+    const heading = dialog.querySelector("#notice-title"), back = dialog.querySelector("[data-list]");
+    let entries = [], lastItem;
+    function showHeading(title, inList = false) {
+      heading.textContent = title;
+      nav.hidden = !inList;
+      back.hidden = mode !== "inbox" || inList;
+    }
     let box = mode === "direct" ? "project" : "account", page = 0, thread, version = 0, messages = [], formKey;
     function call(data) { return request(api, user, {...data, box}); }
     function tabs() {
@@ -73,13 +79,14 @@
     function detail(id) {
       const item = entries.find(entry => entry.id === id);
       if (!item) return;
-      content.innerHTML = back+'<h3 tabindex="-1">'+escape(rewardTitles[item.kind])+'</h3>'+
+      showHeading(rewardTitles[item.kind]);
+      content.innerHTML =
         '<dl class="notice-detail"><dt>Ai primit</dt><dd>'+escape(reward(item))+'</dd><dt>Motiv</dt><dd>'+escape(item.body)+
         '</dd><dt>De la</dt><dd>'+escape(item.sender)+'</dd><dt>Data</dt><dd>'+escape(when(item.at))+'</dd></dl>';
-      content.querySelector("h3").focus();
+      heading.focus();
     }
-    async function list(visit = false) {
-      dialog.querySelector("h2").textContent = "Notificări";
+    async function list(visit = false, returnTo) {
+      showHeading("Notificări", true);
       thread = null; formKey = null;
       const v = busy(); tabs();
       content.replaceChildren();
@@ -90,12 +97,12 @@
         if (visit) sync(api,account,true).then(tabs);
         content.insertAdjacentHTML("beforeend", entries.length ? '<ul class="notice-feed">'+entries.map(row).join("")+'</ul>' : '<p>'+(box==="project"?"Încă nu ai conversații în această secțiune.":"Ești la zi cu notificările.")+'</p>');
         content.insertAdjacentHTML("beforeend", (page?'<button type="button" data-page="-1">Mai recente</button>':'')+(result.items.length>20?'<button type="button" data-page="1">Mai vechi</button>':''));
+        if (returnTo) (content.querySelector('[data-detail="'+CSS.escape(returnTo)+'"],[data-thread="'+CSS.escape(returnTo)+'"]') || heading).focus();
         status.textContent = "";
       } catch (err) {
         if (fresh(v)) { error(err); content.insertAdjacentHTML("beforeend", '<button type="button" data-retry-list="'+visit+'">Reîncearcă</button>'); }
       }
     }
-    const back = mode === "inbox" ? '<button type="button" data-list>← Înapoi la notificări</button>' : "";
     function form(isNew) {
       return '<form class="notice-form">'+(isNew?'<label>Subiect<input name="subject" maxlength="120" required></label>':'')+
         '<label>'+(isNew?'Mesajul tău':'Răspunsul tău')+'<textarea name="body" maxlength="3000" rows="3" required></textarea></label>'+
@@ -106,7 +113,10 @@
     }
     async function read(id, older = false) {
       const v = busy(); thread = id;
-      if (!older) content.innerHTML = back;
+      if (!older) {
+        showHeading("Conversație");
+        content.replaceChildren();
+      }
       try {
         const result = await call({action:"thread", id, page:older?messages[0].seq:0});
         if (!fresh(v)) return;
@@ -116,10 +126,10 @@
           if (messages[0]?.seq <= 1) content.querySelector("[data-older]")?.remove();
         } else {
           messages = result.messages; formKey = crypto.randomUUID();
-          dialog.querySelector("h2").textContent = "Conversație";
-          content.innerHTML = back+'<h3 tabindex="-1">'+escape(result.subject)+'</h3>'+(messages[0]?.seq>1?'<button type="button" data-older>Mesaje anterioare</button>':'')+
+          showHeading(result.subject);
+          content.innerHTML = (messages[0]?.seq>1?'<button type="button" data-older>Mesaje anterioare</button>':'')+
             '<ol class="notice-messages">'+messages.map(message).join("")+'</ol>'+form(false);
-          content.querySelector("h3").focus();
+          heading.focus();
           sync(api, account, true).then(tabs);
         }
         status.textContent = "";
@@ -132,10 +142,10 @@
       if (!el || el.disabled) return;
       if (el.hasAttribute("data-close")) return dialog.close();
       if (el.dataset.box) { box = el.dataset.box; page = 0; return list(true); }
-      if (el.hasAttribute("data-list")) return list();
+      if (el.hasAttribute("data-list")) return list(false, lastItem);
       if (el.dataset.page) { page += Number(el.dataset.page); return list(); }
-      if (el.dataset.thread) return read(el.dataset.thread);
-      if (el.dataset.detail) return detail(el.dataset.detail);
+      if (el.dataset.thread) { lastItem = el.dataset.thread; return read(lastItem); }
+      if (el.dataset.detail) { lastItem = el.dataset.detail; return detail(lastItem); }
       if (el.dataset.retryList) return list(el.dataset.retryList === "true");
       if (el.hasAttribute("data-older")) return read(thread,true);
 
