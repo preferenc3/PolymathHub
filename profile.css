@@ -236,6 +236,8 @@ body > :is(.app-header, .top-bar).nav-away { transform: translateY(calc(-100% - 
 .notice-form button { justify-self: start; }
 .notice-form textarea { resize: none; overflow-y: auto; }
 .notice-form :is(textarea,input) { box-sizing: border-box; min-height: 44px; width: 100%; border: 1px solid var(--line); border-radius: .5rem; padding: .65rem; font: inherit; color: var(--ink); background: var(--page); }
+.notice-form textarea[rows="1"] { height: 2.25rem; min-height: 2.25rem; padding-block: .32rem; line-height: 1.45; }
+.notice-messages h3 { margin: .35rem 0; font: 650 1.05rem/1.35 system-ui, sans-serif; color: var(--ink); overflow-wrap: anywhere; }
 .notice-feed,.notice-messages { list-style: none; padding: 0; }
 .notice-feed li { padding: 1rem 0; border-bottom: 1px solid var(--line); }
 .notice-meta,.notice-status { font-size: .85rem; color: var(--muted); }

@@ -105,16 +105,18 @@
     }
     function form(isNew) {
       return '<form class="notice-form">'+(isNew?'<label>Subiect<input name="subject" maxlength="120" required></label>':'')+
-        '<label>'+(isNew?'Mesajul tău':'Răspunsul tău')+'<textarea name="body" maxlength="3000" rows="3" required></textarea></label>'+
+        '<label>'+(isNew?'Mesajul tău':'Răspunsul tău')+'<textarea name="body" maxlength="3000" rows="'+(isNew?3:1)+'" required></textarea></label>'+
         '<button type="submit">'+(isNew?(mode==='direct'?'Trimite mesajul':'Trimite feedback'):'Trimite răspunsul')+'</button></form>';
     }
-    function message(m) {
-      return '<li data-mine="'+Boolean(m.mine)+'"><div class="notice-meta"><b>'+(m.mine?'Tu':escape(m.sender))+'</b> · '+escape(when(m.created_at))+'</div><p>'+escape(m.body)+'</p></li>';
+    function message(m, subject) {
+      const replyFromViewer = m.seq > 1 && m.mine && m.from_team === (box === "project");
+      const title = m.seq === 1 ? '<h3>'+escape(subject)+'</h3>' : '';
+      return '<li data-mine="'+Boolean(replyFromViewer)+'"><div class="notice-meta"><b>'+(m.mine?'Tu':escape(m.sender))+'</b> · '+escape(when(m.created_at))+'</div>'+title+'<p>'+escape(m.body)+'</p></li>';
     }
     async function read(id, older = false) {
       const v = busy(); thread = id;
       if (!older) {
-        showHeading("Conversație");
+        showHeading("Mesaje");
         content.replaceChildren();
       }
       try {
@@ -122,13 +124,12 @@
         if (!fresh(v)) return;
         if (older) {
           messages = [...result.messages,...messages];
-          content.querySelector(".notice-messages").insertAdjacentHTML("afterbegin",result.messages.map(message).join(""));
+          content.querySelector(".notice-messages").insertAdjacentHTML("afterbegin",result.messages.map(m => message(m,result.subject)).join(""));
           if (messages[0]?.seq <= 1) content.querySelector("[data-older]")?.remove();
         } else {
           messages = result.messages; formKey = crypto.randomUUID();
-          showHeading(result.subject);
           content.innerHTML = (messages[0]?.seq>1?'<button type="button" data-older>Mesaje anterioare</button>':'')+
-            '<ol class="notice-messages">'+messages.map(message).join("")+'</ol>'+form(false);
+            '<ol class="notice-messages">'+messages.map(m => message(m,result.subject)).join("")+'</ol>'+form(false);
           heading.focus();
           sync(api, account, true).then(tabs);
         }
@@ -158,7 +159,13 @@
       btn.disabled = true; status.textContent = "Se trimite…";
       try {
         await call({action:thread?"reply":mode==="direct"?"direct":"new",id,recipient:trigger.dataset.directRecipient,nonce:formKey,subject:data.get("subject"),body:data.get("body")});
-        if (fresh(v)) read(id);
+        if (!fresh(v)) return;
+        if (mode === "feedback" && !thread) {
+          dialog.close();
+          window.PolymathApp.toast("Feedbackul a fost trimis.");
+        } else {
+          read(id);
+        }
       } catch (err) { if (fresh(v)) { btn.disabled = false; error(err); } }
     });
     let pressedOutside = false;
