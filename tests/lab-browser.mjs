@@ -294,6 +294,12 @@ try {
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.$eval('#profile-tab-colors', tab => tab.getAttribute('aria-selected')), 'true');
   assert.equal(await page.$$eval('#profile-pane-colors input[name=appearance]', options => options.length), 8);
+  await page.click('input[name=banner][value="grid"]');
+  assert.equal(await page.$eval('.profile-cover', el => el.dataset.pattern), 'grid');
+  await page.reload({waitUntil:'networkidle0'});
+  await page.click('#account-control button');
+  await page.click('#profile-tab-colors');
+  assert.equal(await page.$eval('input[name=banner]:checked', el => el.value), 'grid');
   await audit('mobile-profile-colors');
   await page.click('input[name="appearance"][value="cyber-dark"]');
   await page.keyboard.press('Escape');

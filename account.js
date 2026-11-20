@@ -87,10 +87,30 @@
       </label>`).join("")}</fieldset>`;
   }
 
+  const guestBannerKey = 'polymath_guest_banner';
+  function currentBanner() {
+    if (account.user) return account.user.banner || 'rings';
+    try {
+      const saved = localStorage.getItem(guestBannerKey);
+      return Object.hasOwn(window.ProfilePatterns, saved) ? saved : 'rings';
+    } catch { return 'rings'; }
+  }
+  function bannerPicker(selected) {
+    const options = Object.entries(window.ProfilePatterns).map(([id, label]) => `<label class="palette-option banner-option">
+      <input type="radio" name="banner" value="${id}" ${selected === id ? 'checked' : ''}>
+      <span class="pattern-preview" data-pattern="${id}" aria-hidden="true"></span>
+      <span class="palette-name">${label}<span aria-hidden="true">✓</span></span>
+    </label>`).join('');
+    return `<form class="banner-form" data-account-action="banner">
+      <fieldset class="banner-picker"><legend>Modelul copertei</legend>${options}</fieldset>
+      ${account.user ? '<button type="submit" class="studio-primary" disabled>Salvează coperta</button>' : ''}
+      <p class="banner-status" role="status"></p></form>`;
+  }
   function profileShell(body, mode) {
     const user = account.user;
     const heading = user ? text(user.name) : mode === 'register' ? 'Creează un cont' : 'Profilul tău';
-    return `<header class="profile-cover">
+    const banner = currentBanner();
+    return `<header class="profile-cover" data-pattern="${banner}">
       <div class="profile-cover-copy"><p>PolymathHub</p>
       <h2 id="auth-title" tabindex="-1">${user ? `<span id="settings-account-name">${heading}</span>` : heading}</h2>
       ${user ? `<span class="profile-email">${text(user.email)}</span>` : ''}</div>
@@ -103,6 +123,7 @@
     </div>
     <section id="profile-pane-account" role="tabpanel" aria-labelledby="profile-tab-account">${body}</section>
     <section id="profile-pane-colors" role="tabpanel" aria-labelledby="profile-tab-colors" hidden>
+      ${bannerPicker(banner)}
       ${appearancePicker()}<p class="palette-note">Culoarea aleasă se aplică imediat pe acest dispozitiv.</p>
     </section>`;
   }
@@ -597,7 +618,7 @@
     if (!account.user || account.authenticating || (account.loading && action !== "profile" && action !== "password")) return;
     const values = new FormData(form);
     const body = Object.fromEntries(values);
-    const feedback = $("auth-feedback");
+    const feedback = action === "banner" ? form.querySelector(".banner-status") : $("auth-feedback");
     const submit = form.querySelector('button[type="submit"]');
     if (action === "password" && body.password !== body.repeatPassword) {
       feedback.textContent = "Parolele noi trebuie să coincidă.";
@@ -614,6 +635,7 @@
       clearTimeout(account.timer);
     }
     submit.disabled = true;
+    if (action === "banner") form.querySelectorAll('[name="banner"]').forEach(input => { input.disabled = true; });
     feedback.textContent = "Se salvează…";
     try {
       if (account.saving) await account.saving;
@@ -642,7 +664,9 @@
       } else {
         account.user = result.user;
         renderControl();
-        if (action === "profile") {
+        if (action === "banner") {
+          feedback.textContent = "Coperta a fost salvată în cont.";
+        } else if (action === "profile") {
           $("settings-account-name").textContent = result.user.name;
           $("account-dialog").querySelector(".settings-avatar").innerHTML = avatarMark(result.user);
           form.elements.name.value = result.user.name;
@@ -660,7 +684,10 @@
       feedback.textContent = error.message;
     } finally {
       account.authenticating = false;
-      submit.disabled = false;
+      if (action === "banner") {
+        form.querySelectorAll('[name="banner"]').forEach(input => { input.disabled = false; });
+        submit.disabled = form.elements.banner.value === currentBanner();
+      } else submit.disabled = false;
     }
   }
 
@@ -690,6 +717,19 @@
       input.closest(".avatar-picker").querySelector("[data-avatar-label]").textContent = avatarChoices.get(input.value)[1];
       const preview = input.closest('dialog')?.querySelector('.settings-avatar');
       if (preview && account.user) preview.innerHTML = avatarMark({...account.user, avatar: input.value});
+    } else if (input.matches('input[name="banner"]')) {
+      const form = input.form;
+      input.closest('dialog').querySelector('.profile-cover').dataset.pattern = input.value;
+      const status = form.querySelector('.banner-status');
+      if (account.user) {
+        form.querySelector('button[type="submit"]').disabled = input.value === currentBanner();
+        status.textContent = '';
+      } else {
+        try {
+          localStorage.setItem(guestBannerKey, input.value);
+          status.textContent = 'Coperta a fost salvată pe acest dispozitiv.';
+        } catch { status.textContent = 'Coperta este disponibilă pentru această vizualizare.'; }
+      }
     } else if (input.matches('input[name="appearance"]')) {
       applyAppearance(input.value);
       try { localStorage.setItem(themeKey, input.value); } catch {}
@@ -709,13 +749,13 @@
     else if (button.hasAttribute("data-open-account")) open();
     else if (button.hasAttribute("data-open-inbox")) window.PolymathInbox.open(api, account, button);
     else if (button.hasAttribute("data-open-feedback")) {
-      if (account.user) window.PolymathInbox.open(api, account, button, "feedback");
-      else {
-        open();
-        $("account-dialog")?.addEventListener("close", () => {
-          if (account.user) window.PolymathInbox.open(api, account, button, "feedback");
-        }, {once:true});
-      }
+      let returnTo = button;
+      if (button.closest('#main-navigation')) {
+        document.querySelector('.top-bar').classList.remove('menu-open');
+        returnTo = $('shell-menu-toggle');
+        returnTo.setAttribute('aria-expanded', 'false');
+      } else if (button.closest('#explore-drawer')) returnTo = $('explore-button');
+      openFeedback(returnTo);
     }
     else if (button.dataset.directRecipient && account.admin) {
       window.PolymathInbox.open(api, account, button, "direct");
@@ -761,6 +801,17 @@
     if (account.user && account.dirty && !account.loading && !account.authenticating) return applyUser(account.user);
   });
   document.addEventListener("visibilitychange", () => { if (document.hidden && account.ready && account.dirty) flush(); });
+  function openFeedback(returnTo) {
+    if (account.user) {
+      window.PolymathInbox.open(api, account, returnTo, 'feedback');
+    } else {
+      open();
+      $('account-dialog').addEventListener('close', () => {
+        if (account.user) window.PolymathInbox.open(api, account, returnTo, 'feedback');
+        else returnTo?.focus({preventScroll:true});
+      }, {once:true});
+    }
+  }
   async function loadSession() {
     sessionState = "checking";
     try {
@@ -777,14 +828,19 @@
   }
   document.addEventListener("DOMContentLoaded", async () => {
     try { applyAppearance(localStorage.getItem(themeKey)); } catch {}
-    const url = new URL(window.location.href);
-    const requestedProfile = url.searchParams.get('profil');
-    if (window.PolymathSqlCourse && ['1', 'culori'].includes(requestedProfile)) {
+    const url = window.PolymathSqlCourse ? new URL(window.location.href) : null;
+    const requestedProfile = url?.searchParams.get('profil');
+    if (['1', 'culori'].includes(requestedProfile)) {
       url.searchParams.delete("profil");
       history.replaceState(history.state, "", url);
       open();
       if (requestedProfile === 'culori') selectProfileTab($('profile-tab-colors'));
     }
     await loadSession();
+    if (url?.searchParams.get('feedback') === '1') {
+      url.searchParams.delete('feedback');
+      history.replaceState(history.state, '', url);
+      openFeedback($('explore-button'));
+    }
   });
 })();

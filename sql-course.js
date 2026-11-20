@@ -126,14 +126,15 @@
   }
   function homePractice() {
     const activities = [
-      ['SQL · Laborator', 'Filtrează după salariu', 'Afișează angajații care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14'],
-      ['Engleză · Vocabular', 'Numește patru animale', 'Citește cuvintele și verifică ce îți amintești.', '/biblioteca.html#invata?lesson=path-en-animals&pane=practice'],
-      ['Algoritmi · Complexitate', 'Estimează complexitatea unui algoritm', 'Explorează notația Big-O și tehnica celor doi pointeri.', '/biblioteca.html#invata?lesson=dsa-1-ex1'],
+      ['SQL · Laborator', 'Filtrează după salariu', 'Afișează angajații care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14', 'database'],
+      ['Engleză · Vocabular', 'Numește patru animale', 'Citește cuvintele și verifică ce îți amintești.', '/biblioteca.html#invata?lesson=path-en-animals&pane=practice', 'animals'],
+      ['Algoritmi · Complexitate', 'Estimează complexitatea unui algoritm', 'Explorează notația Big-O și tehnica celor doi pointeri.', '/biblioteca.html#invata?lesson=dsa-1-ex1', 'algorithms'],
     ];
     return `<section class="home-practice" aria-labelledby="home-practice-title">
       <h2 id="home-practice-title">Exersează acum</h2>
       <ul class="home-practice-list">
-        ${activities.map(([topic, title, prompt, href]) => `<li><a href="${href}">
+        ${activities.map(([topic, title, prompt, href, art]) => `<li><a href="${href}">
+          <img class="practice-photo" src="/assets/editorial/${art}-small.webp" width="144" height="112" alt="" loading="lazy">
           <span class="home-practice-topic">${topic}</span>
           <strong>${title}</strong>
           <span class="home-practice-prompt">${prompt}</span>
@@ -166,23 +167,22 @@
   }
 
   const featuredLessons = [
-    {domain: 'HTML', title: 'Construiește prima pagină web', lesson: 'path-html-document', detail: 'Descoperă ce apare pe fila browserului și ce se vede pe pagină.', icon: 'code'},
-    {domain: 'Franceză', title: 'Présente-toi · Spune cum te numești', lesson: 'path-fr-introduce', detail: 'Citește un dialog scurt și încearcă să te prezinți în franceză.', icon: 'translate'},
-    {domain: 'Python', title: 'Afișează un mesaj cu print', lesson: 'path-python-print', detail: 'Scrie o instrucțiune care afișează text pe ecran.', icon: 'code'},
-    {domain: 'SQL', title: 'Prima interogare cu SELECT', lesson: 'path-sql-select', detail: 'Alege ce date vrei să citești și din ce tabel provin.', icon: 'code'},
-    {domain: 'Spaniolă', title: 'Numără până la zece', lesson: 'path-es-numbers', detail: 'Asociază fiecare cifră cu un cuvânt și scrie un număr în spaniolă.', icon: 'translate'},
-    {domain: 'C++', title: 'Ce face linia #include?', lesson: 'path-cpp-include', detail: 'Vezi de unde vine std::cout și scrie prima directivă.', icon: 'code'},
-    {domain: 'Go', title: 'De unde pornește un program Go?', lesson: 'path-go-main', detail: 'Leagă pachetul main de funcția care pornește programul.', icon: 'code'},
-    {domain: 'Engleză', title: 'Cum le spui animalelor în engleză?', lesson: 'path-en-animals', detail: 'Pornește de la patru animale și folosește un cuvânt într-o propoziție.', icon: 'translate'},
-    {domain: 'Java', title: 'Găsește începutul programului', lesson: 'path-java-main', detail: 'Descoperă legătura dintre o clasă și metoda main.', icon: 'code'},
-    {domain: 'Rust', title: 'Prima funcție main', lesson: 'path-rust-main', detail: 'Scrie punctul de intrare al unui program Rust.', icon: 'code'},
+    {domain: 'HTML', title: 'Construiește prima pagină web', lesson: 'path-html-document', detail: 'Descoperă ce apare pe fila browserului și ce se vede pe pagină.', art: 'computing'},
+    {domain: 'Franceză', title: 'Présente-toi · Spune cum te numești', lesson: 'path-fr-introduce', detail: 'Citește un dialog scurt și încearcă să te prezinți în franceză.', art: 'languages'},
+    {domain: 'Python', title: 'Afișează un mesaj cu print', lesson: 'path-python-print', detail: 'Scrie o instrucțiune care afișează text pe ecran.', art: 'computing'},
+    {domain: 'SQL', title: 'Prima interogare cu SELECT', lesson: 'path-sql-select', detail: 'Alege ce date vrei să citești și din ce tabel provin.', art: 'database'},
+    {domain: 'Spaniolă', title: 'Numără până la zece', lesson: 'path-es-numbers', detail: 'Asociază fiecare cifră cu un cuvânt și scrie un număr în spaniolă.', art: 'counting'},
+    {domain: 'C++', title: 'Ce face linia #include?', lesson: 'path-cpp-include', detail: 'Vezi de unde vine std::cout și scrie prima directivă.', art: 'computing'},
+    {domain: 'Go', title: 'De unde pornește un program Go?', lesson: 'path-go-main', detail: 'Leagă pachetul main de funcția care pornește programul.', art: 'computing'},
+    {domain: 'Engleză', title: 'Cum le spui animalelor în engleză?', lesson: 'path-en-animals', detail: 'Pornește de la patru animale și folosește un cuvânt într-o propoziție.', art: 'animals'},
+    {domain: 'Java', title: 'Găsește începutul programului', lesson: 'path-java-main', detail: 'Descoperă legătura dintre o clasă și metoda main.', art: 'computing'},
+    {domain: 'Rust', title: 'Prima funcție main', lesson: 'path-rust-main', detail: 'Scrie punctul de intrare al unui program Rust.', art: 'computing'},
   ];
 
   function dailyFeature(today = new Date()) {
     // Use the learner's calendar date; UTC arithmetic avoids daylight-saving gaps.
     const day = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000;
     const pick = featuredLessons[day % featuredLessons.length];
-    const art = pick.icon === 'translate' ? 'languages' : 'computing';
     return `<section aria-labelledby="daily-title" class="daily-feature">
       <div class="feature-story">
         <p class="feature-kicker"><span>Domeniul zilei</span><b aria-hidden="true">/</b>${esc(pick.domain)}</p>
@@ -190,7 +190,7 @@
         <p class="feature-description">${esc(pick.detail)}</p>
         <a class="feature-action" href="/biblioteca.html#invata?lesson=${pick.lesson}">Deschide lecția <span aria-hidden="true">→</span></a>
       </div>
-      <img class="feature-art" src="/assets/editorial/${art}.webp" width="960" height="640" alt="" fetchpriority="high">
+      <img class="feature-art" src="/assets/editorial/${pick.art}.webp" width="960" height="640" alt="" fetchpriority="high">
     </section>`;
   }
 
@@ -232,7 +232,15 @@
       </div>
       ${latestMistake()}
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
-      ${homeActivity()}${saveNote()}</div>`;
+       ${homeActivity()}${saveNote()}
+      <details class="photo-credits"><summary>Credite foto</summary>
+        <p>Fotografii de pe Wikimedia Commons, decupate, redimensionate și convertite în WebP. Versiunile adaptate păstrează licența fiecărei fotografii.</p>
+        <ul>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Cat_and_Dog_Cuddling.jpg">Cat and Dog Cuddling</a> · SeanT313 · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Copyright_Card_Catalog_Drawer.jpg">Copyright Card Catalog Drawer</a> · Michael Holley · Domeniu public</li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Abacus_6.jpg">Abacus 6</a> · David R. Tribble (Loadmaster) · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></li>
+          <li><a href="https://commons.wikimedia.org/wiki/File:Tower_of_Hanoi.jpeg">Tower of Hanoi</a> · Evanherk · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a></li>
+        </ul></details></div>`;
   }
   function courseRow(lesson, index) {
     const done = lesson.exercises.filter(id=>state.sql.records[id]?.passed).length;

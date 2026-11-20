@@ -18,6 +18,27 @@ async function run(handler, { method = "GET", url = "/api/account", body, header
   await handler(req, response); return response;
 }
 
+test("banner updates validate the pattern and preserve the existing avatar and name", async () => {
+  const savedUser = {...user, user_metadata:{display_name:"Student", avatar:"owl"}};
+  let writes = 0;
+  const handler = createAccountHandler({env, fetcher:async (url, options) => {
+    if (options.method === "PUT") {
+      const {data} = JSON.parse(options.body);
+      assert.deepEqual(data, {banner:"grid"});
+      Object.assign(savedUser.user_metadata, data);
+      writes++;
+    }
+    return result(savedUser);
+  }});
+  const headers = {cookie:"__Host-pm_access=test-token", "x-polymath-account":id};
+  for (const [banner, status] of [["unexpected",400],["grid",200]]) {
+    const response = await run(handler, {method:"POST", url:"/api/account?action=banner", headers, body:{banner}});
+    assert.equal(response.statusCode,status);
+    if (status === 200) assert.deepEqual(response.body.user, {id, email:user.email, name:"Student", avatar:"owl", banner:"grid"});
+  }
+  assert.equal(writes,1);
+});
+
 test("unconfigured accounts are explicit and never create a fake session", async () => {
   const handler = createAccountHandler({ env: {}, fetcher: () => { throw new Error("must not call"); } });
   const config = await run(handler, { url: "/api/account?action=config" });

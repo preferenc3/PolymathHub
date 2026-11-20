@@ -11,7 +11,7 @@ import adminAccounts from "../api/admin-accounts.mjs";
 import { readJson, send, fail } from "../server/auth.mjs";
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".webp": "image/webp" };
-const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|study-overview\.js|domain-meter\.js|inbox\.js|scroll-nav\.js|profile-avatars\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/editorial\/(?:languages|computing)\.webp|assets\/icons\/[a-z-]+\.svg)$/;
+const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|study-overview\.js|domain-meter\.js|inbox\.js|scroll-nav\.js|profile-(?:avatars|patterns)\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/editorial\/(?:languages|computing|animals|database|counting|algorithms)(?:-small)?\.webp|assets\/icons\/[a-z-]+\.svg)$/;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/domain-index.json") {

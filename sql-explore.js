@@ -28,6 +28,16 @@
       <button class="dialog-close" type="button" aria-label="Închide meniul">×</button>
     </header>
     <nav aria-label="Destinații Experimentează">${links()}</nav>`;
+  const feedback = document.querySelector('[data-open-feedback]');
+  const feedbackEntry = document.createElement(feedback ? 'button' : 'a');
+  feedbackEntry.className = 'feedback-menu';
+  feedbackEntry.textContent = 'Trimite feedback';
+  if (feedback) {
+    feedbackEntry.type = 'button';
+    feedbackEntry.dataset.openFeedback = '';
+    feedbackEntry.setAttribute('aria-haspopup', 'dialog');
+  } else feedbackEntry.href = '/?feedback=1';
+  drawer.querySelector('nav').append(feedbackEntry);
   document.body.append(drawer);
   button.addEventListener('click', () => drawer.showModal());
   drawer.addEventListener('click', event => {

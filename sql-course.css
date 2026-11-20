@@ -167,12 +167,13 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 .home-destinations .explore-arrow { width: 12px; }
 .home-practice { min-width: 0; padding-left: clamp(18px, 3vw, 40px); border-left: 1px solid var(--line); }
 .home-practice-list { list-style: none; padding: 0; margin: 0; }
-.home-practice-list a { display: grid; grid-template-columns: minmax(0, 1fr) 20px; gap: .18rem .55rem; align-content: center; min-height: 86px; padding: .65rem .25rem; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); }
+.home-practice-list a { display: grid; grid-template-columns: clamp(52px, 6vw, 75px) minmax(0, 1fr) 16px; gap: .18rem .55rem; align-content: center; min-height: 86px; padding: .65rem .25rem; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); }
 .home-practice-list a:focus-visible, .home-destinations .explore-destination:focus-visible { outline-offset: -2px; }
-.home-practice-topic { color: var(--teal-dark); font: 650 .72rem/1.3 var(--sans); }
-.home-practice-list strong { grid-column: 1; font: 650 1.12rem/1.24 var(--serif); }
-.home-practice-prompt { grid-column: 1; color: var(--muted); line-height: 1.36; font-size: .79rem; }
-.home-practice-arrow { grid-column: 2; grid-row: 1 / 4; align-self: center; width: 16px; height: 16px; }
+.practice-photo { grid-column:1; grid-row:1 / 4; align-self:center; width:100%; height:auto; aspect-ratio:9/7; object-fit:cover; border-radius:7px; }
+.home-practice-topic { grid-column:2; color: var(--teal-dark); font: 650 .72rem/1.3 var(--sans); }
+.home-practice-list strong { grid-column: 2; font: 650 1.12rem/1.24 var(--serif); }
+.home-practice-prompt { grid-column: 2; color: var(--muted); line-height: 1.36; font-size: .79rem; }
+.home-practice-arrow { grid-column: 3; grid-row: 1 / 4; align-self: center; width: 16px; height: 16px; }
 .home-continuation { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.6rem 1.25rem; padding:1rem 0; }
 .home-continuation h2 { margin:0; font: 650 1.3rem/1.2 var(--serif); }
 .home-continuation p { margin: .25rem 0; }
@@ -320,3 +321,7 @@ html[data-theme="cyber-dark"] .learning-app .primary img { filter: none; }
 @media (max-width: 600px) {
   .progress-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 }
+
+.photo-credits { font-size:.82rem; color:var(--muted); }
+.photo-credits summary { width:fit-content; padding-block:.65rem; min-height:44px; cursor:pointer; }
+.photo-credits ul { padding-left:1.2rem; }

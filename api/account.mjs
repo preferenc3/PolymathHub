@@ -1,6 +1,8 @@
 import { avatars, ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, publicUser, credentials, setSession, fail, checkExpectedAccount } from "../server/auth.mjs";
 
-const settingsActions = ["profile", "password", "delete"];
+import patterns from "../profile-patterns.js";
+
+const settingsActions = ["banner", "profile", "password", "delete"];
 
 async function settings(req, res, action, body, call) {
   const session = await sessionFor(req, res, call);
@@ -8,6 +10,14 @@ async function settings(req, res, action, body, call) {
   if (!req.headers["x-polymath-account"]) throw new ApiError(412, "Reîncarcă setările contului și încearcă din nou.");
   checkExpectedAccount(req, session.user);
 
+  if (action === "banner") {
+    if (typeof body.banner !== "string" || !Object.hasOwn(patterns, body.banner))
+      throw new ApiError(400, "Alege un model de copertă din listă.");
+    const user = await call("/auth/v1/user", {method:"PUT", token:session.token, body:{data:{banner:body.banner}}});
+    if (user.id !== session.user.id || user.user_metadata?.banner !== body.banner)
+      throw new ApiError(503, "Modelul copertei nu a putut fi salvat.");
+    return send(res, 200, {user:publicUser(user)});
+  }
   if (action === "profile") {
     const name = typeof body.name === "string" ? body.name.trim() : "";
     if (!name || name.length > 60 || /[\u0000-\u001f\u007f]/.test(name)) {

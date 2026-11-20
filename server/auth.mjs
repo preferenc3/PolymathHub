@@ -1,3 +1,4 @@
+import patterns from "../profile-patterns.js";
 import avatarGroups from "../profile-avatars.js";
 
 export class ApiError extends Error {
@@ -72,7 +73,8 @@ function cookies(req) {
 export const avatars = Object.values(avatarGroups).flat().map(([id]) => id);
 export function publicUser(user) {
   const avatar = user.user_metadata?.avatar;
-  return { ...(avatars.includes(avatar) ? {avatar} : {}), id: user.id, email: user.email, name: String(user.user_metadata?.display_name || user.email?.split("@")[0] || "").slice(0, 60) };
+  const banner = user.user_metadata?.banner;
+  return { ...(typeof banner === "string" && Object.hasOwn(patterns, banner) ? {banner} : {}), ...(avatars.includes(avatar) ? {avatar} : {}), id: user.id, email: user.email, name: String(user.user_metadata?.display_name || user.email?.split("@")[0] || "").slice(0, 60) };
 }
 
 export function checkExpectedAccount(req, user) {
