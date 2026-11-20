@@ -179,6 +179,24 @@
         }
       } catch (err) { if (fresh(v)) { btn.disabled = false; error(err); } }
     });
+    // Keep a drag or long-press selection inside the message where it started.
+    let selectionMessage;
+    function limitMessageSelection() {
+      const selection = window.getSelection();
+      if (!selectionMessage?.isConnected || !selection?.rangeCount || selection.isCollapsed ||
+          !selectionMessage.contains(selection.anchorNode) || selectionMessage.contains(selection.focusNode)) return;
+      const range = document.createRange();
+      range.selectNodeContents(selectionMessage);
+      const before = range.comparePoint(selection.focusNode, selection.focusOffset) < 0;
+      range.collapse(before);
+      selection.extend(range.startContainer, range.startOffset);
+    }
+    dialog.addEventListener("pointerdown", event => {
+      selectionMessage = event.target.closest(".notice-message");
+    });
+    dialog.addEventListener("keydown", () => { selectionMessage = null; });
+    document.addEventListener("selectionchange", limitMessageSelection);
+    dialog.addEventListener("close", () => document.removeEventListener("selectionchange",limitMessageSelection), {once:true});
     let pressedOutside = false;
     function outside(e) {
       const r = dialog.getBoundingClientRect();
