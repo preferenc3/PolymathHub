@@ -256,6 +256,7 @@ body > :is(.app-header, .top-bar).nav-away { transform: translateY(calc(-100% - 
 .inbox-trigger { position: relative; flex: 0 0 44px; order: 3; }
 .header-tools .inbox-trigger { order: 0; }
 .inbox-trigger[hidden] { display: none; }
+[data-inbox-count]:empty { display: none; }
 [data-inbox-count]:not(:empty) {
   position: absolute; top: -3px; right: -3px; min-width: 16px; padding: 1px 3px;
   color: var(--on-accent); background: var(--teal); border: 1px solid var(--paper);
