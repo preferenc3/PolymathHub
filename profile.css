@@ -228,9 +228,10 @@ body > :is(.app-header, .top-bar).nav-away { transform: translateY(calc(-100% - 
 #notice-dialog [data-close] { background: transparent; border: 0; font-size: 1.55rem; }
 #notice-dialog nav { display: flex; gap: .5rem; margin-block: 1rem; }
 #notice-dialog button[aria-pressed=true], #notice-dialog button[type=submit] { color: var(--on-accent); background: var(--teal); }
-.notice-form, .notice-form label { display: grid; gap: .45rem; }
+.notice-form, .notice-form label { display: grid; grid-template-columns: minmax(0, 1fr); gap: .45rem; }
 .notice-form { gap: 1rem; }
 .notice-form button { justify-self: start; }
+.notice-form textarea { resize: none; overflow-y: auto; }
 .notice-form :is(textarea,input) { box-sizing: border-box; min-height: 44px; width: 100%; border: 1px solid var(--line); border-radius: .5rem; padding: .65rem; font: inherit; color: var(--ink); background: var(--page); }
 .notice-feed,.notice-messages { list-style: none; padding: 0; }
 .notice-feed li { padding: 1rem 0; border-bottom: 1px solid var(--line); }
