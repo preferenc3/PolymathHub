@@ -22,6 +22,9 @@
       ["rocket", "Rachetă", "🚀"], ["planet", "Planetă", "🪐"], ["rainbow", "Curcubeu", "🌈"], ["comet", "Cometă", "☄️"]
     ],
     "Culori uni": [
+      ["solid-pine", "Pin", "", "solid-pine"], ["solid-cobalt", "Cobalt", "", "solid-cobalt"],
+      ["solid-clay", "Teracotă", "", "solid-clay"], ["solid-rose", "Trandafir", "", "solid-rose"],
+      ["solid-lilac", "Liliac", "", "solid-lilac"], ["solid-lagoon", "Lagună", "", "solid-lagoon"],
       ["solid-white", "Alb", "", "solid-white"], ["solid-black", "Negru", "", "solid-black"],
       ["solid-gray", "Gri", "", "solid-gray"], ["solid-yellow", "Galben", "", "solid-yellow"],
       ["solid-violet", "Violet", "", "solid-violet"]

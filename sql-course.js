@@ -182,12 +182,16 @@
     // Use the learner's calendar date; UTC arithmetic avoids daylight-saving gaps.
     const day = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000;
     const pick = featuredLessons[day % featuredLessons.length];
+    const art = pick.icon === 'translate' ? 'languages' : 'computing';
     return `<section aria-labelledby="daily-title" class="daily-feature">
-      <p class="section-label">Domeniul zilei · ${pick.domain}</p>
-      <div class="resume-entry"><span class="resume-icon">${icon(pick.icon)}</span>
-        <div class="resume-copy"><h1 id="daily-title">${esc(pick.title)}</h1><p>${esc(pick.detail)}</p></div>
-        <a class="primary" href="/biblioteca.html#invata?lesson=${pick.lesson}">Deschide lecția ${icon('arrow-right','icon-small')}</a>
-      </div></section>`;
+      <div class="feature-story">
+        <p class="feature-kicker"><span>Domeniul zilei</span><b aria-hidden="true">/</b>${esc(pick.domain)}</p>
+        <h1 id="daily-title">${esc(pick.title)}</h1>
+        <p class="feature-description">${esc(pick.detail)}</p>
+        <a class="feature-action" href="/biblioteca.html#invata?lesson=${pick.lesson}">Deschide lecția <span aria-hidden="true">→</span></a>
+      </div>
+      <img class="feature-art" src="/assets/editorial/${art}.webp" width="960" height="640" alt="" fetchpriority="high">
+    </section>`;
   }
 
   function resumeCourse() {
@@ -218,12 +222,15 @@
     const last = StudyOverview.last(owner);
     const resume = last ? `<section class="home-continuation"><div><p class="section-label">Ultima lecție</p><h2>${esc(last.title)}</h2></div>
       <a class="primary" href="${esc(last.href)}">Continuă lecția ${icon('arrow-right','icon-small')}</a></section>` : resumeCourse();
-    return `<div class="home">${resume}${latestMistake()}${dailyFeature()}
+    return `<div class="home">${resume}${dailyFeature()}
+      <div class="study-directory">
       <section class="home-explore" aria-labelledby="home-explore-title">
         <h2 id="home-explore-title">Ce vrei să exersezi?</h2>
         <div class="home-destinations">${window.PolymathExplore.links()}</div>
       </section>
       ${homePractice()}
+      </div>
+      ${latestMistake()}
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
       ${homeActivity()}${saveNote()}</div>`;
   }

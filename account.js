@@ -50,8 +50,8 @@
   const avatarGroups = window.ProfileAvatars || {};
   const avatarChoices = new Map(Object.values(avatarGroups).flat().map(entry => [entry[0], entry]));
   const themes = [
-    ["daylight-clean", "Crem"], ["emerald-forest", "Verde"], ["ocean-deep", "Albastru"],
-    ["ruby-clay", "Roșu"], ["cyber-dark", "Noapte"], ["sepia-book", "Sepia"],
+    ["daylight-clean", "Crem"], ["emerald-forest", "Pădure"], ["ocean-deep", "Cobalt"],
+    ["ruby-clay", "Rodie"], ["cyber-dark", "Noapte"], ["sepia-book", "Sepia"],
     ["neon-amethyst", "Violet"], ["sunset-amber", "Chihlimbar"]
   ];
   const themeKey = "polymath_appearance";
@@ -79,10 +79,41 @@
   }
   function appearancePicker() {
     const selected = document.documentElement.getAttribute("data-theme") || "daylight-clean";
-    return `<details class="settings-group" name="account-section"><summary>Aspect și culori</summary>
-      <fieldset class="appearance-picker"><legend>Alege o temă</legend>
-      ${themes.map(([id, label]) => `<label><input type="radio" name="appearance" value="${id}" ${id === selected ? "checked" : ""}><span class="theme-swatch" data-palette="${id}"></span>${label}</label>`).join("")}
-      </fieldset></details>`;
+    return `<fieldset class="appearance-picker"><legend>Paleta interfeței</legend>
+      ${themes.map(([id, label]) => `<label class="palette-option">
+        <input type="radio" name="appearance" value="${id}" ${id === selected ? "checked" : ""}>
+        <span class="theme-preview" data-palette="${id}" aria-hidden="true"><b>Aa</b><i></i><i></i></span>
+        <span class="palette-name">${label}<span aria-hidden="true">✓</span></span>
+      </label>`).join("")}</fieldset>`;
+  }
+
+  function profileShell(body, mode) {
+    const user = account.user;
+    const heading = user ? text(user.name) : mode === 'register' ? 'Creează un cont' : 'Profilul tău';
+    return `<header class="profile-cover">
+      <div class="profile-cover-copy"><p>PolymathHub</p>
+      <h2 id="auth-title" tabindex="-1">${user ? `<span id="settings-account-name">${heading}</span>` : heading}</h2>
+      ${user ? `<span class="profile-email">${text(user.email)}</span>` : ''}</div>
+      <span class="settings-avatar" aria-hidden="true">${user ? avatarMark(user) : accountIcon}</span>
+      <button type="button" class="dialog-close" data-close-account aria-label="Închide profilul">×</button>
+    </header>
+    <div class="profile-tabs" role="tablist" aria-label="Setări profil">
+      <button id="profile-tab-account" role="tab" type="button" aria-controls="profile-pane-account" aria-selected="true">Cont</button>
+      <button id="profile-tab-colors" role="tab" type="button" aria-controls="profile-pane-colors" aria-selected="false" tabindex="-1">Culori</button>
+    </div>
+    <section id="profile-pane-account" role="tabpanel" aria-labelledby="profile-tab-account">${body}</section>
+    <section id="profile-pane-colors" role="tabpanel" aria-labelledby="profile-tab-colors" hidden>
+      ${appearancePicker()}<p class="palette-note">Culoarea aleasă se aplică imediat pe acest dispozitiv.</p>
+    </section>`;
+  }
+  function selectProfileTab(button, focus = true) {
+    for (const tab of button.parentElement.querySelectorAll('[role="tab"]')) {
+      const active = tab === button;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      $(tab.getAttribute('aria-controls')).hidden = !active;
+    }
+    if (focus) button.focus({preventScroll:true});
   }
   function renderControl() {
     const button = $("account-control").querySelector("button");
@@ -209,24 +240,20 @@
   function open(mode = "login") {
     if (account.authenticating) return;
     const element = dialog();
+    const colorsOpen = element.open && $('profile-tab-colors')?.getAttribute('aria-selected') === 'true';
+    let body;
     if (sessionState !== "available") {
       const checking = sessionState === "checking";
-      element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide profilul">×</button>
-        <h2 id="auth-title" tabindex="-1">Profilul tău</h2>
-        <p class="profile-status" data-session-status role="status">${checking ? "Se verifică sesiunea…" : text(sessionError)}</p>
+      body = `<p class="profile-status" data-session-status role="status">${checking ? "Se verifică sesiunea…" : text(sessionError)}</p>
         ${checking ? "" : '<button type="button" class="studio-secondary" data-check-session>Reîncearcă</button>'}`;
     } else if (account.user) {
-      element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide setările">×</button>
-        <h2 id="auth-title" class="dialog-heading" tabindex="-1">Setările contului</h2>
-        <div class="settings-identity"><span class="settings-avatar" aria-hidden="true">${avatarMark(account.user)}</span><div><strong id="settings-account-name">${text(account.user.name)}</strong><span>${text(account.user.email)}</span></div></div>
-        <button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog" ${account.admin ? "" : "hidden"}><img src="/assets/icons/caret-right.svg" alt="">Panou administrator</button>
+      body = `<button type="button" class="admin-entry settings-admin-entry" data-open-admin aria-haspopup="dialog" ${account.admin ? "" : "hidden"}><img src="/assets/icons/caret-right.svg" alt="">Panou administrator</button>
         <details class="settings-group" name="account-section" open><summary>Profil și avatar</summary>
         <form class="auth-form settings-form" data-account-action="profile">
           ${avatarPicker(account.user)}
           <label>Nume afișat<input type="text" name="name" autocomplete="nickname" maxlength="60" required value="${text(account.user.name)}"></label>
           <button class="studio-primary" type="submit">Salvează profilul</button>
         </form></details>
-        ${appearancePicker()}
         <details class="settings-group" name="account-section"><summary>Schimbă parola</summary>
           <form class="auth-form settings-form" data-account-action="password">
             <label>Parola actuală<input type="password" name="currentPassword" autocomplete="current-password" maxlength="128" required></label>
@@ -260,12 +287,13 @@
         </div>`;
     } else {
       const register = mode === "register";
-      element.innerHTML = `<button type="button" class="dialog-close" data-close-account aria-label="Închide autentificarea">×</button><span class="eyebrow">POLYMATHHUB</span><h2 id="auth-title">${register ? "Creează un cont" : "Conectează-te"}</h2><p class="auth-intro">Salvează progresul și revino la el de pe alt dispozitiv.</p><form id="auth-form" class="auth-form" data-mode="${mode}"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Parolă<input type="password" name="password" autocomplete="${register ? "new-password" : "current-password"}" minlength="10" maxlength="128" required></label><button class="studio-primary" type="submit">${register ? "Creează contul" : "Conectează-te"}</button></form><div id="auth-feedback" role="status" aria-live="polite"></div><p class="auth-switch">${register ? 'Ai deja cont? <button type="button" data-auth-mode="login">Conectează-te</button>' : 'Nu ai cont? <button type="button" data-auth-mode="register">Creează unul</button>'}</p>${register ? '<p class="auth-note">Folosește un email în format valid ca identificator și o parolă de minimum 10 caractere. Nu trebuie să ai acces la căsuța poștală.</p>' : ""}`;
+      body = `<h3 class="account-form-title">${register ? 'Date de conectare' : 'Conectează-te'}</h3><p class="auth-intro">Salvează progresul și revino la el de pe alt dispozitiv.</p><form id="auth-form" class="auth-form" data-mode="${mode}"><label>Email<input type="email" name="email" autocomplete="username" maxlength="254" required></label><label>Parolă<input type="password" name="password" autocomplete="${register ? "new-password" : "current-password"}" minlength="10" maxlength="128" required></label><button class="studio-primary" type="submit">${register ? "Creează contul" : "Conectează-te"}</button></form><div id="auth-feedback" role="status" aria-live="polite"></div><p class="auth-switch">${register ? 'Ai deja cont? <button type="button" data-auth-mode="login">Conectează-te</button>' : 'Nu ai cont? <button type="button" data-auth-mode="register">Creează unul</button>'}</p>${register ? '<p class="auth-note">Folosește un email în format valid ca identificator și o parolă de minimum 10 caractere. Nu trebuie să ai acces la căsuța poștală.</p>' : ""}`;
     }
-    if (!account.user && sessionState !== "checking") element.insertAdjacentHTML("beforeend", appearancePicker());
+    element.innerHTML = profileShell(body, mode);
+    if (colorsOpen) selectProfileTab($('profile-tab-colors'), false);
     window.PolymathInbox?.sync(api, account);
     if (!element.open) element.showModal();
-    (element.querySelector("#auth-title[tabindex]") || element.querySelector("input"))?.focus({preventScroll:true});
+    (colorsOpen ? $('profile-tab-colors') : $('auth-title')).focus({preventScroll:true});
   }
 
   const adminDateFormat = new Intl.DateTimeFormat("ro-RO", { dateStyle: "short", timeStyle: "short" });
@@ -660,6 +688,8 @@
     const input = event.target;
     if (input.matches('input[name="avatar"]')) {
       input.closest(".avatar-picker").querySelector("[data-avatar-label]").textContent = avatarChoices.get(input.value)[1];
+      const preview = input.closest('dialog')?.querySelector('.settings-avatar');
+      if (preview && account.user) preview.innerHTML = avatarMark({...account.user, avatar: input.value});
     } else if (input.matches('input[name="appearance"]')) {
       applyAppearance(input.value);
       try { localStorage.setItem(themeKey, input.value); } catch {}
@@ -668,7 +698,9 @@
   });
   document.addEventListener("click", async event => {
     const button = event.target.closest("button"); if (!button) return;
-    if (button.hasAttribute("data-avatar-category")) {
+    if (button.matches('.profile-tabs [role="tab"]')) {
+      selectProfileTab(button);
+    } else if (button.hasAttribute("data-avatar-category")) {
       const picker = button.closest(".avatar-picker");
       for (const category of picker.querySelectorAll("[data-avatar-category]")) category.setAttribute("aria-pressed", String(category === button));
       for (const group of picker.querySelectorAll("[data-avatar-group]")) group.hidden = group.dataset.avatarGroup !== button.dataset.avatarCategory;
@@ -717,6 +749,13 @@
       finally { account.authenticating = false; }
     }
   });
+  document.addEventListener('keydown', event => {
+    const tab = event.target.closest?.('.profile-tabs [role="tab"]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const tabs = [...tab.parentElement.querySelectorAll('[role="tab"]')];
+    selectProfileTab(event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs.at(-1) : tabs.find(item => item !== tab));
+  });
   window.addEventListener("polymath:progress", queueSave);
   window.addEventListener("online", () => {
     if (account.user && account.dirty && !account.loading && !account.authenticating) return applyUser(account.user);
@@ -738,11 +777,13 @@
   }
   document.addEventListener("DOMContentLoaded", async () => {
     try { applyAppearance(localStorage.getItem(themeKey)); } catch {}
-    if (window.PolymathSqlCourse && window.location?.search && new URLSearchParams(window.location.search).get("profil") === "1") {
-      const url = new URL(window.location.href);
+    const url = new URL(window.location.href);
+    const requestedProfile = url.searchParams.get('profil');
+    if (window.PolymathSqlCourse && ['1', 'culori'].includes(requestedProfile)) {
       url.searchParams.delete("profil");
       history.replaceState(history.state, "", url);
       open();
+      if (requestedProfile === 'culori') selectProfileTab($('profile-tab-colors'));
     }
     await loadSession();
   });

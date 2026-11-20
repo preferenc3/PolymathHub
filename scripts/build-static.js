@@ -15,6 +15,7 @@ fs.copyFileSync(path.join(root, "sql-course.html"), path.join(output, "index.htm
 
 fs.cpSync(path.join(root, "assets/icons"), path.join(output, "assets/icons"), { recursive: true });
 
+fs.cpSync(path.join(root, "assets/editorial"), path.join(output, "assets/editorial"), { recursive: true });
 fs.cpSync(path.join(root, "assets/audio"), path.join(output, "assets/audio"), { recursive: true });
 
 const { execFileSync } = require("node:child_process");

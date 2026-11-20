@@ -290,7 +290,11 @@ try {
   await ready();
   await page.click('#account-control button');
   await page.waitForSelector('.appearance-picker');
-  await page.click('.settings-group:has(.appearance-picker) summary');
+  await page.focus('#profile-tab-account');
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.$eval('#profile-tab-colors', tab => tab.getAttribute('aria-selected')), 'true');
+  assert.equal(await page.$$eval('#profile-pane-colors input[name=appearance]', options => options.length), 8);
+  await audit('mobile-profile-colors');
   await page.click('input[name="appearance"][value="cyber-dark"]');
   await page.keyboard.press('Escape');
   await page.goto(base + '/sql-university.html?ex=5-14');
