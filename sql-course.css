@@ -189,7 +189,8 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
   gap: 1.15rem;
   padding: clamp(1.2rem, 3vw, 2rem);
 }
-.home :is(h1, h2, h3, p) { inline-size: fit-content; }
+/* WebKit paints multi-paragraph selections relative to the nearest positioned block. */
+.home :is(h1, h2, h3, p) { position: relative; inline-size: fit-content; }
 .daily-feature .section-label { color: var(--teal-dark); }
 .daily-feature .resume-copy h1 { font: 700 clamp(1.5rem, 3vw, 2.25rem)/1.12 var(--serif); }
 .daily-feature .resume-copy p, .home-continuation p { margin: .55rem 0 0; color: var(--ink); }
