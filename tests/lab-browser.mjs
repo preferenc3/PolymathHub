@@ -288,10 +288,14 @@ try {
 
   await page.goto(base + '/#acasa');
   await ready();
-  await page.click('#account-control button');
+  await page.focus('#account-control button');
+  await page.keyboard.press('Enter');
   await page.waitForSelector('.appearance-picker');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'auth-title');
+  assert.equal(await page.$eval('#auth-title', title => getComputedStyle(title).outlineStyle), 'none');
   await page.focus('#profile-tab-account');
   await page.keyboard.press('ArrowRight');
+  assert.notEqual(await page.$eval('#profile-tab-colors', tab => getComputedStyle(tab).outlineStyle), 'none');
   assert.equal(await page.$eval('#profile-tab-colors', tab => tab.getAttribute('aria-selected')), 'true');
   assert.equal(await page.$$eval('#profile-pane-colors input[name=appearance]', options => options.length), 8);
   await page.click('input[name=banner][value="grid"]');

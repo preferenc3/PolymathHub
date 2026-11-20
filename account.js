@@ -112,7 +112,7 @@
     const banner = currentBanner();
     return `<header class="profile-cover" data-pattern="${banner}">
       <div class="profile-cover-copy"><p>PolymathHub</p>
-      <h2 id="auth-title" tabindex="-1">${user ? `<span id="settings-account-name">${heading}</span>` : heading}</h2>
+      <h2 id="auth-title" tabindex="-1" autofocus>${user ? `<span id="settings-account-name">${heading}</span>` : heading}</h2>
       ${user ? `<span class="profile-email">${text(user.email)}</span>` : ''}</div>
       <span class="settings-avatar" aria-hidden="true">${user ? avatarMark(user) : accountIcon}</span>
       <button type="button" class="dialog-close" data-close-account aria-label="Închide profilul">×</button>
@@ -261,7 +261,9 @@
   function open(mode = "login") {
     if (account.authenticating) return;
     const element = dialog();
-    const colorsOpen = element.open && $('profile-tab-colors')?.getAttribute('aria-selected') === 'true';
+    const colorsTab = $('profile-tab-colors');
+    const colorsOpen = element.open && colorsTab?.getAttribute('aria-selected') === 'true';
+    const refocusColorsTab = colorsOpen && document.activeElement === colorsTab;
     let body;
     if (sessionState !== "available") {
       const checking = sessionState === "checking";
@@ -314,7 +316,7 @@
     if (colorsOpen) selectProfileTab($('profile-tab-colors'), false);
     window.PolymathInbox?.sync(api, account);
     if (!element.open) element.showModal();
-    (colorsOpen ? $('profile-tab-colors') : $('auth-title')).focus({preventScroll:true});
+    (refocusColorsTab ? $('profile-tab-colors') : $('auth-title')).focus({preventScroll:true});
   }
 
   const adminDateFormat = new Intl.DateTimeFormat("ro-RO", { dateStyle: "short", timeStyle: "short" });
@@ -834,7 +836,7 @@
       url.searchParams.delete("profil");
       history.replaceState(history.state, "", url);
       open();
-      if (requestedProfile === 'culori') selectProfileTab($('profile-tab-colors'));
+      if (requestedProfile === 'culori') selectProfileTab($('profile-tab-colors'), false);
     }
     await loadSession();
     if (url?.searchParams.get('feedback') === '1') {

@@ -155,7 +155,11 @@
       if (!el || el.disabled) return;
       if (el.hasAttribute("data-close")) return dialog.close();
       if (el.dataset.box) { box = el.dataset.box; page = 0; return list(true); }
-      if (el.hasAttribute("data-list")) return list(false, lastItem);
+      if (el.hasAttribute("data-list")) {
+        if (event.detail === 0) return list(false, lastItem);
+        heading.focus({preventScroll:true});
+        return list();
+      }
       if (el.dataset.page) { page += Number(el.dataset.page); return list(); }
       if (el.dataset.thread) { lastItem = el.dataset.thread; return read(lastItem); }
       if (el.dataset.detail) { lastItem = el.dataset.detail; return detail(lastItem); }
