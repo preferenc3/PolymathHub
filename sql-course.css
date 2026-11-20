@@ -182,6 +182,7 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
   .home-practice-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
 
+.daily-feature { display: grid; gap: 18px; }
 .daily-feature .resume-entry {
   border: 1px solid var(--line);
   border-inline-start: 4px solid var(--teal);
@@ -191,7 +192,7 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 }
 /* WebKit paints multi-paragraph selections relative to the nearest positioned block. */
 .home :is(h1, h2, h3, p) { position: relative; inline-size: fit-content; }
-.daily-feature .section-label { color: var(--teal-dark); }
+.daily-feature .section-label { margin-bottom: 0; color: var(--teal-dark); }
 .daily-feature .resume-copy h1 { font: 700 clamp(1.5rem, 3vw, 2.25rem)/1.12 var(--serif); }
 .daily-feature .resume-copy p, .home-continuation p { margin: .55rem 0 0; color: var(--ink); }
 .home-continuation { margin-top: 1rem; padding: 1rem .35rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
