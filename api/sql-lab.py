@@ -11,7 +11,7 @@ from contextlib import closing
 from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from server import study_sql, university_sql
+from backend.sql import study_sql, university_sql
 
 MAX_BODY = 8192
 MAX_UNIVERSITY_BODY = 80000
@@ -60,7 +60,7 @@ def query_rows(query, fixture):
         return columns, rows, correct
 
 
-COURSE = json.loads((Path(__file__).resolve().parents[1] / "server/sql-course.json").read_text())
+COURSE = json.loads((Path(__file__).resolve().parents[1] / "backend/sql/sql-course.json").read_text())
 EXERCISES = {ex["id"]: ex for ex in COURSE["exercises"]}
 SAFE_FUNCTIONS = {"count", "sum", "avg", "min", "max", "coalesce", "round", "lower", "upper", "length", "abs", "ifnull"}
 

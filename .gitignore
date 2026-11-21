@@ -8,7 +8,7 @@ __pycache__/
 *.pyc
 
 dist/
-.openai/portable/
+/.openai/
 
 .env*
 !.env.example

@@ -168,7 +168,7 @@ def main():
     print("ALL VALIDATIONS PASSED CLEANLY (100% compliant)!")
 
     # Write curriculum-mega.js
-    output_path = os.path.join(os.path.dirname(__file__), "..", "curriculum-mega.js")
+    output_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend", "curriculum", "curriculum-mega.js")
     js_content = "// MEGA EXPANDED CURRICULUM — ALL TRACKS DEEP-DIVE\n"
     js_content += "const MEGA_EXPANDED_CURRICULUM = " + json.dumps(all_lessons, indent=2, ensure_ascii=False) + ";\n"
 

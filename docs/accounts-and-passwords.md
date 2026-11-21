@@ -18,8 +18,8 @@ Nu se verifică existența căsuței poștale și nu se trimite email de confirm
 
 - `api/account.mjs`: configurare, sesiune, signup, login și logout.
 - `api/progress.mjs`: citire și salvare de progres pentru utilizatorul validat pe server.
-- `server/auth.mjs`: cereri către Supabase, validare, cookie-uri și protecție pentru cererile de modificare.
-- `account.js`: formular, starea contului și sincronizare. Tokenurile nu sunt expuse JavaScript-ului din browser.
+- `backend/auth/session.mjs`: cereri către Supabase, validare, cookie-uri și protecție pentru cererile de modificare.
+- `frontend/account/account-session.js`: formular, starea contului și sincronizare. Tokenurile nu sunt expuse JavaScript-ului din browser.
 
 Sesiunea folosește cookie-uri `HttpOnly`, `Secure` și `SameSite=Lax` pe domeniul public. Parolele sunt gestionate de Supabase Auth, nu sunt stocate de aplicație. Cheile rămân în variabilele Vercel. Verificarea originii protejează operațiile de modificare, iar accesul la PostgreSQL folosește tokenul utilizatorului și politicile RLS.
 

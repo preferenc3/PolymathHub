@@ -3,15 +3,11 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const output = path.join(root, "dist");
 fs.mkdirSync(output, { recursive: true });
-const files = fs.readdirSync(root).filter(file => /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|study-overview\.js|domain-meter\.js|inbox\.js|scroll-nav\.js|profile-(?:avatars|patterns)\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css)$/.test(file));
-for (const file of files) fs.copyFileSync(path.join(root, file), path.join(output, file));
-for (const required of ["index.html", "app.js", "studio.js", "vocabulary.js", "studio.css"]) {
-  if (!fs.existsSync(path.join(output, required))) throw new Error(`Missing required asset: ${required}`);
+const publicFiles = require("./public-files.cjs");
+for (const [url, source] of publicFiles) {
+  fs.copyFileSync(path.join(root, source), path.join(output, url));
 }
-console.log(`Static build ready: ${files.length} assets in dist/`);
-
-fs.copyFileSync(path.join(root, "index.html"), path.join(output, "biblioteca.html"));
-fs.copyFileSync(path.join(root, "sql-course.html"), path.join(output, "index.html"));
+console.log(`Static build ready: ${publicFiles.size} public files in dist/`);
 
 fs.cpSync(path.join(root, "assets/icons"), path.join(output, "assets/icons"), { recursive: true });
 
@@ -54,3 +50,8 @@ const compactLibrary = library.replace(sourceTags, (tag, file) => file === "curr
   .replace('  <script src="app.js">', `  ${embed("lesson-index", listing)}\n  <script src="app.js">`)
   .replace(/^  <link [^\n]*fonts\.google[^\n]*\n/gm, "");
 fs.writeFileSync(libraryPath, compactLibrary);
+
+// Sites reads its deployment manifest at a fixed path during packaging.
+const hostingDirectory = path.join(root, ".openai");
+fs.mkdirSync(hostingDirectory, { recursive: true });
+fs.copyFileSync(path.join(root, "config", "hosting.json"), path.join(hostingDirectory, "hosting.json"));

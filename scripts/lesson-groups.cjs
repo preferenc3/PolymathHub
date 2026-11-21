@@ -1,12 +1,13 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const publicFiles = require("./public-files.cjs");
 const vm = require("node:vm");
 
 const sourceTags = /  <script src="(curriculum(?:-[\w-]+)?\.js)"><\/script>\n/g;
 function collect(root, library) {
   const sources = [...library.matchAll(sourceTags)].map(match => match[1]).filter(file => file !== "curriculum-tests.js");
   const context = vm.createContext({});
-  for (const file of sources) vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context, { filename: file });
+  for (const file of sources) vm.runInContext(fs.readFileSync(path.join(root, publicFiles.get(file)), "utf8"), context, { filename: file });
   const lessons = vm.runInContext(`[
     ...DEFAULT_CURRICULUM, ...EXTENDED_MODULES, ...ADVANCED_CURRICULUM_EXPANSION,
     ...NEW_EXPANDED_CURRICULUM, ...CPP_EXPANDED_CURRICULUM, ...MEGA_EXPANDED_CURRICULUM,

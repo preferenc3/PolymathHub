@@ -1,8 +1,10 @@
 const fs = require('fs');
+const path = require('node:path');
+const curriculumFile = path.resolve(__dirname, '../../../frontend/curriculum/curriculum-polyglot.js');
 const vm = require('vm');
 
 // 1. Read existing curriculum-polyglot.js (26 chapters)
-const existingCode = fs.readFileSync('./curriculum-polyglot.js', 'utf8');
+const existingCode = fs.readFileSync(curriculumFile, 'utf8');
 const existingSandbox = {};
 vm.runInNewContext(existingCode, existingSandbox);
 const part1And2 = existingSandbox.NEW_EXPANDED_CURRICULUM;
@@ -367,5 +369,5 @@ console.log('Total combined polyglot curriculum:', combinedPolyglot.length);
 
 // Write out to curriculum-polyglot.js
 const fileContent = 'var NEW_EXPANDED_CURRICULUM = ' + JSON.stringify(combinedPolyglot, null, 2) + ';\n';
-fs.writeFileSync('./curriculum-polyglot.js', fileContent, 'utf8');
+fs.writeFileSync(curriculumFile, fileContent, 'utf8');
 console.log('Successfully written to curriculum-polyglot.js!');
