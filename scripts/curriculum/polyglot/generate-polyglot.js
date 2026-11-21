@@ -1,4 +1,6 @@
 const fs = require('fs');
+const path = require('node:path');
+const curriculumFile = path.resolve(__dirname, '../../../frontend/curriculum/curriculum-polyglot.js');
 
 global.window = {};
 // 1. Part 1
@@ -568,5 +570,5 @@ const outputCode = 'const NEW_EXPANDED_CURRICULUM = ' + JSON.stringify(normalize
 }, 2) + ';\n';
 
 // Replace regex strings with actual RegExp in output or parse properly
-fs.writeFileSync('curriculum-polyglot.js', outputCode, 'utf8');
+fs.writeFileSync(curriculumFile, outputCode, 'utf8');
 console.log('Written curriculum-polyglot.js successfully!');

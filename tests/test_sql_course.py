@@ -11,7 +11,7 @@ class SqlCourseTests(unittest.TestCase):
         return LAB['evaluate'](json.dumps({'exerciseId': exercise, 'query': query, 'variant': variant}).encode())
 
     def test_inventory_project_checks_mutations_and_report_on_fresh_data(self):
-        from server.study_sql import REFERENCES
+        from backend.sql.study_sql import REFERENCES
 
         lesson = "path-sql-it-project"
         reference = REFERENCES[lesson][1]
@@ -48,7 +48,7 @@ class SqlCourseTests(unittest.TestCase):
         self.assertNotEqual(course['datasets'][0], course['datasets'][1])
 
     def test_all_reference_solutions_work_on_both_public_variants(self):
-        data = json.loads((ROOT / 'server/sql-course.json').read_text())
+        data = json.loads((ROOT / 'backend/sql/sql-course.json').read_text())
         for ex in data['exercises']:
             for variant in (0, 1):
                 with self.subTest(exercise=ex['id'], variant=variant):

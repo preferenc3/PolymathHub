@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const V = require("../vocabulary.js");
+const V = require("../frontend/languages/vocabulary.js");
 
 test("every offline card provides bilingual learning, two examples and a complete exercise", () => {
   assert.equal(V.WORDS.length, 24);

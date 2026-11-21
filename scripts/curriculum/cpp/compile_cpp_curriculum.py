@@ -40,7 +40,7 @@ for l in all_new_cpp_lessons:
     assert 0 <= l["quiz"]["correctIndex"] < 4, f"Index quiz incorect pentru {l['id']}"
 
 # Scrie curriculum-cpp.js
-output_path = os.path.join(os.path.dirname(__file__), "..", "curriculum-cpp.js")
+output_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend", "curriculum", "curriculum-cpp.js")
 with open(output_path, "w", encoding="utf-8") as f:
     f.write("var CPP_EXPANDED_CURRICULUM = ")
     json.dump(all_new_cpp_lessons, f, ensure_ascii=False, indent=2)

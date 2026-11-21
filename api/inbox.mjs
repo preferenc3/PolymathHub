@@ -1,4 +1,4 @@
-import {ApiError, configuration, send, provider, sessionFor, fail, checkExpectedAccount, sameOrigin, readJson} from "../server/auth.mjs";
+import {ApiError, configuration, send, provider, sessionFor, fail, checkExpectedAccount, sameOrigin, readJson} from "../backend/auth/session.mjs";
 
 export function createInboxHandler({env = process.env, fetcher = fetch} = {}) {
   return async function handler(req, res) {

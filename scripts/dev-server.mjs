@@ -1,4 +1,5 @@
 import inbox from "../api/inbox.mjs";
+import publicFiles from "./public-files.cjs";
 import lessonGroups from "./lesson-groups.cjs";
 import http from "node:http";
 import fs from "node:fs/promises";
@@ -8,10 +9,10 @@ import catalog from "../api/catalog.mjs";
 import account from "../api/account.mjs";
 import progress from "../api/progress.mjs";
 import adminAccounts from "../api/admin-accounts.mjs";
-import { readJson, send, fail } from "../server/auth.mjs";
+import { readJson, send, fail } from "../backend/auth/session.mjs";
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".webp": "image/webp" };
-const assets = /^(index\.html|styles\.css|studio\.css|app\.js|studio\.js|account\.js|study-overview\.js|domain-meter\.js|inbox\.js|scroll-nav\.js|profile-(?:avatars|patterns)\.js|profile\.css|vocabulary\.js|manifest\.json|curriculum(?:-[\w-]+)?\.js|sql-(?:course|progress|university|explore|catalog)\.(?:html|css|js)|language-(?:practice|guide|lessons)\.js|language-guide\.css|assets\/audio\/(?:fr|en|es)-[1-7]\.mp3|assets\/editorial\/(?:languages|computing|animals|database|counting|algorithms)(?:-small)?\.webp|assets\/icons\/[a-z-]+\.svg)$/;
+const media = /^assets\/(?:audio\/(?:fr|en|es)-[1-7]\.mp3|editorial\/(?:languages|computing|animals|database|counting|algorithms)(?:-small)?\.webp|icons\/[a-z-]+\.svg)$/;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/domain-index.json") {
@@ -19,7 +20,7 @@ const server = http.createServer(async (req, res) => {
       const data = await fs.readFile(path.join(root, "dist/domain-index.json"), "utf8");
       return send(res, 200, JSON.parse(data));
     }
-    const library = await fs.readFile(path.join(root, "index.html"), "utf8");
+    const library = await fs.readFile(path.join(root, publicFiles.get("biblioteca.html")), "utf8");
     return send(res, 200, lessonGroups.domainIndex(lessonGroups.collect(root, library).groups));
   }
   if (url.pathname === "/api/catalog") return catalog(req, res);
@@ -51,20 +52,16 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
-  if (process.env.POLYMATH_SERVE_DIST === "1") {
-    const file = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
-    if (file === "biblioteca.html" || assets.test(file) || /^lessons\/[a-f0-9]{20}\.json$/.test(file)) {
-      try {
-        const body = await fs.readFile(path.join(root, "dist", file));
-        res.writeHead(200, { "Content-Type": types[path.extname(file)], "Cache-Control": "no-store" });
-        return res.end(body);
-      } catch { res.writeHead(404); return res.end("Not found"); }
-    }
-  }
-  const requested = url.pathname === "/biblioteca.html" ? "index.html" : url.pathname.slice(1);
-  const file = ["/","/index.html"].includes(url.pathname) ? "sql-course.html" : requested;
-  if (!assets.test(file)) { res.writeHead(404); return res.end("Not found"); }
-  try { const body = await fs.readFile(path.join(root, file)); res.writeHead(200, { "Content-Type": types[path.extname(file)], "Cache-Control": "no-store" }); res.end(body); }
-  catch { res.writeHead(404); res.end("Not found"); }
+  const file = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
+  const serveDist = process.env.POLYMATH_SERVE_DIST === "1";
+  let source = publicFiles.get(file);
+  if (media.test(file) || (serveDist && /^lessons\/[a-f0-9]{20}\.json$/.test(file))) source = file;
+  if (!source) { res.writeHead(404); return res.end("Not found"); }
+  try {
+    const filename = serveDist ? path.join(root, "dist", file) : path.join(root, source);
+    const body = await fs.readFile(filename);
+    res.writeHead(200, { "Content-Type": types[path.extname(file)], "Cache-Control": "no-store" });
+    res.end(body);
+  } catch { res.writeHead(404); res.end("Not found"); }
 });
 server.listen(Number(process.env.PORT) || 8000, "127.0.0.1", () => console.log(`PolymathHub: http://127.0.0.1:${server.address().port}`));
