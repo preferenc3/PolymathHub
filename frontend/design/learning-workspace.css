@@ -142,6 +142,12 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
 .explore-symbol img { width: 19px; height: 19px; }
 .explore-arrow { width: 14px; height: 14px; opacity: .7; }
 /* The study journal opens with one feature, followed by a directory and a practice list. */
+/* WebKit otherwise paints a selection across the empty space below the header. */
+.learning-app:has(> #main-content > .home) {
+  display: flex;
+  flex-direction: column;
+}
+
 .home { width: min(100%, 1240px); max-width: 1240px; margin-inline: auto; padding: clamp(16px, 2.6vw, 38px) clamp(16px, 3.4vw, 48px) 36px; }
 .home :is(h1, h2, h3, p) { position: relative; inline-size: fit-content; }
 .daily-feature { display: grid; grid-template-columns: 1.03fr 1fr; overflow: hidden; border-radius: 18px; background: var(--cover-bg); color: var(--cover-ink); }
