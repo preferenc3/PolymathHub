@@ -5,7 +5,7 @@ import vm from "node:vm";
 import { createAccountHandler } from "../api/account.mjs";
 import { createProgressHandler, validateProgress } from "../api/progress.mjs";
 import { createAdminAccountsHandler } from "../api/admin-accounts.mjs";
-import { credentials, sameOrigin, configuration } from "../server/auth.mjs";
+import { credentials, sameOrigin, configuration } from "../backend/auth/session.mjs";
 
 const env = { SUPABASE_URL: "https://project.supabase.co", SUPABASE_ANON_KEY: "public-test-key" };
 const id = "11111111-1111-4111-8111-111111111111";
@@ -193,7 +193,7 @@ function accountBrowser({ storage = new Map(), remote = { course: { xp: 0 }, voc
     if (path === "/api/progress") { await beforeRead(); return result({ progress: currentRemote }); }
     throw Error("Unexpected path " + path);
   };
-  vm.runInNewContext(fs.readFileSync(new URL("../account.js", import.meta.url), "utf8"), {
+  vm.runInNewContext(fs.readFileSync(new URL("../frontend/account/account-session.js", import.meta.url), "utf8"), {
     window, document, fetch: fetcher, structuredClone, AbortSignal, Event, Intl,
     setTimeout: () => 1, clearTimeout() {},
     localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) }

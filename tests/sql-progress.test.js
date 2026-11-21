@@ -1,5 +1,5 @@
 const test=require('node:test'); const assert=require('node:assert/strict');
-const progress=require('../sql-progress.js');
+const progress=require('../frontend/sql/sql-progress.js');
 const {validateProgress}=require('../api/progress.mjs');
 test('a first correct answer earns XP once, including after reload and data variant',()=>{
  let s=progress.attempt(null,'s1-all','SELECT * FROM customers',{correct:true},0);

@@ -3,7 +3,7 @@ from collections import Counter
 from contextlib import closing
 import sqlite3
 
-from server import university_sql
+from backend.sql import university_sql
 
 SCHEMA = {
     "echipamente": ("id INTEGER PRIMARY KEY, tip TEXT NOT NULL, producator TEXT NOT NULL, model TEXT NOT NULL, "

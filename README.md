@@ -21,7 +21,7 @@ Căutarea locală acceptă cuvântul sau traducerea română, fără a impune di
 
 Steaua salvează cuvântul în **Colecția mea**. **Practică rapidă** folosește cuvintele salvate din limba selectată; când colecția este goală, folosește selecția disponibilă. Răspunsul rămâne ascuns până la verificare sau dezvăluire. Cuvintele exersate sunt marcate fără a acorda XP repetat. Pronunția audio folosește vocile disponibile în browser/dispozitiv.
 
-Progresul cursurilor rămâne în cheia existentă `polymath_edtech_state_v2`. Vocabularul folosește separat `polymath_vocabulary_v1`. Pentru vizitatori, datele rămân în browser. Integrarea opțională de conturi permite email/parolă fără confirmare pe email și sincronizarea progresului prin Supabase. Activarea necesită baza de date și variabilele Vercel: vezi [AUTH_SETUP.md](AUTH_SETUP.md). Autentificarea nu este prezentată ca activă dacă serviciul nu este configurat. Site-ul este destinat utilizării online.
+Progresul cursurilor rămâne în cheia existentă `polymath_edtech_state_v2`. Vocabularul folosește separat `polymath_vocabulary_v1`. Pentru vizitatori, datele rămân în browser. Integrarea opțională de conturi permite email/parolă fără confirmare pe email și sincronizarea progresului prin Supabase. Activarea necesită baza de date și variabilele Vercel: vezi [ghidul de conturi și parole](docs/accounts-and-passwords.md). Autentificarea nu este prezentată ca activă dacă serviciul nu este configurat. Site-ul este destinat utilizării online.
 
 ## Pornire și verificare
 
@@ -35,18 +35,25 @@ npm test
 npm run build
 ```
 
-Buildul copiază exclusiv cele 14 fișiere publice ale aplicației în `dist/`. Testele unitare verifică fișele bilingve, căutarea, validarea răspunsurilor, alegerea sensului, conversia răspunsurilor API, fallbackul, cotele și limitele UTF-8, cookie-urile de sesiune, protecția originii, izolarea accesului și conflictele de progres. Testele de cont folosesc răspunsuri de serviciu simulate; integrarea reală necesită configurarea Supabase. Vechile scripturi de audit din `tests/` rămân disponibile separat; unele presupun Chrome instalat într-o cale fixă și structura vechii interfețe.
+Buildul pregătește paginile, resursele și pachetele de lecții în `dist/`. Testele unitare verifică fișele bilingve, căutarea, validarea răspunsurilor, alegerea sensului, conversia răspunsurilor API, fallbackul, cotele și limitele UTF-8, cookie-urile de sesiune, protecția originii, izolarea accesului și conflictele de progres. Testele de cont folosesc răspunsuri de serviciu simulate; integrarea reală necesită configurarea Supabase. Vechile scripturi de audit din `tests/` rămân disponibile separat; unele presupun Chrome instalat într-o cale fixă și structura vechii interfețe.
 
-## Fișiere principale
+## Unde găsești fișierele
 
-- `app.js`: curriculum, progresul lecțiilor și rutare.
-- `studio.js`: dashboard, colecție, căutare și practica vocabularului.
-- `vocabulary.js`: cele 24 de fișe și adaptoarele API, cu funcții testabile.
-- `studio.css`: noua interfață responsive; `styles.css` păstrează componentele și temele existente.
-- `scripts/build-static.js`: build static fără bundler.
-- `api/`, `server/`, `account.js`: autentificare și sincronizare prin Vercel/Supabase.
-- `api/sql-lab.py`: laborator SQLite scris în Python. Răspunsurile sunt evaluate după rezultat; datele se recreează în memorie la fiecare cerere.
-- `vercel.json`: build de producție și configurarea funcțiilor API.
+| Ce vrei să modifici | Unde lucrezi |
+| --- | --- |
+| Designul, culorile și aspectul pe telefon | [frontend/design](frontend/design) conține stilurile CSS. [assets](assets) conține imaginile, pictogramele și înregistrările audio. |
+| Paginile și navigarea | [frontend/pages](frontend/pages) conține paginile HTML. Pagina principală este `learning-workspace.html`, iar biblioteca este `library.html`. Navigarea bibliotecii și tabloul de bord sunt în [frontend/library](frontend/library). |
+| Lecțiile și exercițiile | [frontend/curriculum](frontend/curriculum) conține colecțiile de lecții. [frontend/languages](frontend/languages) și [frontend/sql](frontend/sql) conțin activitățile interactive. |
+| Formularele de cont, profilul și notificările | [frontend/account](frontend/account) conține interfața pentru utilizator. |
+| Autentificarea și parolele | [api/account.mjs](api/account.mjs) primește cererile de conectare. [backend/auth/session.mjs](backend/auth/session.mjs) verifică și gestionează sesiunile. Supabase Auth gestionează parolele utilizatorilor. [Ghid de configurare](docs/accounts-and-passwords.md) |
+| Backendul și baza de date | [api](api) conține rutele Vercel, [backend/sql](backend/sql) conține datele și evaluatorul SQL, iar [supabase/migrations](supabase/migrations) păstrează istoricul modificărilor bazei de date. |
+| Găzduirea și configurarea | [vercel.json](vercel.json) configurează Vercel. [config/hosting.json](config/hosting.json) păstrează identificatorul proiectului Sites. Comanda `npm run build` pregătește și copia locală cerută la împachetare. [.env.example](.env.example) arată ce variabile trebuie configurate. |
+
+### Fișiere folosite doar la dezvoltare
+
+- [scripts/curriculum](scripts/curriculum) conține instrumentele folosite la pregătirea colecțiilor C++, multilingve și multidisciplinare. Site-ul folosește lecțiile deja generate. Cele două generatoare din `polyglot/` depind de fișiere sursă externe folosite la importul inițial.
+- [tests](tests) conține testele automate și auditurile de interfață. [docs](docs) păstrează ghidurile, verificările de design și rapoartele de laborator.
+- [scripts/build-static.js](scripts/build-static.js) pregătește versiunea publică. [scripts/public-files.cjs](scripts/public-files.cjs) asociază fiecare adresă publică cu fișierul sursă. Atât buildul, cât și serverul local folosesc această listă.
 
 ## Surse pentru căutarea online
 

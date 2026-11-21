@@ -1,5 +1,5 @@
 const test=require('node:test'); const assert=require('node:assert/strict');
-const L=require('../language-practice.js'); const {validateProgress}=require('../api/progress.mjs');
+const L=require('../frontend/languages/language-practice.js'); const {validateProgress}=require('../api/progress.mjs');
 test('French practice checks each answer and accepts harmless typing variations',()=>{
  const r=L.check([' Acheter ','COMBIEN','combien']);assert.deepEqual(r.correct,[true,true,true]);assert.equal(r.passed,true);
  assert.deepEqual(L.check(['vendre','combien','prix']).correct,[false,true,false]);

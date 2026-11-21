@@ -68,7 +68,7 @@ Nu s-a aplicat automat `npm audit fix --force`: soluția propusă era revenirea 
 
 ## Căutarea secretelor
 
-Au fost inspectate toate cele 292 de obiecte Git de tip blob accesibile din referințele locale existente (`git rev-list --objects --all`), inclusiv istoria ambelor branchuri. Scanarea a căutat blocuri de chei private, formate cunoscute de tokenuri GitHub/OpenAI, chei secrete Supabase, chei AWS, URL-uri de baze de date cu parolă și JWT-uri cu rol `service_role`. Au fost verificate și nume de fișiere sensibile; `.env.example` a fost tratat drept șablon. Nu au existat potriviri confirmate. Secretele de test au fost păstrate în afara repository-ului, în fișiere locale cu permisiuni restrictive.
+Au fost inspectate toate cele 292 de obiecte Git de tip blob accesibile din referințele locale existente (`git rev-list --objects --all`), inclusiv istoria ambelor branchuri. Scanarea a căutat blocuri de chei private, formate cunoscute de tokenuri GitHub și chei API pentru servicii AI, chei secrete Supabase, chei AWS, URL-uri de baze de date cu parolă și JWT-uri cu rol `service_role`. Au fost verificate și nume de fișiere sensibile; `.env.example` a fost tratat drept șablon. Nu au existat potriviri confirmate. Secretele de test au fost păstrate în afara repository-ului, în fișiere locale cu permisiuni restrictive.
 
 Limite: scanarea bazată pe tipare nu poate demonstra absența oricărei parole arbitrare, a secretelor codificate într-un format necunoscut, a obiectelor șterse inaccesibile prin referințe, a logurilor de platformă sau a artefactelor din afara repository-ului. Nu s-a rescris istoricul și nu s-au rotit credențiale fără dovada unei expuneri.
 
