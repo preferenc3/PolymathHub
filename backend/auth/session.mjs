@@ -1,5 +1,5 @@
-import patterns from "../profile-patterns.js";
-import avatarGroups from "../profile-avatars.js";
+import patterns from "../../frontend/account/profile-patterns.js";
+import avatarGroups from "../../frontend/account/profile-avatars.js";
 
 export class ApiError extends Error {
   constructor(status, message) { super(message); this.status = status; }

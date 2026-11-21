@@ -10,7 +10,7 @@ const base = process.env.POLYMATH_BROWSER_URL || 'http://127.0.0.1:8000';
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw new Error('Browser tests must target an isolated local laboratory.');
 const chrome = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const screenshotDir = process.env.POLYMATH_BROWSER_SCREENSHOTS;
-const course = JSON.parse(await fs.readFile(new URL('../server/sql-course.json', import.meta.url), 'utf8'));
+const course = JSON.parse(await fs.readFile(new URL('../backend/sql/sql-course.json', import.meta.url), 'utf8'));
 const checks = [], accessibility = [], errors = [];
 const browser = await puppeteer.launch({executablePath: chrome, headless: true, args: ['--no-first-run']});
 const page = await browser.newPage();

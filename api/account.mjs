@@ -1,6 +1,6 @@
-import { avatars, ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, publicUser, credentials, setSession, fail, checkExpectedAccount } from "../server/auth.mjs";
+import { avatars, ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, publicUser, credentials, setSession, fail, checkExpectedAccount } from "../backend/auth/session.mjs";
 
-import patterns from "../profile-patterns.js";
+import patterns from "../frontend/account/profile-patterns.js";
 
 const settingsActions = ["banner", "profile", "password", "delete"];
 

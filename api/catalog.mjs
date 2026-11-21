@@ -1,4 +1,4 @@
-import { ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, checkExpectedAccount, fail } from "../server/auth.mjs";
+import { ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, checkExpectedAccount, fail } from "../backend/auth/session.mjs";
 
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 

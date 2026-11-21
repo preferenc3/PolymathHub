@@ -1,6 +1,6 @@
-import SqlProgress from "../sql-progress.js";
-import LanguagePractice from "../language-practice.js";
-import { ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, fail, checkExpectedAccount } from "../server/auth.mjs";
+import SqlProgress from "../frontend/sql/sql-progress.js";
+import LanguagePractice from "../frontend/languages/language-practice.js";
+import { ApiError, configuration, send, sameOrigin, readJson, provider, sessionFor, fail, checkExpectedAccount } from "../backend/auth/session.mjs";
 
 const cleanObject = value => value && !Array.isArray(value) && typeof value === "object" ? value : {};
 export function validateProgress(body) {
