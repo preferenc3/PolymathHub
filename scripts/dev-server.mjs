@@ -12,7 +12,7 @@ import adminAccounts from "../api/admin-accounts.mjs";
 import { readJson, send, fail } from "../backend/auth/session.mjs";
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".webp": "image/webp" };
-const media = /^assets\/(?:audio\/(?:fr|en|es)-[1-7]\.mp3|editorial\/(?:languages|computing|animals|database|counting|algorithms)(?:-small)?\.webp|icons\/[a-z-]+\.svg)$/;
+const media = /^assets\/(?:audio\/(?:fr|en|es)-[1-7]\.mp3|editorial\/[a-z]+(?:-[a-z]+)*\.webp|icons\/[a-z-]+\.svg)$/;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/domain-index.json") {

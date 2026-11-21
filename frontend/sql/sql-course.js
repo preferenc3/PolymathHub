@@ -126,8 +126,8 @@
   }
   function homePractice() {
     const activities = [
-      ['SQL · Laborator', 'Filtrează după salariu', 'Afișează angajații care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14', 'database'],
-      ['Engleză · Vocabular', 'Numește patru animale', 'Citește cuvintele și verifică ce îți amintești.', '/biblioteca.html#invata?lesson=path-en-animals&pane=practice', 'animals'],
+      ['SQL · Laborator', 'Filtrează după salariu', 'Afișează angajații care câștigă peste 12 000 $.', '/sql-university.html?ex=5-14', 'salary-filter'],
+      ['Engleză · Vocabular', 'Numește patru animale', 'Citește cuvintele și verifică ce îți amintești.', '/biblioteca.html#invata?lesson=path-en-animals&pane=practice', 'animal-vocabulary'],
       ['Algoritmi · Complexitate', 'Estimează complexitatea unui algoritm', 'Explorează notația Big-O și tehnica celor doi pointeri.', '/biblioteca.html#invata?lesson=dsa-1-ex1', 'algorithms'],
     ];
     return `<section class="home-practice" aria-labelledby="home-practice-title">
@@ -169,14 +169,14 @@
   const featuredLessons = [
     {domain: 'HTML', title: 'Construiește prima pagină web', lesson: 'path-html-document', detail: 'Descoperă ce apare pe fila browserului și ce se vede pe pagină.', art: 'computing'},
     {domain: 'Franceză', title: 'Présente-toi · Spune cum te numești', lesson: 'path-fr-introduce', detail: 'Citește un dialog scurt și încearcă să te prezinți în franceză.', art: 'languages'},
-    {domain: 'Python', title: 'Afișează un mesaj cu print', lesson: 'path-python-print', detail: 'Scrie o instrucțiune care afișează text pe ecran.', art: 'computing'},
+    {domain: 'Python', title: 'Afișează un mesaj cu print', lesson: 'path-python-print', detail: 'Scrie o instrucțiune care afișează text pe ecran.', art: 'python-print'},
     {domain: 'SQL', title: 'Prima interogare cu SELECT', lesson: 'path-sql-select', detail: 'Alege ce date vrei să citești și din ce tabel provin.', art: 'database'},
     {domain: 'Spaniolă', title: 'Numără până la zece', lesson: 'path-es-numbers', detail: 'Asociază fiecare cifră cu un cuvânt și scrie un număr în spaniolă.', art: 'counting'},
-    {domain: 'C++', title: 'Ce face linia #include?', lesson: 'path-cpp-include', detail: 'Vezi de unde vine std::cout și scrie prima directivă.', art: 'computing'},
-    {domain: 'Go', title: 'De unde pornește un program Go?', lesson: 'path-go-main', detail: 'Leagă pachetul main de funcția care pornește programul.', art: 'computing'},
+    {domain: 'C++', title: 'Ce face linia #include?', lesson: 'path-cpp-include', detail: 'Vezi de unde vine std::cout și scrie prima directivă.', art: 'cpp-include'},
+    {domain: 'Go', title: 'De unde pornește un program Go?', lesson: 'path-go-main', detail: 'Leagă pachetul main de funcția care pornește programul.', art: 'go-start'},
     {domain: 'Engleză', title: 'Cum le spui animalelor în engleză?', lesson: 'path-en-animals', detail: 'Pornește de la patru animale și folosește un cuvânt într-o propoziție.', art: 'animals'},
-    {domain: 'Java', title: 'Găsește începutul programului', lesson: 'path-java-main', detail: 'Descoperă legătura dintre o clasă și metoda main.', art: 'computing'},
-    {domain: 'Rust', title: 'Prima funcție main', lesson: 'path-rust-main', detail: 'Scrie punctul de intrare al unui program Rust.', art: 'computing'},
+    {domain: 'Java', title: 'Găsește începutul programului', lesson: 'path-java-main', detail: 'Descoperă legătura dintre o clasă și metoda main.', art: 'java-main'},
+    {domain: 'Rust', title: 'Prima funcție main', lesson: 'path-rust-main', detail: 'Scrie punctul de intrare al unui program Rust.', art: 'rust-main'},
   ];
 
   function dailyFeature(today = new Date()) {
