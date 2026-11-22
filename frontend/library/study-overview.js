@@ -8,6 +8,14 @@
   function guestWorkspace() {
     return read('pm_learning_workspace_v1') || {sqlPractice: read('pm_sql_practice_v1')};
   }
+  function workshopCount() {
+    const completed = read('polymath-university-sql-completed');
+    return Array.isArray(completed) ? new Set(completed.filter(id => typeof id === 'string')).size : 0;
+  }
+  function accountNote() {
+    const a = window.PolymathAccount;
+    return a?.user ? (a.sync || 'Progresul se salvează în cont.') : 'Progres salvat în acest browser. Conectează-te pentru a continua și pe alt dispozitiv.';
+  }
   function awards(course) {
     const ids = new Set();
     for (const [id, record] of Object.entries(SqlProgress.clean(course.sqlPractice).records)) {
@@ -52,7 +60,7 @@
       return response.json();
     }).catch(error => { domains = null; throw error; });
   }
-  window.StudyOverview = {guestXp, guestLibrary, guestWorkspace, domainIndex, record,
+  window.StudyOverview = {guestXp, guestLibrary, guestWorkspace, workshopCount, accountNote, domainIndex, record,
     leave: () => { pending = null; },
     last(owner) { const visit = read(visitKey(owner)); return validVisit(visit) ? visit : null; }
   };
