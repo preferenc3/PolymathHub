@@ -3,13 +3,27 @@
   const dialog = document.createElement('dialog');
   dialog.id = 'domain-meter-dialog';
   dialog.setAttribute('aria-labelledby', 'domain-meter-title');
-  dialog.innerHTML = '<button type="button" class="meter-close" aria-label="Închide">×</button><h2 id="domain-meter-title" tabindex="-1" autofocus>Progres pe domenii</h2><strong data-count></strong><p data-level></p><p>Finalizezi un domeniu când rezolvi corect fiecare lecție și promovezi testul cu toate răspunsurile corecte.</p><a href="/biblioteca.html#teste">Teste pe domenii →</a>';
+  dialog.innerHTML = `
+    <button type="button" class="meter-close" aria-label="Închide">×</button>
+    <h2 id="domain-meter-title" tabindex="-1" autofocus>Progres pe domenii</h2>
+    <strong data-count></strong><p data-level></p>
+    <p>Finalizezi un domeniu când rezolvi corect fiecare lecție și promovezi testul cu toate răspunsurile corecte.</p>
+    <a href="/biblioteca.html#teste">Teste pe domenii →</a>
+    <section class="meter-activity" aria-labelledby="meter-activity-title">
+      <h3 id="meter-activity-title">Activitatea ta</h3>
+      <ul>
+        <li><a href="/sql-university.html">Rezolvate în atelier <strong data-workshop></strong></a></li>
+        <li><a href="/#greseli">De repetat la cursuri <strong data-review></strong></a></li>
+        <li><a href="/#progres">Puncte din cursuri <strong data-xp></strong></a></li>
+      </ul>
+      <p class="meter-save-status"></p>
+    </section>`;
   document.body.append(dialog);
   button.setAttribute('aria-controls', dialog.id);
-  button.onclick = () => { refresh(); dialog.showModal(); };
+  button.onclick = () => { dialog.showModal(); refresh(); };
   dialog.querySelector('button').onclick = () => dialog.close();
-  dialog.querySelector('a').onclick = () => dialog.close();
   dialog.addEventListener('click', event => {
+    if (event.target.closest('a')) { dialog.close(); return; }
     const r = dialog.getBoundingClientRect();
     if (event.target === dialog && (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom)) dialog.close();
   });
@@ -25,25 +39,36 @@
     button.firstElementChild.textContent = count ? String(count) : '-';
     button.style.setProperty('--meter-height', (fraction * 100) + '%');
     const total = 'Domenii finalizate: ' + count;
-    button.setAttribute('aria-label', total + '. ' + detail);
-    button.title = total + '. ' + detail;
+    const label = 'Progres pe domenii. ' + total + '. ' + detail;
+    button.setAttribute('aria-label', label);
+    button.title = label;
     dialog.querySelector('[data-count]').textContent = total;
     dialog.querySelector('[data-level]').textContent = detail;
+  }
+  function renderActivity(library, workspace, account) {
+    const pending = account?.loading || account?.authenticating;
+    dialog.querySelector('[data-workshop]').textContent = StudyOverview.workshopCount();
+    dialog.querySelector('[data-review]').textContent = pending ? '…' :
+      SqlProgress.summary(workspace.sqlPractice).toReview + LanguagePractice.summary(workspace.languagePractice).toReview;
+    const xp = pending ? null : account?.user ? workspace.xp || 0 : StudyOverview.guestXp(library, workspace);
+    dialog.querySelector('[data-xp]').textContent = xp === null ? '…' : xp + ' XP';
+    dialog.querySelector('.meter-save-status').textContent = pending ? 'Se încarcă progresul.' : StudyOverview.accountNote();
   }
   function refresh() {
     const app = window.PolymathApp;
     if (!app) return;
     const account = window.PolymathAccount;
+    const snapshot = app.snapshot();
+    const library = snapshot.lessons || account?.user ? snapshot.state : StudyOverview.guestLibrary();
+    if (dialog.open) {
+      const workspace = snapshot.lessons && !account?.user ? StudyOverview.guestWorkspace() : snapshot.state;
+      renderActivity(library, workspace, account);
+    }
     if (account?.loading || account?.authenticating) {
       render(0, 0, 'Se încarcă progresul.');
       return;
     }
-    const snapshot = app.snapshot();
-    let progress = snapshot.state;
-    if (!snapshot.lessons && !account?.user) {
-      // Guest coursework and the SQL workspace have distinct storage keys.
-      try { progress = JSON.parse(localStorage.getItem('polymath_edtech_state_v2')) || progress; } catch {}
-    }
+    const progress = library.masteryPoints ? library : snapshot.state;
     const points = progress.masteryPoints || {};
     if (!Object.values(points).some(value => value > 0)) {
       render(0, 0, 'Încă nu ai lecții rezolvate corect.');

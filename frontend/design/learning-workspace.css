@@ -192,11 +192,6 @@ body[data-learning=true] .app-header{position:sticky;top:0;z-index:20}
   .home-destinations, .home-destinations [data-catalog-links] { grid-template-columns: 1fr; }
   .home-destinations .explore-destination { min-height: 66px; }
 }
-.home-activity { margin-top: 1rem; border-top: 1px solid var(--line); }
-.home-activity summary { width: fit-content; padding: .75rem 0; min-height: 44px; cursor: pointer; }
-.activity-list { list-style: none; padding: 0; margin: 0; }
-.activity-list a { min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: 0 .65rem; border-radius: .4rem; color: var(--teal-dark); }
-.activity-list a:hover { background: var(--teal-soft); }
 @media (max-width: 760px) {
   .app-header .explore-toggle { margin-right: 0; }
 }

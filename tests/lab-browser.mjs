@@ -95,6 +95,8 @@ try {
   await page.focus('#domain-meter');
   await page.keyboard.press('Enter');
   await page.waitForSelector('#domain-meter-dialog[open]');
+  assert.equal(await page.$('.home .home-activity, .home [data-save-status]'), null);
+  assert.deepEqual(await page.$$eval('.meter-activity li strong', items => items.map(item => item.textContent)), ['0', '0', '0 XP']);
   assert.equal(await page.evaluate(() => !!document.activeElement.closest('#domain-meter-dialog')), true);
   for (let i = 0; i < 4; i++) {
     await page.keyboard.press('Tab');
@@ -278,6 +280,10 @@ try {
   await page.waitForFunction(() => window.PolymathApp.snapshot().state.xp === 15);
   await page.goto(base + '/#progres');
   await page.waitForFunction(() => document.querySelector('.progress-summary strong')?.textContent === '335');
+  await page.click('#domain-meter');
+  assert.equal(await page.$eval('.meter-activity [data-xp]', item => item.textContent), '335 XP');
+  await page.click('.meter-activity a[href="/#progres"]');
+  await page.waitForSelector('#domain-meter-dialog', {hidden:true});
   await page.waitForFunction(() => document.querySelector('[data-domain-summary]')?.textContent.includes('1 / 26'));
   await route('#acasa');
   assert.match(await page.$eval('.home-continuation a', a => a.href), /lesson=path-en-animals&pane=practice$/);

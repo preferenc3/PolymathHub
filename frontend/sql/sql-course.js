@@ -69,13 +69,9 @@
     vocabularySnapshot:()=>structuredClone(vocabulary),
     replaceVocabulary:value=>{ vocabulary = value || {saved:[],learned:[],cache:[]}; }
   };
-  function accountNote() {
-    const a = window.PolymathAccount;
-    return a?.user ? (a.sync || 'Progresul se salvează în cont.') : 'Progres salvat în acest browser. Conectează-te pentru a continua și pe alt dispozitiv.';
-  }
   function updateStatus() {
     for (const item of document.querySelectorAll('[data-review-count]')) item.textContent = totals().toReview;
-    for (const item of document.querySelectorAll('[data-save-status]')) item.textContent = accountNote();
+    for (const item of document.querySelectorAll('[data-save-status]')) item.textContent = StudyOverview.accountNote();
     for (const item of document.querySelectorAll('[data-sql-lesson]')) {
       const lesson = course?.lessons.find(l=>l.id===item.dataset.sqlLesson);
       if(!lesson)continue;
@@ -101,28 +97,9 @@
   function dataTable(columns, rows, caption, emphasized = []) {
     return `<div class="table-scroll"><table class="data-table">${caption?`<caption>${esc(caption)}</caption>`:''}<thead><tr>${columns.map((c,i)=>`<th scope="col"${emphasized.includes(i)?' class="emphasis"':''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map(row=>`<tr>${row.map((value,i)=>`<td${emphasized.includes(i)?' class="emphasis"':''}>${value===null?'<span class="null">NULL</span>':esc(value)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${columns.length}">Niciun rând.</td></tr>`}</tbody></table></div>`;
   }
-  const saveNote = () => `<p class="save-note" data-save-status>${esc(accountNote())}</p>`;
+  const saveNote = () => `<p class="save-note" data-save-status>${esc(StudyOverview.accountNote())}</p>`;
   function overviewXp() {
     return owner ? totals().xp : StudyOverview.guestXp(StudyOverview.guestLibrary(), snapshot());
-  }
-  function workshopCount() {
-    const completed = stored('polymath-university-sql-completed');
-    return Array.isArray(completed) ? new Set(completed.filter(id => typeof id === 'string')).size : 0;
-  }
-  function homeActivity() {
-    const {toReview} = totals();
-    const labCount = workshopCount();
-    const xp = overviewXp();
-    return `<aside class="home-activity" aria-label="Activitatea ta">
-      <details>
-        <summary>Activitatea ta</summary>
-        <ul class="activity-list">
-          <li><a href="/sql-university.html"><span>Rezolvate în atelier</span><span>${labCount}</span></a></li>
-          <li><a href="#greseli"><span>De repetat la cursuri</span><span>${toReview}</span></a></li>
-          <li><a href="#progres"><span>Puncte din cursuri</span><span>${xp} XP</span></a></li>
-        </ul>
-      </details>
-    </aside>`;
   }
   function homePractice() {
     const activities = [
@@ -232,7 +209,6 @@
       </div>
       ${latestMistake()}
       <section class="word-row" aria-label="Expresia de azi"><h2 class="section-label">O expresie de luat cu tine</h2><span class="word-expression" lang="fr">s’il vous plaît</span><span class="translation">vă rog</span><a class="text-button" href="${frLink('exemple')}">Ascultă și exersează ${icon('arrow-right','icon-small')}</a></section>
-      ${homeActivity()}${saveNote()}
     </div>`;
   }
   function courseRow(lesson, index) {
@@ -275,7 +251,7 @@
         <div><strong>${t.french.correct}/3</strong><span>Replici la piață · Franceză</span></div>
       </div>
       ${mastered ? '<section aria-labelledby="domain-summary-title"><h2 id="domain-summary-title">Lecții rezolvate pe domenii</h2><ul class="domain-summary" data-domain-summary></ul></section>' : ''}
-      <p><a href="/sql-university.html">Laboratoare SQL</a> · ${workshopCount()} exerciții rezolvate pe acest dispozitiv</p>
+      <p><a href="/sql-university.html">Laboratoare SQL</a> · ${StudyOverview.workshopCount()} exerciții rezolvate pe acest dispozitiv</p>
       <a class="secondary" href="#greseli">Greșelile mele · ${t.toReview} de repetat ${icon('arrow-right','icon-small')}</a>
       <div class="catalog-heading"><h2>Traseul SQL</h2></div>${course.lessons.map(courseRow).join('')}${saveNote()}</div>`;
   }
@@ -346,7 +322,7 @@
       <div class="editor-frame"><div class="editor-caption"><label for="sql-editor">Interogarea ta SQL</label><small>SQLite · Ctrl/⌘ + Enter pentru execuție</small></div><div class="editor-body"><pre id="line-numbers" class="line-numbers" aria-hidden="true">1</pre><textarea id="sql-editor" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" maxlength="2000" placeholder="Scrie interogarea aici…">${esc(draft)}</textarea></div></div>
       <div class="editor-actions"><button class="primary" id="run-sql">${icon('play','icon-small')} Execută</button><button class="text-button" id="hint-button">${icon('lightbulb','icon-small')} Indiciu</button><button class="text-button" id="clear-sql">${icon('arrow-counter-clockwise','icon-small')} Resetează</button><button class="text-button alternate" id="alternate-data">Alte date</button></div>
       <div id="sql-feedback" role="status" aria-live="polite"></div><div id="hint-content" class="hint-content" hidden><ol id="hint-list"></ol></div><div id="sql-result" class="result-area"><div class="result-empty">Rezultatele vor apărea aici după execuție.</div></div>
-      <div class="workspace-foot"><span class="save-status" data-save-status>${esc(accountNote())}</span><div id="next-exercise" hidden></div></div><p class="lesson-progress" data-lesson-count="${lesson.id}">${lesson.exercises.filter(id=>state.sql.records[id]?.passed).length}/${lesson.exercises.length} exerciții rezolvate în această lecție</p></section>`;
+      <div class="workspace-foot"><span class="save-status" data-save-status>${esc(StudyOverview.accountNote())}</span><div id="next-exercise" hidden></div></div><p class="lesson-progress" data-lesson-count="${lesson.id}">${lesson.exercises.filter(id=>state.sql.records[id]?.passed).length}/${lesson.exercises.length} exerciții rezolvate în această lecție</p></section>`;
   }
   function conversation() {
     return `<div class="conversation">${dialogue.map((line,i)=>`<div class="conversation-line"><button class="icon-button" data-speak="${i}" aria-label="Ascultă replica ${i+1} în franceză">${icon('speaker-high')}</button><p lang="fr"><small class="speaker-label" lang="ro">${i%2?'Vânzătorul':'Clientul'}</small>${esc(line.fr)}<small class="dialogue-ro" id="dialogue-translation-${i}" lang="ro" hidden>${esc(line.ro)}</small></p></div>`).join('')}<button class="text-button conversation-translate" id="translate-dialogue" aria-expanded="false" aria-controls="${dialogue.map((_,i)=>'dialogue-translation-'+i).join(' ')}">Arată traducerea în română</button><p class="save-note" id="pronunciation-status" role="status" aria-live="polite"></p></div>`;

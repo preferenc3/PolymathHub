@@ -158,11 +158,18 @@ html:has(#account-dialog[open]), body:has(#account-dialog[open]) { overflow: hid
 dialog h2[tabindex="-1"]:focus { outline: none; }
 :is(#domain-meter, .inbox-trigger):focus:not(:focus-visible) { outline: none; }
 .domain-meter:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
-#domain-meter-dialog { width: min(25rem, 92vw); margin: auto; padding: 1.5rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); }
+#domain-meter-dialog { width: min(25rem, 92vw); max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; margin: auto; padding: 1.5rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); }
 #domain-meter-dialog::backdrop { background: #10181480; }
 #domain-meter-dialog h2 { margin: 0 2rem 1rem 0; font: 700 1.6rem/1.2 Georgia, serif; }
 #domain-meter-dialog p { margin: .75rem 0; color: var(--muted); }
 #domain-meter-dialog a { display: inline-flex; align-items: center; min-height: 44px; color: var(--teal-dark); }
+.meter-activity { margin-top: .9rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.meter-activity h3 { margin: 0 0 .35rem; font: 650 1.15rem/1.3 Georgia, serif; }
+.meter-activity ul { list-style: none; margin: 0; padding: 0; }
+#domain-meter-dialog .meter-activity a { display: flex; justify-content: space-between; gap: .8rem; padding-inline: .4rem; border-radius: .35rem; }
+.meter-activity a:hover { background: var(--teal-soft); }
+.meter-activity strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#domain-meter-dialog .meter-save-status { margin: .65rem 0 0; font-size: .85rem; }
 #domain-meter-dialog .meter-close { position: absolute; top: .35rem; right: .35rem; width: 44px; height: 44px; border: 0; color: var(--ink); background: transparent; font-size: 1.35rem; cursor: pointer; }
 @media (max-width: 375px) {
   body.library-app[data-view] .top-bar { gap: 2px; padding-inline: 4px; }
